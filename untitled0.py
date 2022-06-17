@@ -292,7 +292,7 @@ class Galaxy(object):
             self.spherical = position
             self.cartesian = self.spherical_to_cartesian(position[0], position[1], position[2])
             
-        self.starpositions = self.generate_galaxy()
+        self.starpositions, self.stars = self.generate_galaxy()
         
         
     
@@ -396,6 +396,7 @@ class Galaxy(object):
             bulgex = np.append(bulgex, barx); bulgey = np.append(bulgey, bary); bulgez = np.append(bulgez, barz)
             bulgecolours = np.append(bulgecolours, barcolours, axis=0)
             bulgescales = np.append(bulgescales, barscales, axis=0)
+            bulgestars = np.append(bulgestars, barstars, axis=0)
         else:
             bulgedists = np.random.weibull(1.5 * bulgeradius, size = bulgepop) * np.random.normal(1, 0.05, bulgepop)
             theta = np.random.uniform(0, 2*np.pi, bulgepop)
@@ -408,7 +409,7 @@ class Galaxy(object):
             bulgescales = [star.get_star_scale() for star in bulgestars]
         
         
-        spiralx, spiraly, spiralz, spiralcolours, spiralscales = [], [], [], np.empty((0,3)), []
+        spiralx, spiraly, spiralz, spiralcolours, spiralscales, spiralstars = [], [], [], np.empty((0,3)), [], []
         
         #the following is experimental, and models barred spirals accurately
         if mult != None and self.species[:2] == "SB":       #barred spiral
@@ -416,9 +417,9 @@ class Galaxy(object):
             youngpop, oldpop =  int(spiralpop / 2), int(spiralpop / 2)
             youngstars = ["ys", youngpop, 0, 0.04, 0.01, 0.005, 10000, 6000] #[pop, lag, scatter, scatter2, zscatter, tempmean, tempshift]
             oldstars = ["os", oldpop, 0.2, 0.08, 0.015, 0.01, 4000, 1000]
-            spiralstars = [youngstars, oldstars]
+            spiralpopulations = [youngstars, oldstars]
 
-            for [region, pop, lag, scatter, scatter2, zscatter, tempmean, tempshift] in spiralstars:
+            for [region, pop, lag, scatter, scatter2, zscatter, tempmean, tempshift] in spiralpopulations:
                 if speciesindex[self.species] >= 5:
                     spiralangle = np.geomspace(lower, upper, pop)
                 else:
@@ -434,14 +435,15 @@ class Galaxy(object):
                 spiralx = np.append(spiralx, x); spiraly = np.append(spiraly, y); spiralz = np.append(spiralz, z)
                 spiralcolours = np.append(spiralcolours, colours, axis=0)
                 spiralscales = np.append(spiralscales, scales, axis=0)
+                spiralstars = np.append(spiralstars, stars, axis=0)
         elif mult != None:          #standard spiral 
             lower, upper = spiralwrap
             youngpop, oldpop = int(spiralpop / 2), int(spiralpop / 2)
             youngstars = ["ys", youngpop, 0, 0.04, 0.01, 0.005, 10000, 6000] #[pop, lag, scatter, scatter2, zscatter, tempmean, tempshift]
             oldstars = ["os", oldpop, 0.2, 0.08, 0.015, 0.01, 4000, 1000]
-            spiralstars = [youngstars, oldstars]
+            spiralpopulations = [youngstars, oldstars]
             
-            for [region, pop, lag, scatter, scatter2, zscatter, tempmean, tempshift] in spiralstars:
+            for [region, pop, lag, scatter, scatter2, zscatter, tempmean, tempshift] in spiralpopulations:
                 if speciesindex[self.species] >= 5:
                     spiralangle = np.geomspace(lower, upper, pop)
                 else:
@@ -457,11 +459,13 @@ class Galaxy(object):
                 spiralx = np.append(spiralx, x); spiraly = np.append(spiraly, y); spiralz = np.append(spiralz, z)
                 spiralcolours = np.append(spiralcolours, colours, axis=0)
                 spiralscales = np.append(spiralscales, scales, axis=0)
+                spiralstars = np.append(spiralstars, stars, axis=0)
                 
         x = np.append(diskx, np.append(bulgex, spiralx)); y = np.append(disky, np.append(bulgey, spiraly)); z = np.append(diskz, np.append(bulgez, spiralz))
         colours = np.append(diskcolours, np.append(bulgecolours, spiralcolours, axis=0), axis=0)
         scales = np.append(diskscales, np.append(bulgescales, spiralscales, axis=0), axis=0)
-        return x, y, z, colours, scales
+        stars = np.append(diskstars, np.append(bulgestars, spiralstars, axis=0), axis=0)
+        return x, y, z, colours, scales, stars
     
     def generate_elliptical(self, population, radius):
         '''TODO: make more elliptical spirals. Maybe multiply by the reciprocal of the distance from the center in x,y coords?
@@ -503,7 +507,9 @@ class Galaxy(object):
         x = np.append(centralx, spherex); y = np.append(centraly, spherey); z = np.append(centralz, spherez)
         colours = np.append(centralcolours, spherecolours, axis=0)
         scales = np.append(centralscales, spherescales, axis=0)
-        return x, y, z, colours, scales
+        
+        stars = np.append(centralstars, spherestars, axis=0)
+        return x, y, z, colours, scales, stars
     
     def generate_galaxy(self):
         '''Generate random stars according to species type of galaxy. 
@@ -516,9 +522,9 @@ class Galaxy(object):
         population, radius = self.population, self.radius
         
         if self.species[0] == 'E':  #elliptical galaxy
-            x, y, z, colours, scales = self.generate_elliptical(population, radius)
+            x, y, z, colours, scales, stars = self.generate_elliptical(population, radius)
         else:                       #spiral galaxy
-            x, y, z, colours, scales = self.generate_spiral(population, radius)
+            x, y, z, colours, scales, stars = self.generate_spiral(population, radius)
         
         points = np.array([x, y, z])
         phi = np.random.uniform(0, 2*np.pi, 3)
@@ -529,13 +535,23 @@ class Galaxy(object):
         points = np.dot(self.galaxyrotation(phi[2], 'z'), points)
         x0, y0, distance = self.cartesian
         x, y, z = points[0] + x0, points[1] + y0, points[2] + distance  #move the galaxy away from the origin to its desired position
-        return x, y, z, colours, scales
+        return [x, y, z, colours, scales], stars
         
     def get_stars(self):
         return self.starpositions
     
     def generate_stars(self, region, n):
-        '''
+        '''Generates n Star objects according to the region of the galaxy.
+        Parameters
+        ----------
+        region : str
+            The region of the galaxy (e.g. young spiral, bulge, etc)
+        n : int
+            The number of stars to generate.
+        
+        Returns
+        -------
+        stars : list of n Star objects
         '''
         proportions = {"ys":[0.82, 0.1, 0.07, 0.01], "os":[0.75, 0.15, 0.05, 0.05],
                        "disk":[0.9, 0.05, 0.02, 0.03], "bulge":[0.8, 0.1, 0.04, 0.06]}
@@ -545,15 +561,30 @@ class Galaxy(object):
         for i in range(n):
             if val[i] <= probs[0]:
                 choice.append("MS")
-            elif val[i] <= probs[1]:
+            elif val[i] <= probs[1] + probs[0]:
                 choice.append("Giant")
-            elif val[i] <= probs[2]:
+            elif val[i] <= probs[2] + probs[1] + probs[0]:
                 choice.append("SupGiant")
             else:
                 choice.append("WDwarf")
         stars = [Star(region, species) for species in choice]
         return stars
             
+    def generate_HR(self):
+        '''Plots a Colour-Magnitude (HR) diagram for this galaxy.     
+        Returns
+        -------
+        matplotlib axes object
+            The HR diagram. 
+        '''
+        fig, ax = plt.subplots()
+        lumins = [star.get_star_lumin() for star in self.stars]
+        temps = [star.get_star_temp() for star in self.stars]
+        colours = self.starpositions[3]
+        ax.scatter(temps, lumins, color=colours, s=0.2)
+        ax.set_facecolor('k'); ax.invert_xaxis(); 
+        ax.set_xscale('log'); ax.set_yscale('log')
+        ax.set_xlabel("Temperature (K)"); ax.set_ylabel(r"Solar Luminosities ($L / L_\odot$)")
     
     def plot_2d(self, fig, ax):
         '''Plots the Galaxy onto predefined matplotlib axes in terms of its equatorial and polar angles. 
@@ -654,13 +685,15 @@ class Galaxy(object):
     
 
 def main():
-    galaxy = Galaxy('SBb', (100,130,100), 1000, 10)
+    galaxy = Galaxy('SBb', (0,0,0), 2000, 10)
     # galaxy2 = Galaxy('E0', (104, 131, 500), 1000, 10)
     # galaxy3 = Galaxy('Sc', (110, 128, 1000), 1000, 10)
     fig = plt.figure()
     ax = fig.add_subplot(projection='3d')
     galaxy.plot_3d(ax)
-    # ax.set_xlim(-15, 15); ax.set_ylim(-15, 15); ax.set_zlim(-15, 15)
+    ax.set_xlim(-15, 15); ax.set_ylim(-15, 15); ax.set_zlim(-15, 15)
+    
+    galaxy.generate_HR()
     # fig, ax = plt.subplots()
     # galaxy.plot_2d(fig, ax)
     # galaxy2.plot_2d(fig, ax)

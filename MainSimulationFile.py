@@ -539,7 +539,7 @@ class Galaxy(object):
         #rotate the galaxy randomly
         points = np.dot(self.galaxyrotation(phi[0], 'x'), points)
         points = np.dot(self.galaxyrotation(phi[1], 'y'), points)
-        # points = np.dot(self.galaxyrotation(phi[2], 'z'), points)
+        points = np.dot(self.galaxyrotation(phi[2], 'z'), points)
         x0, y0, z0 = self.cartesian
         x, y, z = points[0] + x0, points[1] + y0, points[2] + z0  #move the galaxy away from the origin to its desired position
         return [x, y, z, colours, scales], stars
@@ -709,7 +709,12 @@ class Galaxy(object):
     def cartesian_to_spherical(self, x, y, z):
         ''' Converts cartesian coordinates to spherical ones (formulae taken from wikipedia) in units of degrees. 
         Maps polar angle to [0, 180] with 0 at the north pole, 180 at the south pole. 
-        Maps azimuthal (equatorial) angle to [0, 360], with equat=0 corresponding to the positive y-axis, equat=90 the positive x-axis, etc
+        Maps azimuthal (equatorial) angle to [0, 360], with equat=0 corresponding to the negative x-axis, equat=270 the positive y-axis, etc
+        Azimuthal (equat) angles reference:
+            equat = 0 or 360 -> -ve x-axis (i.e. y=0)
+            equat = 180 -> +ve x-axis (y=0)
+            equat = 90 -> -ve y-axis (x=0)
+            equat = 270 -> +ve y-axis (x=0)
         Parameters
         ----------
         x, y, z : numpy array
@@ -725,11 +730,13 @@ class Galaxy(object):
         polar = np.arccos(z / radius)
         polar = np.degrees(polar)
         equat = np.degrees(equat)
-        # now need to reflect the negative angles about equat=360
+        # now need to shift the angles
         if np.size(equat) != 1:
-            equat = np.array([360 - abs(val) if val < 0 else val for val in equat])
-        else:
-            equat = 360 - abs(equat) if equat < 0 else equat
+            equat = np.array([360 - val if val > 0 else val for val in equat])  #this reflects positive angles about equat=180
+            equat = np.array([- val if val < 0 else val for val in equat])  #this reflects negative angles about equat=0
+        else:   #same as above, but for a single element. 
+            equat = 360 - equat if equat > 0 else equat
+            equat = - equat if equat < 0 else equat
         return (equat, polar, radius)
     
     def spherical_to_cartesian(self, equat, polar, distance):
@@ -759,7 +766,7 @@ def main():
     # galaxy3 = Galaxy('Sc', (110, 128, 10000), 1000, 100)
     fig = plt.figure()
     ax = fig.add_subplot(projection='3d')
-    galaxy.plot_3d(ax, camera=False)
+    galaxy.plot_3d(ax, camera=True)
     # ax.set_xlim(-15, 15); ax.set_ylim(-15, 15); ax.set_zlim(-15, 15)
     # ax.set_xlim(-10, 10); ax.set_ylim(-10, 10); ax.set_zlim(-10, 10)
     

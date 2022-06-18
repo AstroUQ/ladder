@@ -397,7 +397,7 @@ class Galaxy(object):
         bulgeR = bulgeradius * bulgedists**(1/3)    #bulgedists was meant to be RVs between 0 and 1, but the mult makes up for it
         bulgex = bulgeR * (np.cos(theta) * np.sin(phi) + np.random.normal(0, 0.1, bulgepop))
         bulgey = bulgeR * (np.sin(theta) * np.sin(phi) + np.random.normal(0, 0.1, bulgepop))
-        distanceflat = 0.1 * np.sqrt(bulgex**2 + bulgey**2)     #this makes the z lower for stars further from the center
+        distanceflat = (1 / radius) * np.sqrt(bulgex**2 + bulgey**2)     #this makes the z lower for stars further from the center
         bulgez = (0.83 * bulgeR * (np.cos(phi) + np.random.normal(0, 0.1, bulgepop))) * 0.9**distanceflat
         
         # bulgex = np.cos(theta) * bulgedists
@@ -489,8 +489,8 @@ class Galaxy(object):
         phi = np.random.uniform(-1, 1, population)
         phi = np.arccos(phi)
         
-        spheredists = np.random.exponential(0.07 * radius, spherepop)#np.random.uniform(0, 1, spherepop)
-        centraldists = np.random.exponential(centralradius, centralpop)#np.random.uniform(0, 1, centralpop)
+        spheredists = np.random.exponential(0.4, spherepop)
+        centraldists = np.random.exponential(1/5, centralpop)
         centralR = centralradius * centraldists**(1/3)
         sphereR = radius * spheredists**(1/3)
         
@@ -504,7 +504,7 @@ class Galaxy(object):
         
         spherex = sphereR * (np.cos(theta[centralpop:]) * np.sin(phi[centralpop:]) + np.random.normal(0, 0.1, spherepop))
         spherey = sphereR * (np.sin(theta[centralpop:]) * np.sin(phi[centralpop:]) + np.random.normal(0, 0.1, spherepop))
-        distanceflat = 0.1 * np.sqrt(spherex**2 + spherey**2)
+        distanceflat = (1 / radius) * np.sqrt(spherex**2 + spherey**2)
         spherez = (sphereR * (np.cos(phi[centralpop:]) + np.random.normal(0, 0.1, spherepop))) * ellipsoid_mult**distanceflat
         
         spherestars = self.generate_stars("disk", spherepop)
@@ -539,9 +539,9 @@ class Galaxy(object):
         #rotate the galaxy randomly
         points = np.dot(self.galaxyrotation(phi[0], 'x'), points)
         points = np.dot(self.galaxyrotation(phi[1], 'y'), points)
-        points = np.dot(self.galaxyrotation(phi[2], 'z'), points)
-        x0, y0, distance = self.cartesian
-        x, y, z = points[0] + x0, points[1] + y0, points[2] + distance  #move the galaxy away from the origin to its desired position
+        # points = np.dot(self.galaxyrotation(phi[2], 'z'), points)
+        x0, y0, z0 = self.cartesian
+        x, y, z = points[0] + x0, points[1] + y0, points[2] + z0  #move the galaxy away from the origin to its desired position
         return [x, y, z, colours, scales], stars
         
     def get_stars(self):
@@ -620,13 +620,16 @@ class Galaxy(object):
             ax.set_xlim(xmin, xmax); ax.set_ylim(ymin, ymax)    #make sure the figure bounds dont change from before
                 
     
-    def plot_2d(self, fig, ax):
+    def plot_2d(self, fig, ax, spikes=False):
         '''Plots the Galaxy onto predefined matplotlib axes in terms of its equatorial and polar angles. 
         
         Parameters
         ----------
+        fig : matplotlib.figure
         ax : matplotlib.axes 
             A predefined matplotlib axes that has been defined by "fig, ax = plt.subplots()"
+        spikes : bool
+            Whether to show diffraction spikes for bright stars.
         
         Returns
         -------
@@ -637,8 +640,17 @@ class Galaxy(object):
         
         
         scales = scales / (0.05 * radius)
-        scales = [2.5 if scale > 2.5 else scale for scale in scales]
-        ax.scatter(equat, polar, s=scales, c=colours, marker='.')
+        if spikes == True:
+            brightequat, brightpolar, brightscale, brightcolour = [], [], [], np.empty((0, 3))
+            for i, scale in enumerate(scales):
+                if scale > 2.5:
+                    brightequat += [equat[i]]
+                    brightpolar += [polar[i]]
+                    brightscale = brightscale + [scale / 4]
+                    brightcolour = np.append(brightcolour, [colours[i]], axis=0)
+            ax.errorbar(brightequat, brightpolar, yerr=brightscale, xerr=brightscale, ecolor=brightcolour, fmt='none', elinewidth=0.3)
+        scales = [4 if scale > 4 else scale for scale in scales]
+        ax.scatter(equat, polar, s=scales, c=colours)
         ax.set_xlim(0, 360); ax.set_ylim(0, 180)
         ax.set_facecolor('k')
         ax.set_aspect(1)
@@ -647,7 +659,7 @@ class Galaxy(object):
         ax.set_xlabel("Equatorial Angle (degrees)")
         ax.set_ylabel("Polar Angle (degrees)")
     
-    def plot_3d(self, ax):
+    def plot_3d(self, ax, camera=False):
         '''Plots the Galaxy onto predefined 3D matplotlib axes. 
         
         Parameters
@@ -655,6 +667,8 @@ class Galaxy(object):
         ax : matplotlib.axes 
             A predefined matplotlib axes that has been defined by "ax = fig.add_subplot(projection='3d')", 
             where fig is defined by "fig = plt.figure()"
+        camera : bool
+            whether or not to show a little green pyramid at the origin (0, 0, 0) showing the direction of the camera in the 2d plot
         
         Returns
         -------
@@ -676,6 +690,21 @@ class Galaxy(object):
         
         # uncomment the lines below for a pretty view
         ax.set_facecolor('k')
+        
+        if camera == True:
+            ax.scatter(0, 0, 0, c='g', s=60, alpha=0.9) #plots the main camera part
+            equat = np.array([-30, -30, 30, 30]) + 180
+            polar = np.array([-30, 30, 30, -30]) + 90
+            distance = self.radius / 2
+            equat = np.radians(equat); polar = np.radians(polar)
+            x = distance * np.cos(equat) * np.sin(polar)
+            y = distance * np.sin(equat) * np.sin(polar)
+            z = distance * np.cos(polar)
+            ax.scatter(x, y, z, c='g', s=40, alpha=0.9)
+            x, y, z = np.append(x, x[0]), np.append(y, y[0]), np.append(z, z[0])
+            ax.plot(x, y, z, c='g', linewidth=1)
+            for i in range(4):
+                ax.plot([0, x[i]], [0, y[i]], [0, z[i]], c='g', linewidth=1)
     
     def cartesian_to_spherical(self, x, y, z):
         ''' Converts cartesian coordinates to spherical ones (formulae taken from wikipedia) in units of degrees. 
@@ -725,20 +754,20 @@ class Galaxy(object):
 
 def main():
     # galaxy = Galaxy('SBb', (40,10,20), 1000, 100, cartesian=True)
-    galaxy = Galaxy('SBb', (0, 90, 20), 1000, 100)
-    galaxy2 = Galaxy('E0', (104, 131, 5000), 1000, 100)
-    galaxy3 = Galaxy('Sc', (110, 128, 10000), 1000, 100)
-    # fig = plt.figure()
-    # ax = fig.add_subplot(projection='3d')
-    # galaxy.plot_3d(ax)
+    galaxy = Galaxy('Sc', (180, 90, 70), 1000, 100)
+    # galaxy2 = Galaxy('E0', (104, 131, 5000), 1000, 100)
+    # galaxy3 = Galaxy('Sc', (110, 128, 10000), 1000, 100)
+    fig = plt.figure()
+    ax = fig.add_subplot(projection='3d')
+    galaxy.plot_3d(ax, camera=False)
     # ax.set_xlim(-15, 15); ax.set_ylim(-15, 15); ax.set_zlim(-15, 15)
     # ax.set_xlim(-10, 10); ax.set_ylim(-10, 10); ax.set_zlim(-10, 10)
     
     # galaxy.generate_HR(isoradii=True)
     fig, ax = plt.subplots()
-    galaxy.plot_2d(fig, ax)
-    galaxy2.plot_2d(fig, ax)
-    galaxy3.plot_2d(fig, ax)
+    galaxy.plot_2d(fig, ax, spikes=True)
+    # galaxy2.plot_2d(fig, ax)
+    # galaxy3.plot_2d(fig, ax)
 
     
 if __name__ == "__main__":

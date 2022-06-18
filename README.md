@@ -5,6 +5,7 @@ I am intending to emulate the "Distance Ladder" universe simulation that was a p
 ## To-Do:
  - Stars:
     - Generate narrow band luminosity data (currently have bolometric luminosity and temperature). 
+	- Simulate variability in some regions on the HR diagram. 
  - Create standard galaxy populations and radii for galaxy types. 
  - Galaxy Rotation Curves
     - Curves given black hole and no black hole

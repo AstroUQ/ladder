@@ -674,8 +674,8 @@ class Galaxy(object):
         -------
         No returns, but adds the current Galaxy instance to the matplotlib axes. 
         '''
-        equat, polar, dist, colours, scales = self.starpositions
-        ax.scatter(equat, polar, dist, s=scales, c=colours)
+        x, y, z, colours, scales = self.starpositions
+        ax.scatter(-x, -y, -z, s=scales, c=colours) #need to plot the flipped coordinates for some reason? need to do this to match up with the 2d plot.
         ax.set_xlabel("x")
         ax.set_ylabel("y")
         ax.set_zlabel("z")
@@ -710,10 +710,10 @@ class Galaxy(object):
         ''' Converts cartesian coordinates to spherical ones (formulae taken from wikipedia) in units of degrees. 
         Maps polar angle to [0, 180] with 0 at the north pole, 180 at the south pole. 
         Maps azimuthal (equatorial) angle to [0, 360], with equat=0 corresponding to the negative x-axis, equat=270 the positive y-axis, etc
-        Azimuthal (equat) angles reference:
+        Azimuthal (equat) angles reference (rotates anti-clockwise):
             equat = 0 or 360 -> -ve x-axis (i.e. y=0)
-            equat = 180 -> +ve x-axis (y=0)
             equat = 90 -> -ve y-axis (x=0)
+            equat = 180 -> +ve x-axis (y=0)
             equat = 270 -> +ve y-axis (x=0)
         Parameters
         ----------
@@ -732,11 +732,9 @@ class Galaxy(object):
         equat = np.degrees(equat)
         # now need to shift the angles
         if np.size(equat) != 1:
-            equat = np.array([360 - val if val > 0 else val for val in equat])  #this reflects positive angles about equat=180
-            equat = np.array([- val if val < 0 else val for val in equat])  #this reflects negative angles about equat=0
+            equat = np.array([360 - abs(val) if val < 0 else val for val in equat])  #this reflects negative angles about equat=180
         else:   #same as above, but for a single element. 
-            equat = 360 - equat if equat > 0 else equat
-            equat = - equat if equat < 0 else equat
+            equat = 360 - abs(equat) if equat < 0 else equat
         return (equat, polar, radius)
     
     def spherical_to_cartesian(self, equat, polar, distance):
@@ -761,7 +759,7 @@ class Galaxy(object):
 
 def main():
     # galaxy = Galaxy('SBb', (40,10,20), 1000, 100, cartesian=True)
-    galaxy = Galaxy('Sc', (180, 90, 70), 1000, 100)
+    galaxy = Galaxy('Sc', (270, 90, 70), 1000, 100)
     # galaxy2 = Galaxy('E0', (104, 131, 5000), 1000, 100)
     # galaxy3 = Galaxy('Sc', (110, 128, 10000), 1000, 100)
     fig = plt.figure()

@@ -8,12 +8,11 @@ Created on Wed Jun 15 13:22:58 2022
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
-
-colourdata = pd.read_csv("blackbodycolours.txt", delimiter=' ')
+from matplotlib import colors
 
 class Star(object):
-    colourdata = pd.read_csv("blackbodycolours.txt", delimiter=' ')
     def __init__(self, location, species="MS"):
+        self.colourdata = pd.read_csv("blackbodycolours.txt", delimiter=' ')
         if species == "MS":
             self.mass = abs(self.MS_masses(location))
             self.luminosity = abs(self.MS_lumin(self.mass))
@@ -34,6 +33,7 @@ class Star(object):
             self.luminosity = abs(self.SGB_lumin(self.temperature))
             self.mass = abs(self.SGB_mass())
             self.radius = self.stefboltz_radius(self.luminosity, self.temperature)
+        self.bandlumin = self.generate_BandLumin(self.temperature, self.radius)
             
     def MS_masses(self, species):
         '''Masses for stars on the main sequence.
@@ -73,6 +73,7 @@ class Star(object):
             lumin = 1.4 * mass**3.5
         elif 55 < mass:
             lumin = 3.2 * 10**4 * mass
+        else: ValueError("something is wrong")
         lumin += np.random.normal(0, 0.005 * mass)
         lumin = 0.23 * 0.04**2.3 if lumin < 0.23 * 0.04**2.3 else lumin
         return lumin
@@ -164,7 +165,7 @@ class Star(object):
         R = 696340000 * radii
         solLum = 3.828 * 10**26
         mult =  1 / solLum
-        return 4 * np.pi * R**2 * sigma * temps**4 * mult * np.random.normal(1, 0.05)
+        return 4 * np.pi * R**2 * sigma * temps**4 * mult * np.random.normal(1, 0.1)
 
     def SGB_temp(self):
         '''Beta temperature distribution, weighted to be just higher in temperature than the midpoint. 
@@ -231,20 +232,102 @@ class Star(object):
         return radius / 696340000
 
     def get_star_colour(self):
-        '''Approximations were retrieved from https://en.wikipedia.org/wiki/Planckian_locus
+        ''' Takes the RGB colour values from a blackbody of specified temperature, with values stored in the file:
+            "blackbodycolours.txt"
+        Blackbody RGB values kindly supplied by:
+            Mitchell Charity <mcharity@lcs.mit.edu>
+            http://www.vendian.org/mncharity/dir3/blackbody/
+            Version 2001-Jun-22
         
-        Alternate::
-            # Mitchell Charity <mcharity@lcs.mit.edu>
-            # http://www.vendian.org/mncharity/dir3/blackbody/
-            # Version 2001-Jun-22
+        Alternate version (commented out) using colour-science package:
+            Approximations were retrieved from https://en.wikipedia.org/wiki/Planckian_locus
         '''
+        #i tried to use an algorithm here but i ran into issues with the colour-science (or is it colour?) package
+        # temp = self.temperature
+        # if 1667 <= temp <= 4000:
+        #     x = -0.2661239 * (10**9 / temp**3) - 0.2343589 * (10**6 / temp**2) + 0.8776956 * (10**3 / temp) + 0.179910
+        #     if temp <= 2222:
+        #         y = -1.1063814 * x**3 - 1.34811020 * x**2 + 2.18555832 * x - 0.20219683
+        #     else:
+        #         y = -0.9549476 * x**3 - 1.37418593 * x**2 + 2.09137015 * x - 0.16748867
+        # elif 4000 <= temp <= 25000:
+        #     x = -3.0258469 * (10**9 / temp**3) + 2.1070379 * (10**6 / temp**2) + 0.2226347 * (10**3 / temp) + 0.24039
+        #     y = 3.0817580 * x**3 - 5.87338670 * x**2 + 3.75112997 * x - 0.37001483
+        # xy = [x, y]
+        # XYZ = col.xy_to_XYZ(xy)
+        # rgb = col.XYZ_to_RGB(XYZ)
+        # return rgb
         temperature = self.temperature
         temperature = 40000 if temperature > 40000 else temperature
         temperature = 1000 if temperature < 1000 else temperature
         temp = round(temperature / 100) * 100
-        r, g, b = colourdata.loc[colourdata['Temperature'] == temp].iloc[0, 9:12]
+        r, g, b = self.colourdata.loc[self.colourdata['Temperature'] == temp].iloc[0, 9:12]
         rgb = np.array([r, g, b]) / 255
         return rgb
+    
+    def get_star_scale(self):
+        '''A basic logarithmic scale to determine how large stars should be in pictures given their luminosity.
+        Returns
+        -------
+        scale : float
+            the number to be input into the 'scale' kwarg in a matplotlib figure. 
+        '''
+        scale = 3 * np.log(2 * self.luminosity + 1)
+        scale = 2 if scale > 2 else scale
+        return scale
+    
+    def generate_BandLumin(self, temp, radius):
+        '''http://burro.cwru.edu/academics/Astr221/Light/blackbody.html
+        Parameters
+        ----------
+        temp : float
+        radius : float
+            Radius of the star in units of solar radii. 
+        Returns
+        -------
+        band luminosities : list
+            [B, G, R] band luminosities in units of W/m/s^3 ??
+        '''
+        c, h, k = 299792458, 6.626 * 10**-34, 1.38 * 10**-23
+        blue, green, red = 440 * 10**-9, 500 * 10**-9, 700 * 10**-9
+        planck = lambda x: ((2 * h * c**2) / x**5) * (1 / (np.exp(h * c / (x * k * temp)) - 1))
+        bandLum = lambda x: 4 * np.pi**2 * (696540000 * radius)**2 * planck(x)
+        return np.array([bandLum(blue), bandLum(green), bandLum(red)]) * 10**-7 * np.random.uniform(0.99, 1.01, 3)
+    
+    def generate_blackbodycurve(self, markers=True, visible=False):
+        ''' Produce a graph of this stars' blackbody curve. 
+        Parameters
+        ----------
+        markers : bool
+            whether or not to put the [B, G, R] band luminosity markers on the graph
+        visible : bool
+            whether or not to plot the visible spectrum overlaid onto the curve
+        '''
+        temp = self.temperature
+        radius = self.radius
+        c, h, k = 299792458, 6.626 * 10**-34, 1.38 * 10**-23
+        x = np.linspace(1 * 10**-9, 10**-6, 1000)   # the domain for the graph. going from ~0 -> 1000nm
+        planck = lambda x: ((2 * h * c**2) / x**5) * (1 / (np.exp(h * c / (x * k * temp)) - 1))
+        bandLum = lambda x: 4 * np.pi**2 * (696540000 * radius)**2 * planck(x) * 10**-7
+        lumins = bandLum(x)     # generate the blackbody curve
+        
+        fig, ax = plt.subplots()
+        ax.plot(x * 10**9, lumins, c='k')   # plot the blackbody curve of the star
+        ax.set_xlabel(r"Wavelength $\lambda$ (nm)")
+        ax.set_ylabel(r"Luminosity (W/m/s$^3$)")
+        ax.set_ylim(ymin=0); ax.set_xlim(xmin=0)
+        
+        if visible == True:     # plot the visible spectrum under the blackbody curve
+            spectrum = np.linspace(1, 1000, 1000)
+            colourmap = plt.get_cmap('Spectral_r')  # spectral_r is the visible spectrum going from blue -> red 
+            normalize = colors.Normalize(vmin=380, vmax=750) # normalize spectral_r to the wavelength of the visible spectrum
+            for i in range(len(spectrum) - 1): # iterate over blocks in the domain, and plot the colour for that block
+                where = [True if 380 <= x <= 750 else False for x in [spectrum[i], spectrum[i + 1]]]
+                ax.fill_between([spectrum[i], spectrum[i + 1]], [lumins[i], lumins[i + 1]], where=where, 
+                                color=colourmap(normalize(spectrum[i])), alpha=0.3)
+        if markers == True:     # plot markers for each of the luminosity band values given to the user
+            ax.scatter(np.array([440, 500, 700]), self.bandlumin, color=['b', 'g', 'r'])
+        
     
     def get_star_lumin(self):
         return self.luminosity
@@ -254,6 +337,8 @@ class Star(object):
         return self.temperature
     def get_star_radius(self):
         return self.radius
+    def get_star_BandLumin(self):
+        return self.bandlumin
 
 def HR_diagram(lumins, temps, colours=None):
     '''Plots a Colour-Magnitude (HR) diagram given some luminosity and temperature values. 
@@ -295,20 +380,25 @@ lumins = [star.get_star_lumin() for star in stars]
 temps = [star.get_star_temp() for star in stars]
 colours = [star.get_star_colour() for star in stars]
 masses = [star.get_star_mass() for star in stars]
+bandlums = [star.get_star_BandLumin() for star in stars]
 
-HR_diagram(lumins, temps, colours)
+print(bandlums[0], temps[0], lumins[0] * 3.828 * 10**26)
+stars[0].generate_blackbodycurve()
+stars[0].generate_blackbodycurve(visible=True)
 
-fig, ax = plt.subplots()
-logbins = np.logspace(np.log10(min(lumins)), np.log10(max(lumins)), int(n/10))
-ax.hist(lumins, bins=logbins)
-ax.set_xscale('log'); ax.set_xlabel(r"Solar Luminosities ($L / L_\odot$)")
+# HR_diagram(lumins, temps, colours)
 
-fig1, ax1 = plt.subplots()
-ax1.hist(masses, bins=30)
-ax1.set_xlabel(r"Solar Masses ($M / M_\odot$)")
+# fig, ax = plt.subplots()
+# logbins = np.logspace(np.log10(min(lumins)), np.log10(max(lumins)), int(n/10))
+# ax.hist(lumins, bins=logbins)
+# ax.set_xscale('log'); ax.set_xlabel(r"Solar Luminosities ($L / L_\odot$)")
 
-fig2, ax2 = plt.subplots()
-ax2.hist(temps)
+# fig1, ax1 = plt.subplots()
+# ax1.hist(masses, bins=30)
+# ax1.set_xlabel(r"Solar Masses ($M / M_\odot$)")
+
+# fig2, ax2 = plt.subplots()
+# ax2.hist(temps)
 
 
 

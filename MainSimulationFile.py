@@ -9,6 +9,7 @@ Created on Mon Jun  6 09:52:26 2022
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
+from matplotlib import colors
 # import colour as col
 
 class Star(object):
@@ -34,6 +35,7 @@ class Star(object):
             self.luminosity = abs(self.SGB_lumin(self.temperature))
             self.mass = abs(self.SGB_mass())
             self.radius = self.stefboltz_radius(self.luminosity, self.temperature)
+        self.bandlumin = self.generate_BandLumin(self.temperature, self.radius)
             
     def MS_masses(self, species):
         '''Masses for stars on the main sequence.
@@ -276,6 +278,59 @@ class Star(object):
         scale = 2 if scale > 2 else scale
         return scale
     
+    def generate_BandLumin(self, temp, radius):
+        '''http://burro.cwru.edu/academics/Astr221/Light/blackbody.html
+        Parameters
+        ----------
+        temp : float
+        radius : float
+            Radius of the star in units of solar radii. 
+        Returns
+        -------
+        band luminosities : list
+            [B, G, R] band luminosities in units of W/m/s^3 ??
+        '''
+        c, h, k = 299792458, 6.626 * 10**-34, 1.38 * 10**-23
+        blue, green, red = 440 * 10**-9, 500 * 10**-9, 700 * 10**-9
+        planck = lambda x: ((2 * h * c**2) / x**5) * (1 / (np.exp(h * c / (x * k * temp)) - 1))
+        bandLum = lambda x: 4 * np.pi**2 * (696540000 * radius)**2 * planck(x)
+        return np.array([bandLum(blue), bandLum(green), bandLum(red)]) * 10**-7 * np.random.uniform(0.99, 1.01, 3)
+    
+    def generate_blackbodycurve(self, markers=True, visible=False):
+        ''' Produce a graph of this stars' blackbody curve. 
+        Parameters
+        ----------
+        markers : bool
+            whether or not to put the [B, G, R] band luminosity markers on the graph
+        visible : bool
+            whether or not to plot the visible spectrum overlaid onto the curve
+        '''
+        temp = self.temperature
+        radius = self.radius
+        c, h, k = 299792458, 6.626 * 10**-34, 1.38 * 10**-23
+        x = np.linspace(1 * 10**-9, 10**-6, 1000)   # the domain for the graph. going from ~0 -> 1000nm
+        planck = lambda x: ((2 * h * c**2) / x**5) * (1 / (np.exp(h * c / (x * k * temp)) - 1))
+        bandLum = lambda x: 4 * np.pi**2 * (696540000 * radius)**2 * planck(x) * 10**-7
+        lumins = bandLum(x)     # generate the blackbody curve
+        
+        fig, ax = plt.subplots()
+        ax.plot(x * 10**9, lumins, c='k')   # plot the blackbody curve of the star
+        ax.set_xlabel(r"Wavelength $\lambda$ (nm)")
+        ax.set_ylabel(r"Luminosity (W/m/s$^3$)")
+        ax.set_ylim(ymin=0); ax.set_xlim(xmin=0)
+        
+        if visible == True:     # plot the visible spectrum under the blackbody curve
+            spectrum = np.linspace(1, 1000, 1000)
+            colourmap = plt.get_cmap('Spectral_r')  # spectral_r is the visible spectrum going from blue -> red 
+            normalize = colors.Normalize(vmin=380, vmax=750) # normalize spectral_r to the wavelength of the visible spectrum
+            for i in range(len(spectrum) - 1): # iterate over blocks in the domain, and plot the colour for that block
+                where = [True if 380 <= x <= 750 else False for x in [spectrum[i], spectrum[i + 1]]]
+                ax.fill_between([spectrum[i], spectrum[i + 1]], [lumins[i], lumins[i + 1]], where=where, 
+                                color=colourmap(normalize(spectrum[i])), alpha=0.3)
+        if markers == True:     # plot markers for each of the luminosity band values given to the user
+            ax.scatter(np.array([440, 500, 700]), self.bandlumin, color=['b', 'g', 'r'])
+        
+    
     def get_star_lumin(self):
         return self.luminosity
     def get_star_mass(self):
@@ -284,6 +339,8 @@ class Star(object):
         return self.temperature
     def get_star_radius(self):
         return self.radius
+    def get_star_BandLumin(self):
+        return self.bandlumin
     
         
 

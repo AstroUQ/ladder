@@ -279,7 +279,9 @@ class Star(object):
         return scale
     
     def generate_BandLumin(self, temp, radius):
-        '''http://burro.cwru.edu/academics/Astr221/Light/blackbody.html
+        ''' Equations retrieved from: http://burro.cwru.edu/academics/Astr221/Light/blackbody.html
+        The returned band luminosities are at wavelengths: B = 440nm, G = 500nm, R = 700nm
+        Each luminosity value has an uncertainty of +/- 1.5% about a true blackbody. 
         Parameters
         ----------
         temp : float
@@ -287,14 +289,15 @@ class Star(object):
             Radius of the star in units of solar radii. 
         Returns
         -------
-        band luminosities : list
-            [B, G, R] band luminosities in units of W/m/s^3 ??
+        band luminosities : np.array
+            [B, G, R] band luminosities in units of J/nm/s <=> W/nm <=> 10^-9 W/m
+            (the planck function has units of J/m^2/nm/s <=> W/m^2/nm <=> 10^-9 W/m^3 )
         '''
         c, h, k = 299792458, 6.626 * 10**-34, 1.38 * 10**-23
         blue, green, red = 440 * 10**-9, 500 * 10**-9, 700 * 10**-9
-        planck = lambda x: ((2 * h * c**2) / x**5) * (1 / (np.exp(h * c / (x * k * temp)) - 1))
+        planck = lambda x: ((2 * h * c**2) / x**5) * (1 / (np.exp(h * c / (x * k * temp)) - 1)) * 10**-9
         bandLum = lambda x: 4 * np.pi**2 * (696540000 * radius)**2 * planck(x)
-        return np.array([bandLum(blue), bandLum(green), bandLum(red)]) * 10**-7 * np.random.uniform(0.99, 1.01, 3)
+        return np.array([bandLum(blue), bandLum(green), bandLum(red)]) * np.random.uniform(0.99, 1.01, 3)
     
     def generate_blackbodycurve(self, markers=True, visible=False):
         ''' Produce a graph of this stars' blackbody curve. 
@@ -309,14 +312,14 @@ class Star(object):
         radius = self.radius
         c, h, k = 299792458, 6.626 * 10**-34, 1.38 * 10**-23
         x = np.linspace(1 * 10**-9, 10**-6, 1000)   # the domain for the graph. going from ~0 -> 1000nm
-        planck = lambda x: ((2 * h * c**2) / x**5) * (1 / (np.exp(h * c / (x * k * temp)) - 1))
-        bandLum = lambda x: 4 * np.pi**2 * (696540000 * radius)**2 * planck(x) * 10**-7
+        planck = lambda x: ((2 * h * c**2) / x**5) * (1 / (np.exp(h * c / (x * k * temp)) - 1)) * 10**-9
+        bandLum = lambda x: 4 * np.pi**2 * (696540000 * radius)**2 * planck(x)
         lumins = bandLum(x)     # generate the blackbody curve
         
         fig, ax = plt.subplots()
         ax.plot(x * 10**9, lumins, c='k')   # plot the blackbody curve of the star
         ax.set_xlabel(r"Wavelength $\lambda$ (nm)")
-        ax.set_ylabel(r"Luminosity (W/m/s$^3$)")
+        ax.set_ylabel(r"Monochromatic Luminosity (W/nm)")
         ax.set_ylim(ymin=0); ax.set_xlim(xmin=0)
         
         if visible == True:     # plot the visible spectrum under the blackbody curve

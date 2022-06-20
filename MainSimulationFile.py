@@ -8,8 +8,11 @@ Created on Mon Jun  6 09:52:26 2022
 
 import numpy as np
 import matplotlib.pyplot as plt
-import pandas as pd
+import matplotlib.ticker as ticker
 from matplotlib import colors
+import pandas as pd
+
+import scipy.optimize as opt
 # import colour as col
 
 class Star(object):
@@ -367,6 +370,10 @@ class Galaxy(object):
             self.spherical = position
             self.cartesian = self.spherical_to_cartesian(position[0], position[1], position[2])
         self.starpositions, self.stars = self.generate_galaxy()
+        self.starmasses = [star.get_star_mass() for star in self.stars]
+        self.starorbits = self.star_orbits(self.starpositions[0], self.starpositions[1], self.starpositions[2])
+        self.starvels = self.rotation_vels()
+        
         
     def galaxyrotation(self, angle, axis):
         '''Rotate a point in cartesian coordinates about the origin by some angle along the specified axis. 
@@ -607,6 +614,17 @@ class Galaxy(object):
     def get_stars(self):
         return self.starpositions
     
+    def star_orbits(self, x, y, z):
+        ''' Finds the radius of the orbit of each star. 
+        Returns
+        -------
+        radii : np.array
+        '''
+        radii = np.zeros(len(x))
+        for i in range(len(x)):
+            radii[i] = np.sqrt(x[i]**2 + y[i]**2 + z[i]**2)
+        return radii
+    
     def generate_stars(self, region, n):
         '''Generates n Star objects according to the region of the galaxy.
         Parameters
@@ -638,34 +656,146 @@ class Galaxy(object):
                 choice.append("WDwarf")
         stars = [Star(region, species) for species in choice]
         return stars
+    
+    def rotation_vels(self, darkmatter=False):
+        ''' TO DO: implement dark matter halos driving rotation. Look at Navarro-Frenk-White profile?
+        '''
+        G = 6.67 * 10**-11
+        masses, orbits = self.starmasses, self.starorbits
+        MassRadii = np.array([[masses[i] * 1.988 * 10**30, orbits[i] * 3.086 * 10**16] for i in range(len(masses))])
+        vel = np.zeros(len(MassRadii))
+        if darkmatter == False:
+            for i in range(len(MassRadii)):
+                R = MassRadii[i, 1] 
+                M = sum([MassRadii[n, 0] if MassRadii[n, 1] <= R else 0 for n in range(len(MassRadii))])
+                vel[i] = (np.sqrt(G * M / R) / 1000) * np.random.normal(1, 0.01)
+        return vel
+    
+    def generate_RotCurve(self):
+        fig, ax = plt.subplots()
+        
+        ax.scatter(self.starorbits, self.starvels, s=0.5)
+        ax.set_xlabel("Orbital Radius (pc)"); ax.set_ylabel("Orbital Velocity (km/s)")
             
-    def generate_HR(self, isoradii=False):
+    def generate_HR(self, isoradii=False, xunit="temp", yunit="BolLum"):
         '''Plots a Colour-Magnitude (HR) diagram for this galaxy.     
         Parameters
         ----------
         isoradii : bool
             whether or not to plot constant radius lines on top of the HR diagram
+        xunit : str
+            One of {temp, colour, both}, which chooses what to put on the x-axis. "both" corresponds to temp on the bottom, colour on top
+        yunit : str
+            One of {BolLum, VLum, AbsMag, VMag, BolLumMag, bothV}, which chooses what to plot on the y-axis. 
+            Bol-Mag corresponds to bolometric luminosity on the left y, and absolute magnitude on the right y
+            bothV corresponds to V Band luminosity on the left y, V absolute mag on the right y
         Returns
         -------
-        matplotlib axes object
+        matplotlib figure
             The HR diagram. 
         '''
         fig, ax = plt.subplots()
-        lumins = [star.get_star_lumin() for star in self.stars]
-        temps = [star.get_star_temp() for star in self.stars]
-        colours = self.starpositions[3]
-        ax.scatter(temps, lumins, color=colours, s=0.2)
-        ax.set_facecolor('k'); ax.invert_xaxis(); 
-        ax.set_xscale('log'); ax.set_yscale('log')
-        ax.set_xlabel("Temperature (K)"); ax.set_ylabel(r"Solar Luminosities ($L / L_\odot$)")
         
-        if isoradii == True:
+        BolLum = [star.get_star_lumin() for star in self.stars]
+        
+        if (xunit in ["colour", "both"]) or (yunit in ["VLum", "VMag", "bothV"]):
+            starBandLums = np.array([star.get_star_BandLumin() for star in self.stars])
+            
+            #this calculates the luminosity of the Sun at 500nm - same method as in Star.generate_BandLumin()
+            c, h, k = 299792458, 6.626 * 10**-34, 1.38 * 10**-23
+            planck = lambda x: ((2 * h * c**2) / x**5) * (1 / (np.exp(h * c / (x * k * 5778)) - 1)) * 10**-9
+            solar500 = 4 * np.pi**2 * (696540000)**2 * planck(500 * 10**-9)
+            
+            starVLum = starBandLums[:, 1] / (solar500)    # get the 500nm luminosity of the star in solar units
+            starBV = np.log10(starBandLums[:, 1] / starBandLums[:, 0]) # calculated as V - B, but is actually B - V due to the minus signs in their magnitude formulae
+            if yunit in ["VMag", "bothV"]:
+                mult = (3.828 * 10**26) / (3.0128 * 10**28)
+                vmags = np.array([-2.5 * np.log10(lumin * mult) for lumin in starVLum])
+        
+        if yunit in ["AbsMag", "BolLumMag"]:
+            mult = (3.828 * 10**26) / (3.0128 * 10**28)     # solar lum / 0-point lum on the mag scale. 
+            BolMags = np.array([-2.5 * np.log10(lumin * mult) for lumin in BolLum])
+        
+        if xunit != "colour":
+            temps = [star.get_star_temp() for star in self.stars]
+            
+        colours = self.starpositions[3]
+        
+        # now to decide what the x and y axis values are (and their alternate axes) given user input
+        if xunit in ["temp", "both"]:
+            xvals = temps; xlabel = "Temperature (K)"
+            if xunit == "both":
+                xval2 = starBV; xlabel2 = r"Colour (B $-$ V)"
+        else:
+            xvals = starBV; xlabel = r"Colour (B $-$ V)"
+        if yunit in ["BolLum", "AbsMag", "BolLumMag"]:
+            if yunit == "AbsMag":
+                yvals = BolMags; ylabel = r"Absolute Magnitude $M_{bol}$"
+            else:
+                yvals = BolLum; ylabel = r"Luminosity ($L / L_\odot$)"
+            if yunit == "BolLumMag":
+                yval2 = BolMags; ylabel2 = r"Absolute Magnitude $M_{bol}$"
+        else:
+            if yunit == "VMag":
+                yvals = vmags; ylabel = r"V-Band Absolute Magnitude ($M_V$)"
+            else:
+                yvals = starVLum; ylabel = r"V-Band Luminosity ($L_V / L_{V, \odot}$)"
+            if yunit == "bothV":
+                yval2 = vmags; ylabel2 = r"V-Band Absolute Magnitude ($M_V$)"
+        
+        ax.scatter(xvals, yvals, color=colours, s=0.2)
+        
+        if xunit == "both":
+            def func(x, a, b, c, d, g):
+                ''' A polynomial fit for temperature vs colour (B - V)
+                '''
+                return a * (1 / (b * x + c))**d + g
+            
+            # use scipy curve_fit to find a polynomial fit for temperature in terms of B - V colour
+            fit, cov = opt.curve_fit(func, starBV, temps, [4430, 1.6, 0.35, 0.58, -1930])
+            
+            ## uncomment the below if you want to calibrate the B - V colour and temperature fit
+            # fitfit, fitax = plt.subplots()
+            # fitax.scatter(starBV, temps)
+            # x = np.linspace(min(starBV), max(starBV), 101)
+            # y = func(x, fit[0], fit[1], fit[2], fit[3], fit[4])
+            # fitax.plot(x, y)
+            
+            ax2 = ax.twiny()    # produce alternate x-axis on the top
+            colourx = np.array([-0.2 + (n * 0.2) for n in range(10)]) # choose B - V values to plot
+            tempx = func(colourx, fit[0], fit[1], fit[2], fit[3], fit[4])   # calculate the temp for each colour
+            ax2.scatter(np.log10(tempx), np.array([1 for i in range(10)]), alpha=0)  # plot them so that they show up on the plot
+            ax2.set_xlabel(xlabel2);
+            #now to define the ticks and make their labels in terms of the colours
+            ax2.set_xticks(np.log10(tempx)); ax2.set_xticklabels([round(num, 1) for num in colourx], fontsize=6)
+            ax2.minorticks_off(); ax2.invert_xaxis()
+            
+        if yunit in ["BolLumMag", "bothV"]:
+            ax3 = ax.twinx()
+            ax3.scatter(xvals, yval2, color=colours, s=0.2)
+            ax3.set_ylabel(ylabel2); ax3.invert_yaxis()
+            
+        if xunit in ["temp", "both"]:
+            ax.invert_xaxis(); ax.set_xscale('log')
+            ax.set_xticks([10**4, 2 * 10**4, 5 * 10**3, 2 * 10**3])     # set custom temperature labels
+            ax.get_xaxis().set_major_formatter(ticker.ScalarFormatter())    # remove scientific notation
+
+        if yunit in ["BolLum", "BolLumMag", "VLum", "bothV"]:
+            ax.set_yscale('log')
+        else:
+            ax.invert_yaxis()
+            
+        ax.set_xlabel(xlabel); ax.set_ylabel(ylabel)
+        ax.set_facecolor('k')
+        
+        if (isoradii == True) and (xunit in ["temp", "both"]) and (yunit in ["BolLum", "BolLumMag"]):
             textcolour = [0.7, 0.7, 0.7]
             solarradius = 696340000     #initialise variables
             solarlum = 3.828 * 10**26
             sigma = 5.67037 * 10**-8
             xmin, xmax = ax.get_xlim(); ymin, ymax = ax.get_ylim()  #get the current figure bounds so that we don't alter it
             x = np.linspace(xmin, xmax, 2)
+            # now to plot the isoradii lines on the HR diagram
             for power in np.arange(-3, 5):
                 y = (4 * np.pi * (solarradius * 10.0**power)**2 * sigma * x**4) / solarlum
                 ax.plot(x, y, linewidth=0.6, linestyle='--', color=textcolour)
@@ -819,18 +949,20 @@ class Galaxy(object):
 
 def main():
     # galaxy = Galaxy('SBb', (40,10,20), 1000, 100, cartesian=True)
-    galaxy = Galaxy('Sc', (270, 90, 70), 1000, 100)
+    galaxy = Galaxy('SBb', (180, 90, 5), 2000, 100)
     # galaxy2 = Galaxy('E0', (104, 131, 5000), 1000, 100)
     # galaxy3 = Galaxy('Sc', (110, 128, 10000), 1000, 100)
-    fig = plt.figure()
-    ax = fig.add_subplot(projection='3d')
-    galaxy.plot_3d(ax, camera=True)
+    # fig = plt.figure()
+    # ax = fig.add_subplot(projection='3d')
+    # galaxy.plot_3d(ax, camera=False)
+    # galaxy.generate_RotCurve()
+    galaxy.generate_HR(isoradii=True, xunit="both", yunit="BolLumMag")
     # ax.set_xlim(-15, 15); ax.set_ylim(-15, 15); ax.set_zlim(-15, 15)
     # ax.set_xlim(-10, 10); ax.set_ylim(-10, 10); ax.set_zlim(-10, 10)
     
     # galaxy.generate_HR(isoradii=True)
-    fig, ax = plt.subplots()
-    galaxy.plot_2d(fig, ax, spikes=True)
+    # fig, ax = plt.subplots()
+    # galaxy.plot_2d(fig, ax, spikes=True)
     # galaxy2.plot_2d(fig, ax)
     # galaxy3.plot_2d(fig, ax)
 

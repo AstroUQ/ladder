@@ -351,7 +351,7 @@ class Star(object):
         
 
 class Galaxy(object):
-    def __init__(self, species, position, population, radius, cartesian=False):
+    def __init__(self, species, position, population, radius, cartesian=False, darkmatter=True):
         '''
         Parameters
         ----------
@@ -360,6 +360,7 @@ class Galaxy(object):
             if cartesian == False, position = [equatorial angle, polar angle, radius (distance away)]
             if cartesian == True, position = [x, y, z]
         '''
+        self.darkmatter = darkmatter
         self.species = species
         self.population = population
         self.radius = radius
@@ -657,25 +658,64 @@ class Galaxy(object):
         stars = [Star(region, species) for species in choice]
         return stars
     
-    def rotation_vels(self, darkmatter=False):
-        ''' TO DO: implement dark matter halos driving rotation. Look at Navarro-Frenk-White profile?
+    def rotation_vels(self, profile="NFW"):
+        ''' Simulates orbit velocities of stars given their distance from the galactic center.
+        If the galaxy has dark matter (self.darkmatter == True), then extra mass will be added according to the 
+        Navarro-Frenk-White (NFW) dark matter halo mass profile. 
+        TO DO: implement different dark matter halo properties for each galaxy type
+        Returns
+        -------
+        np.array:
+            2 element numpy array, with each element corresponding to:
+                1. vel = the newtonian rotation velocities
+                2. darkvel = rotation velocities including dark matter
+            if self.darkmatter == False, then darkvel is an array of zeros
         '''
+        if self.darkmatter == True:     # time to initialise dark matter properties 
+            density = 0.01 # solar masses per cubic parsec
+            scalerad = 150  # parsec
+            Rs = scalerad * 3.086 * 10**16  # convert scalerad to meters
+            p0 = density * (1.988 * 10**30 / (3.086 * 10**16)**3) # convert density to kg/m^3
+            darkMass = lambda r: p0 / ((r / Rs) * (1 + r / Rs)**2) * (4 / 3 * np.pi * r**3)   # NFW dark matter profile (density * volume)
+            
         G = 6.67 * 10**-11
-        masses, orbits = self.starmasses, self.starorbits
-        MassRadii = np.array([[masses[i] * 1.988 * 10**30, orbits[i] * 3.086 * 10**16] for i in range(len(masses))])
-        vel = np.zeros(len(MassRadii))
-        if darkmatter == False:
-            for i in range(len(MassRadii)):
-                R = MassRadii[i, 1] 
-                M = sum([MassRadii[n, 0] if MassRadii[n, 1] <= R else 0 for n in range(len(MassRadii))])
-                vel[i] = (np.sqrt(G * M / R) / 1000) * np.random.normal(1, 0.01)
-        return vel
-    
-    def generate_RotCurve(self):
-        fig, ax = plt.subplots()
         
-        ax.scatter(self.starorbits, self.starvels, s=0.5)
+        masses, orbits = self.starmasses, self.starorbits
+        # now, create an array that stores the mass and orbital radius of each star in the form of [[m1, r1], [m2,r2], ...]
+        MassRadii = np.array([[masses[i] * 1.988 * 10**30, orbits[i] * 3.086 * 10**16] for i in range(len(masses))])
+        vel = np.zeros(len(MassRadii)); darkvel = np.zeros(len(MassRadii))  # initialise arrays to store velocities in
+        for i in range(len(MassRadii)):
+            R = MassRadii[i, 1] 
+            # now to sum up all of the mass inside the radius R
+            M = sum([MassRadii[n, 0] if MassRadii[n, 1] <= R else 0 for n in range(len(MassRadii))]) 
+            vel[i] = (np.sqrt(G * M / R) / 1000)    # calculate newtonian approximation of orbital velocity
+            if self.darkmatter == True:
+                M += darkMass(R)    # add the average mass of dark matter inside the radius R
+                darkvel[i] = (np.sqrt(G * M / R) / 1000)    # newtonian approximation, now including dark matter
+        if self.species[0] == "E":  # we want elliptical galaxies to have random rotation (random sign)
+            return np.array([vel, darkvel]) * np.random.normal(1, 0.01, len(vel)) * np.random.choice([-1, 1], len(vel))
+        else:
+            return np.array([vel, darkvel]) * np.random.normal(1, 0.01, len(vel))
+    
+    def generate_RotCurve(self, newtapprox=False):
+        ''' Produces a rotation curve of this galaxy. If the galaxy has dark matter and the user opts to display the newtonian
+        approximation (curve based on visible matter), then two curves are plotted. 
+        Parameters
+        ----------
+        newtapprox : bool
+            whether to plot the newtonian approximation of the rotation curve (curve based on visible matter)
+        '''
+        fig, ax = plt.subplots()
+        if self.darkmatter == True:
+            ax.scatter(self.starorbits, self.starvels[1], s=0.5, label="With Dark Matter")
+            if newtapprox == True:
+                ax.scatter(self.starorbits, self.starvels[0], s=0.5, label="Newtonian Approximation")
+                ax.legend()
+        else: 
+            ax.scatter(self.starorbits, self.starvels[0], s=0.5)
+        
         ax.set_xlabel("Orbital Radius (pc)"); ax.set_ylabel("Orbital Velocity (km/s)")
+        ax.set_ylim(ymin=0)
             
     def generate_HR(self, isoradii=False, xunit="temp", yunit="BolLum"):
         '''Plots a Colour-Magnitude (HR) diagram for this galaxy.     
@@ -725,7 +765,7 @@ class Galaxy(object):
         if xunit in ["temp", "both"]:
             xvals = temps; xlabel = "Temperature (K)"
             if xunit == "both":
-                xval2 = starBV; xlabel2 = r"Colour (B $-$ V)"
+                xlabel2 = r"Colour (B $-$ V)"
         else:
             xvals = starBV; xlabel = r"Colour (B $-$ V)"
         if yunit in ["BolLum", "AbsMag", "BolLumMag"]:
@@ -949,14 +989,14 @@ class Galaxy(object):
 
 def main():
     # galaxy = Galaxy('SBb', (40,10,20), 1000, 100, cartesian=True)
-    galaxy = Galaxy('SBb', (180, 90, 5), 2000, 100)
+    galaxy = Galaxy('Sa', (180, 90, 5), 1000, 100)
     # galaxy2 = Galaxy('E0', (104, 131, 5000), 1000, 100)
     # galaxy3 = Galaxy('Sc', (110, 128, 10000), 1000, 100)
-    # fig = plt.figure()
-    # ax = fig.add_subplot(projection='3d')
-    # galaxy.plot_3d(ax, camera=False)
-    # galaxy.generate_RotCurve()
-    galaxy.generate_HR(isoradii=True, xunit="both", yunit="BolLumMag")
+    fig = plt.figure()
+    ax = fig.add_subplot(projection='3d')
+    galaxy.plot_3d(ax, camera=False)
+    galaxy.generate_RotCurve(newtapprox=True)
+    # galaxy.generate_HR(isoradii=True, xunit="both", yunit="BolLumMag")
     # ax.set_xlim(-15, 15); ax.set_ylim(-15, 15); ax.set_zlim(-15, 15)
     # ax.set_xlim(-10, 10); ax.set_ylim(-10, 10); ax.set_zlim(-10, 10)
     

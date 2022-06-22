@@ -11,9 +11,100 @@ import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 from matplotlib import colors
 import pandas as pd
-
 import scipy.optimize as opt
+import scipy.ndimage
+import scipy.interpolate
 # import colour as col
+
+class BlackHole(object):
+    def __init__(self, galaxymass, galaxytype, galaxyradius, luminosity):
+        '''
+        Parameters
+        ----------
+        galaxymass : float
+            baryonic mass of the galaxy in solar masses
+        luminosity : float
+            the fraction of the eddington luminosity that the black hole should be
+        '''
+        self.mass = self.initialise_mass(galaxymass)
+        self.luminosity = luminosity * self.eddington_luminosity(self.mass)
+        self.galaxyradius = galaxyradius
+    
+    def initialise_mass(self, galaxymass):
+        return (galaxymass * 3 * 10**-2) * np.random.normal(1, 0.1)
+    
+    def eddington_luminosity(self, mass):
+        ''' Eddington luminosity for an accreting black hole. 
+        '''
+        return 3 * 10**4 * (mass)
+    
+    def get_BH_mass(self):
+        return self.mass
+    def get_BH_lumin(self):
+        return self.luminosity
+    def get_BH_colour(self):
+        ''' Quasar RGB colour. 
+        '''
+        return np.array([73, 214, 255]) / 255
+    
+    def get_BH_scale(self):
+        '''A basic logarithmic scale to determine how large stars should be in pictures given their luminosity.
+        Returns
+        -------
+        scale : float
+            the number to be input into the 'scale' kwarg in a matplotlib figure. 
+        '''
+        scale = 3 * np.log(2 * self.luminosity + 1)
+        scale = 2 if scale > 2 else scale
+        return scale
+    
+    def BH_emission(self, species=2):
+        if species == 2:
+            centerpop = 100
+            centerradius = 0.1
+            theta = np.random.uniform(0, 2*np.pi, centerpop)
+            phi = np.random.uniform(-1, 1, centerpop)
+            phi = np.arccos(phi)
+            centerx = centerradius * (np.cos(theta) * np.sin(phi) * np.random.normal(1, 0.1, centerpop))
+            centery = centerradius * (np.sin(theta) * np.sin(phi) * np.random.normal(1, 0.1, centerpop))
+            centerz = centerradius * (np.cos(phi) * np.random.normal(1, 0.3, centerpop))
+            
+            jetpop = 1000
+            jetradius = 2.5 * self.galaxyradius
+            jetz = jetradius * (np.linspace(0.01, 1, jetpop) * np.random.normal(1, 0.01, jetpop))
+            jetx = np.random.normal(0, 0.01 * jetz, jetpop)
+            jety = np.random.normal(0, 0.01 * jetz, jetpop)
+            
+            jetreflect = np.random.uniform(0, 1, jetpop)
+            for i, val in enumerate(jetreflect):
+                if val > 0.9:
+                    jetz[i] *= -1
+                    jetx[i] *= -1
+                    jety[i] *= -1
+            
+            lobepop = 4000
+            loberadius = jetradius * 2/3
+            mult = 5
+            lobeangle = np.geomspace(0.5 * np.pi, 1 * np.pi, lobepop)
+            lobex = loberadius / mult * (lobeangle * np.cos(lobeangle) * np.random.normal(1, 0.1, lobepop) + np.random.normal(0, 0.2 * lobeangle, lobepop))# * reflect 
+            lobey = loberadius / mult * (np.random.normal(0, 0.1, lobepop) + np.random.normal(0, 0.2 * lobeangle, lobepop))# * - reflect + np.random.normal(0, scatter2, lobepop))
+            lobez = 0.7 * jetradius + (loberadius / mult * (lobeangle * np.sin(lobeangle) * np.random.normal(1, 0.2, lobepop) + np.random.normal(0, 0.2 * lobeangle, lobepop)))
+            
+            lobereflect = np.random.uniform(0, 1, lobepop)
+            for i, val in enumerate(lobereflect):
+                if val > 0.6:
+                    lobez[i] *= -1
+                    lobex[i] *= -1
+                    lobey[i] *= -1
+            
+            x = np.concatenate((centerx, jetx, lobex), axis=0)
+            y = np.concatenate((centery, jety, lobey), axis=0)
+            z = np.concatenate((centerz, jetz, lobez), axis=0)
+            radius = centerradius + jetradius + loberadius
+        
+        return x, y, z, radius
+        
+        
 
 class Star(object):
     def __init__(self, location, species="MS"):
@@ -370,11 +461,14 @@ class Galaxy(object):
         else:
             self.spherical = position
             self.cartesian = self.spherical_to_cartesian(position[0], position[1], position[2])
-        self.starpositions, self.stars = self.generate_galaxy()
+        self.starpositions, self.stars, self.rotation = self.generate_galaxy()
         self.starmasses = [star.get_star_mass() for star in self.stars]
-        self.starorbits = self.star_orbits(self.starpositions[0], self.starpositions[1], self.starpositions[2])
+        self.blackhole = BlackHole(sum(self.starmasses), self.species, self.radius, 0.5)
+        starorbitradii = [self.starpositions[0] - self.cartesian[0], 
+                          self.starpositions[1] - self.cartesian[1], 
+                          self.starpositions[2] - self.cartesian[2]]
+        self.starorbits = self.star_orbits(starorbitradii[0], starorbitradii[1], starorbitradii[2])
         self.starvels = self.rotation_vels()
-        
         
     def galaxyrotation(self, angle, axis):
         '''Rotate a point in cartesian coordinates about the origin by some angle along the specified axis. 
@@ -610,10 +704,12 @@ class Galaxy(object):
         points = np.dot(self.galaxyrotation(phi[2], 'z'), points)
         x0, y0, z0 = self.cartesian
         x, y, z = points[0] + x0, points[1] + y0, points[2] + z0  #move the galaxy away from the origin to its desired position
-        return [x, y, z, colours, scales], stars
+        return [x, y, z, colours, scales], stars, phi
         
     def get_stars(self):
         return self.starpositions
+    def get_blackhole(self):
+        return self.blackhole
     
     def star_orbits(self, x, y, z):
         ''' Finds the radius of the orbit of each star. 
@@ -679,6 +775,7 @@ class Galaxy(object):
             darkMass = lambda r: p0 / ((r / Rs) * (1 + r / Rs)**2) * (4 / 3 * np.pi * r**3)   # NFW dark matter profile (density * volume)
             
         G = 6.67 * 10**-11
+        BHmass = self.blackhole.get_BH_mass() * 1.988 * 10**30
         
         masses, orbits = self.starmasses, self.starorbits
         # now, create an array that stores the mass and orbital radius of each star in the form of [[m1, r1], [m2,r2], ...]
@@ -687,17 +784,51 @@ class Galaxy(object):
         for i in range(len(MassRadii)):
             R = MassRadii[i, 1] 
             # now to sum up all of the mass inside the radius R
-            M = sum([MassRadii[n, 0] if MassRadii[n, 1] <= R else 0 for n in range(len(MassRadii))]) 
+            M = sum([MassRadii[n, 0] if MassRadii[n, 1] < R else 0 for n in range(len(MassRadii))]) + BHmass
             vel[i] = (np.sqrt(G * M / R) / 1000)    # calculate newtonian approximation of orbital velocity
             if self.darkmatter == True:
                 M += darkMass(R)    # add the average mass of dark matter inside the radius R
                 darkvel[i] = (np.sqrt(G * M / R) / 1000)    # newtonian approximation, now including dark matter
+        
+        velarray = np.array([vel, darkvel]) * np.random.normal(1, 0.01, len(vel))
+        
+        # now to calculate the direction of the velocity to display to the observer
+        x, y, z, _, _ = self.starpositions
+        
+        # now we need to transform the galaxy back to the origin with no rotation
+        x, y, z = x - self.cartesian[0], y - self.cartesian[1], z - self.cartesian[2]
+        points = np.array([x, y, z])
+        phi = self.rotation
+        # rotate galaxy in the reverse order and opposite direction as initially
+        points = np.dot(self.galaxyrotation(-phi[2], 'z'), points)
+        points = np.dot(self.galaxyrotation(-phi[1], 'y'), points)
+        points = np.dot(self.galaxyrotation(-phi[0], 'x'), points)
+        
+        x, y, z = points
+        
+        ## last working state:
+        # theta = np.arctan2(y, x)
+        # print(theta)
+        # direction = np.cos(theta)
+        # velobs = velarray * direction
+        # self.velobs = velobs
+        
+        theta = np.arctan2(y, x)
+        # print(theta)
+        direction = np.array([np.sin(theta), -np.cos(theta), np.random.normal(0, 0.05, len(theta))])
+        # velobs = velarray * direction
+        direction = np.dot(self.galaxyrotation(phi[0], 'x'), direction)
+        direction = np.dot(self.galaxyrotation(phi[1], 'y'), direction)
+        direction = np.dot(self.galaxyrotation(phi[2], 'z'), direction)
+        velobs = velarray[1] * direction
+        self.velobs = velobs
+        
         if self.species[0] == "E":  # we want elliptical galaxies to have random rotation (random sign)
-            return np.array([vel, darkvel]) * np.random.normal(1, 0.01, len(vel)) * np.random.choice([-1, 1], len(vel))
+            return velarray * np.random.choice([-1, 1], len(vel))
         else:
-            return np.array([vel, darkvel]) * np.random.normal(1, 0.01, len(vel))
+            return velarray
     
-    def generate_RotCurve(self, newtapprox=False):
+    def plot_RotCurve(self, newtapprox=False, observed=False):
         ''' Produces a rotation curve of this galaxy. If the galaxy has dark matter and the user opts to display the newtonian
         approximation (curve based on visible matter), then two curves are plotted. 
         Parameters
@@ -708,14 +839,50 @@ class Galaxy(object):
         fig, ax = plt.subplots()
         if self.darkmatter == True:
             ax.scatter(self.starorbits, self.starvels[1], s=0.5, label="With Dark Matter")
+            if observed == True:
+                ax.scatter(self.starorbits, self.velobs[0], s=0.5, label="Observed")
             if newtapprox == True:
                 ax.scatter(self.starorbits, self.starvels[0], s=0.5, label="Newtonian Approximation")
+                if observed == True:
+                    ax.scatter(self.starorbits, self.velobs[0], s=0.5, label="Observed")
                 ax.legend()
         else: 
             ax.scatter(self.starorbits, self.starvels[0], s=0.5)
         
         ax.set_xlabel("Orbital Radius (pc)"); ax.set_ylabel("Orbital Velocity (km/s)")
-        ax.set_ylim(ymin=0)
+        ax.set_ylim(ymin=0); ax.set_xlim(xmin=-0.1)
+        
+    def plot_doppler(self, fig, ax, blackhole=False):
+        '''
+        '''
+        x, y, z, colours, scales = self.starpositions
+        equat, polar, radius = self.cartesian_to_spherical(x, y, z)
+        
+        starredshift = self.velobs[0]
+        minvel = min(starredshift); maxvel = max(starredshift)
+        if maxvel < -minvel:
+            maxvel = -minvel
+        else:
+            minvel = -maxvel
+        
+        cm = plt.cm.get_cmap('bwr')
+        red = ax.scatter(equat, polar, s=scales, c=starredshift, vmin=minvel, vmax=maxvel, cmap=cm , marker='.')  #note the colourmap for the redshift amount
+        cbar = plt.colorbar(red)
+        cbar.set_label('Radial Velocity (km/s)', rotation=90)
+        
+        ax.set_xlim(0, 360); ax.set_ylim(0, 180)
+        ax.set_facecolor('k')
+        ax.set_aspect(1)
+        fig.tight_layout()
+        ax.invert_yaxis()
+        ax.set_xlabel("Equatorial Angle (degrees)")
+        ax.set_ylabel("Polar Angle (degrees)")
+        
+        if (self.blackhole != None) and (blackhole == True):
+            BHequat, BHpolar, distance = self.spherical
+            BHcolour = self.blackhole.get_BH_colour()
+            BHscale = self.blackhole.get_BH_scale() / (0.05 * distance)
+            ax.scatter(BHequat, BHpolar, color=BHcolour, s=BHscale)
             
     def generate_HR(self, isoradii=False, xunit="temp", yunit="BolLum"):
         '''Plots a Colour-Magnitude (HR) diagram for this galaxy.     
@@ -850,7 +1017,7 @@ class Galaxy(object):
             ax.set_xlim(xmin, xmax); ax.set_ylim(ymin, ymax)    #make sure the figure bounds dont change from before
                 
     
-    def plot_2d(self, fig, ax, spikes=False):
+    def plot_2d(self, fig, ax, spikes=False, radio=False):
         '''Plots the Galaxy onto predefined matplotlib axes in terms of its equatorial and polar angles. 
         
         Parameters
@@ -868,6 +1035,13 @@ class Galaxy(object):
         x, y, z, colours, scales = self.starpositions
         equat, polar, radius = self.cartesian_to_spherical(x, y, z)
         
+        if self.blackhole != None:
+            BHequat, BHpolar, distance = self.spherical
+            BHcolour = self.blackhole.get_BH_colour()
+            BHscale = self.blackhole.get_BH_scale() / (0.05 * distance)
+            if BHscale > 2.5: 
+                ax.errorbar(BHequat, BHpolar, yerr=BHscale, xerr=BHscale, ecolor=BHcolour, fmt='none', elinewidth=0.3)
+            ax.scatter(BHequat, BHpolar, color=BHcolour, s=BHscale)
         
         scales = scales / (0.05 * radius)
         if spikes == True:
@@ -888,6 +1062,8 @@ class Galaxy(object):
         ax.invert_yaxis()
         ax.set_xlabel("Equatorial Angle (degrees)")
         ax.set_ylabel("Polar Angle (degrees)")
+        if radio == True:
+            self.plot_radio_contour(ax)
     
     def plot_3d(self, ax, camera=False):
         '''Plots the Galaxy onto predefined 3D matplotlib axes. 
@@ -935,6 +1111,52 @@ class Galaxy(object):
             ax.plot(x, y, z, c='g', linewidth=1)
             for i in range(4):
                 ax.plot([0, x[i]], [0, y[i]], [0, z[i]], c='g', linewidth=1)
+    
+    def galaxy_radio(self):
+        x, y, z, radius = self.blackhole.BH_emission()
+        return x, y, z, radius
+    
+    def plot_radio3d(self):
+        x, y, z, radius = self.galaxy_radio()
+        fig = plt.figure()
+        ax = fig.add_subplot(projection='3d')
+        ax.scatter(x, y, z, s=0.8)
+        ax.set_xlim(-radius, radius); ax.set_ylim(-radius, radius), ax.set_zlim(0, radius)
+        ax.set_xlabel("x"); ax.set_ylabel("y")
+    
+    def plot_radio_contour(self, ax, scatter=False):
+        '''
+        '''
+        x, y, z, radius = self.galaxy_radio()
+        phi = self.rotation
+        points = np.array([x, y, z])
+        points = np.dot(self.galaxyrotation(phi[0], 'x'), points)
+        points = np.dot(self.galaxyrotation(phi[1], 'y'), points)
+        points = np.dot(self.galaxyrotation(phi[2], 'z'), points)
+        x, y, z = points
+        x, y, z = x + self.cartesian[0], y + self.cartesian[1], z + self.cartesian[2]
+        equat, polar, distance = self.cartesian_to_spherical(x, y, z)
+            
+        extent = [[min(equat) - 3, max(equat) + 3], [min(polar) - 3, max(polar) + 3]]
+        density, equatedges, polaredges = np.histogram2d(equat, polar, bins=len(equat)//50, range=extent, density=False)
+        equatbins = equatedges[:-1] + (equatedges[1] - equatedges[0]) / 2
+        polarbins = polaredges[:-1] + (polaredges[1] - polaredges[0]) / 2
+
+        density = density.T
+        density = scipy.ndimage.zoom(density, 2)
+        equatbins = scipy.ndimage.zoom(equatbins, 2)
+        polarbins = scipy.ndimage.zoom(polarbins, 2)
+        # density = scipy.ndimage.gaussian_filter(density, sigma=1)  # this smooths the area density even moreso
+        
+        levels = [2, 3, 4, 5, 6, 10]
+        
+        ax.contour(equatbins, polarbins, density, levels, corner_mask=True)
+        
+        if scatter == True:
+            ax.scatter(equat, polar, s=0.5)
+        
+        ax.set_ylim(0, 180); ax.set_xlim(0, 360)
+        ax.invert_yaxis();
     
     def cartesian_to_spherical(self, x, y, z):
         ''' Converts cartesian coordinates to spherical ones (formulae taken from wikipedia) in units of degrees. 
@@ -989,20 +1211,25 @@ class Galaxy(object):
 
 def main():
     # galaxy = Galaxy('SBb', (40,10,20), 1000, 100, cartesian=True)
-    galaxy = Galaxy('Sa', (180, 90, 5), 1000, 100)
+    galaxy = Galaxy('SBb', (180, 90, 400), 1000, 70)
+    # galaxy.plot_radio3d()
+    # galaxy.plot_radio_contour()
     # galaxy2 = Galaxy('E0', (104, 131, 5000), 1000, 100)
     # galaxy3 = Galaxy('Sc', (110, 128, 10000), 1000, 100)
-    fig = plt.figure()
-    ax = fig.add_subplot(projection='3d')
-    galaxy.plot_3d(ax, camera=False)
-    galaxy.generate_RotCurve(newtapprox=True)
+    # fig = plt.figure()
+    # ax = fig.add_subplot(projection='3d')
+    # galaxy.plot_3d(ax, camera=False)
+    galaxy.plot_RotCurve(newtapprox=False, observed=True)
     # galaxy.generate_HR(isoradii=True, xunit="both", yunit="BolLumMag")
     # ax.set_xlim(-15, 15); ax.set_ylim(-15, 15); ax.set_zlim(-15, 15)
     # ax.set_xlim(-10, 10); ax.set_ylim(-10, 10); ax.set_zlim(-10, 10)
+    fig, ax = plt.subplots()
+    galaxy.plot_doppler(fig, ax, blackhole=True)
     
     # galaxy.generate_HR(isoradii=True)
-    # fig, ax = plt.subplots()
-    # galaxy.plot_2d(fig, ax, spikes=True)
+    fig, ax = plt.subplots()
+    galaxy.plot_2d(fig, ax, spikes=True, radio=True)
+    galaxy.stars[0].generate_blackbodycurve()
     # galaxy2.plot_2d(fig, ax)
     # galaxy3.plot_2d(fig, ax)
 

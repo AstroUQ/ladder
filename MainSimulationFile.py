@@ -12,8 +12,8 @@ import matplotlib.ticker as ticker
 from matplotlib import colors
 import pandas as pd
 import scipy.optimize as opt
-import scipy.ndimage
-import scipy.interpolate
+import scipy.ndimage                     # this is to smooth out the BH radio lobes
+# import scipy.interpolate
 # import colour as col
 
 class BlackHole(object):
@@ -468,7 +468,7 @@ class Galaxy(object):
                           self.starpositions[1] - self.cartesian[1], 
                           self.starpositions[2] - self.cartesian[2]]
         self.starorbits = self.star_orbits(starorbitradii[0], starorbitradii[1], starorbitradii[2])
-        self.starvels = self.rotation_vels()
+        self.starvels, self.ObsStarVels = self.rotation_vels()
         
     def galaxyrotation(self, angle, axis):
         '''Rotate a point in cartesian coordinates about the origin by some angle along the specified axis. 
@@ -790,7 +790,10 @@ class Galaxy(object):
                 M += darkMass(R)    # add the average mass of dark matter inside the radius R
                 darkvel[i] = (np.sqrt(G * M / R) / 1000)    # newtonian approximation, now including dark matter
         
-        velarray = np.array([vel, darkvel]) * np.random.normal(1, 0.01, len(vel))
+        if self.species[0] == "E":  # we want elliptical galaxies to have random rotation (random sign)
+            velarray =  np.array([vel, darkvel]) * np.random.normal(1, 0.01, len(vel)) * np.random.choice([-1, 1], len(vel))
+        else:
+            velarray = np.array([vel, darkvel]) * np.random.normal(1, 0.01, len(vel))
         
         # now to calculate the direction of the velocity to display to the observer
         x, y, z, _, _ = self.starpositions
@@ -814,19 +817,34 @@ class Galaxy(object):
         # self.velobs = velobs
         
         theta = np.arctan2(y, x)
-        # print(theta)
         direction = np.array([np.sin(theta), -np.cos(theta), np.random.normal(0, 0.05, len(theta))])
-        # velobs = velarray * direction
         direction = np.dot(self.galaxyrotation(phi[0], 'x'), direction)
         direction = np.dot(self.galaxyrotation(phi[1], 'y'), direction)
         direction = np.dot(self.galaxyrotation(phi[2], 'z'), direction)
-        velobs = velarray[1] * direction
-        self.velobs = velobs
         
-        if self.species[0] == "E":  # we want elliptical galaxies to have random rotation (random sign)
-            return velarray * np.random.choice([-1, 1], len(vel))
-        else:
-            return velarray
+        # we care about velocity in terms of the y-axis.
+        # velocity in the positive y-direction means motion away from the observer
+        # velocity in the negative y-direction means motion towards the observer
+        #         _______                +y
+        #         \   _  \               |
+        # galaxy->/  /_\  \      -x  ____|____ +x
+        #         \  \_/   \             |
+        #          \_____  /             |
+        #                \/              -y
+                             
+        #              ^
+        #              |
+        #            o.o     <- observer
+        VelObsArray = velarray * direction[0]
+        # velobs = velarray[1] * direction
+        
+        # self.velobs = velobs
+
+        # if self.species[0] == "E":  # we want elliptical galaxies to have random rotation (random sign)
+        #     return velarray * np.random.choice([-1, 1], len(vel))
+        # else:
+        #     return velarray
+        return velarray, VelObsArray
     
     def plot_RotCurve(self, newtapprox=False, observed=False):
         ''' Produces a rotation curve of this galaxy. If the galaxy has dark matter and the user opts to display the newtonian
@@ -835,41 +853,83 @@ class Galaxy(object):
         ----------
         newtapprox : bool
             whether to plot the newtonian approximation of the rotation curve (curve based on visible matter)
+        observed : bool
+            whether to plot the data that an observer would see (accounting for doppler shift)
         '''
         fig, ax = plt.subplots()
         if self.darkmatter == True:
-            ax.scatter(self.starorbits, self.starvels[1], s=0.5, label="With Dark Matter")
+            ax.scatter(self.starorbits, self.starvels[1], s=0.5, label="With Dark Matter")  # plot the dark matter curve data
             if observed == True:
-                ax.scatter(self.starorbits, self.velobs[0], s=0.5, label="Observed")
+                ax.scatter(self.starorbits, self.ObsStarVels[1], s=0.5, label="Observed")   # plot the data that the observer would see
             if newtapprox == True:
-                ax.scatter(self.starorbits, self.starvels[0], s=0.5, label="Newtonian Approximation")
+                ax.scatter(self.starorbits, self.starvels[0], s=0.5, label="Newtonian Approximation") # plot the newtonian approx as well
                 if observed == True:
-                    ax.scatter(self.starorbits, self.velobs[0], s=0.5, label="Observed")
+                    ax.scatter(self.starorbits, self.ObsStarVels[0], s=0.5, label="Observed")   # and plot the newtonian approx that the observer would see
                 ax.legend()
         else: 
-            ax.scatter(self.starorbits, self.starvels[0], s=0.5)
+            ax.scatter(self.starorbits, self.starvels[0], s=0.5)    # plot the newtonian data
         
         ax.set_xlabel("Orbital Radius (pc)"); ax.set_ylabel("Orbital Velocity (km/s)")
         ax.set_ylim(ymin=0); ax.set_xlim(xmin=-0.1)
         
-    def plot_doppler(self, fig, ax, blackhole=False):
+    def plot_doppler(self, fig, ax, cbar_ax, blackhole=False):
         '''
         '''
         x, y, z, colours, scales = self.starpositions
         equat, polar, radius = self.cartesian_to_spherical(x, y, z)
         
-        starredshift = self.velobs[0]
-        minvel = min(starredshift); maxvel = max(starredshift)
+        if self.darkmatter == True:
+            starredshift = self.ObsStarVels[1]
+        else:
+            starredshift = self.ObsStarVels[0]
+        
+        ## last working state (fall back on in emergency)
+        # minvel = min(starredshift); maxvel = max(starredshift)
+        # if maxvel < -minvel:
+        #     maxvel = -minvel
+        # else:
+        #     minvel = -maxvel
+        # cm = plt.cm.get_cmap('bwr')
+        # # red = ax.scatter(equat, polar, s=scales, c=starredshift, vmin=minvel, vmax=maxvel, cmap=cm , marker='.')  #note the colourmap for the redshift amount
+        # red = ax.scatter(equat, polar, s=scales, c=starredshift, cmap=cm , marker='.')  #note the colourmap for the redshift amount
+
+        # cbar = fig.colorbar(red)
+        # cbar.set_label('Radial Velocity (km/s)', rotation=90)
+        
+        ## experimental :
+        # help was gotten from https://stackoverflow.com/questions/33336343/recover-data-from-matplotlib-scatter-plot
+        # and also https://stackoverflow.com/questions/40614177/how-to-get-a-list-of-collections-on-a-matplotlib-figure
+        data = [ax.collections[i].get_offsets().data for i in range(len(ax.collections))]
+
+        coords = [data[i] for i in np.arange(0, len(ax.collections), 3)]
+        speeds = [data[i] for i in np.arange(1, len(ax.collections), 3)]
+
+        x, y, v = [], [], []
+        for element in coords:
+            for coord in element:
+                x.append(coord[0])
+                y.append(coord[1])
+        for element in speeds:
+            for speed in element:
+                v.append(speed[1])
+
+        x = np.append(np.array(x), equat)
+        y = np.append(np.array(y), polar)
+        v = np.append(np.array(v), starredshift)
+        
+        minvel = min(v); maxvel = max(v)
         if maxvel < -minvel:
             maxvel = -minvel
         else:
             minvel = -maxvel
-        
+    
         cm = plt.cm.get_cmap('bwr')
-        red = ax.scatter(equat, polar, s=scales, c=starredshift, vmin=minvel, vmax=maxvel, cmap=cm , marker='.')  #note the colourmap for the redshift amount
-        cbar = plt.colorbar(red)
-        cbar.set_label('Radial Velocity (km/s)', rotation=90)
+        red = ax.scatter(x, y, c=v, vmin=minvel, vmax=maxvel, cmap=cm , marker='.', s=0.5)  #note the colourmap for the redshift amount
+        ax.scatter(np.zeros(len(v)), v, s=0)  # this gives a speed
         
+        cbar = fig.colorbar(red, cax=cbar_ax)
+        cbar.set_label('Radial Velocity (km/s)', rotation=90)
+
         ax.set_xlim(0, 360); ax.set_ylim(0, 180)
         ax.set_facecolor('k')
         ax.set_aspect(1)
@@ -953,13 +1013,13 @@ class Galaxy(object):
         ax.scatter(xvals, yvals, color=colours, s=0.2)
         
         if xunit == "both":
-            def func(x, a, b, c, d, g):
+            def TempVsColour(x, a, b, c, d, g):
                 ''' A polynomial fit for temperature vs colour (B - V)
                 '''
                 return a * (1 / (b * x + c))**d + g
             
             # use scipy curve_fit to find a polynomial fit for temperature in terms of B - V colour
-            fit, cov = opt.curve_fit(func, starBV, temps, [4430, 1.6, 0.35, 0.58, -1930])
+            fit, cov = opt.curve_fit(TempVsColour, starBV, temps, [4430, 1.6, 0.35, 0.58, -1930])
             
             ## uncomment the below if you want to calibrate the B - V colour and temperature fit
             # fitfit, fitax = plt.subplots()
@@ -970,7 +1030,7 @@ class Galaxy(object):
             
             ax2 = ax.twiny()    # produce alternate x-axis on the top
             colourx = np.array([-0.2 + (n * 0.2) for n in range(10)]) # choose B - V values to plot
-            tempx = func(colourx, fit[0], fit[1], fit[2], fit[3], fit[4])   # calculate the temp for each colour
+            tempx = TempVsColour(colourx, fit[0], fit[1], fit[2], fit[3], fit[4])   # calculate the temp for each colour
             ax2.scatter(np.log10(tempx), np.array([1 for i in range(10)]), alpha=0)  # plot them so that they show up on the plot
             ax2.set_xlabel(xlabel2);
             #now to define the ticks and make their labels in terms of the colours
@@ -1208,30 +1268,41 @@ class Galaxy(object):
         return (x, y, z)
     
     
-
+def plot_all_dopplers(galaxies):
+    fig, (ax, cbar_ax) = plt.subplots(1, 2, gridspec_kw={'width_ratios': [20,1]})
+    for galaxy in galaxies:
+        galaxy.plot_doppler(fig, ax, cbar_ax, blackhole=True)
+def plot_all_2d(galaxies, spikes=False, radio=False):
+    fig, ax = plt.subplots()
+    for galaxy in galaxies:
+        galaxy.plot_2d(fig, ax, spikes=spikes, radio=radio)
+        
 def main():
     # galaxy = Galaxy('SBb', (40,10,20), 1000, 100, cartesian=True)
     galaxy = Galaxy('SBb', (180, 90, 400), 1000, 70)
-    # galaxy.plot_radio3d()
-    # galaxy.plot_radio_contour()
-    # galaxy2 = Galaxy('E0', (104, 131, 5000), 1000, 100)
-    # galaxy3 = Galaxy('Sc', (110, 128, 10000), 1000, 100)
+    # galaxy2 = Galaxy('E0', (104, 131, 500), 1000, 100)
+    # galaxy3 = Galaxy('Sc', (110, 128, 1000), 1000, 50)
+    
     # fig = plt.figure()
     # ax = fig.add_subplot(projection='3d')
     # galaxy.plot_3d(ax, camera=False)
-    galaxy.plot_RotCurve(newtapprox=False, observed=True)
+    
+    # galaxy.plot_radio3d()
+    
+    # fig, ax = plt.subplots()
+    # galaxy.plot_radio_contour(ax)
+    # galaxy.plot_RotCurve(newtapprox=False, observed=True)
     # galaxy.generate_HR(isoradii=True, xunit="both", yunit="BolLumMag")
     # ax.set_xlim(-15, 15); ax.set_ylim(-15, 15); ax.set_zlim(-15, 15)
     # ax.set_xlim(-10, 10); ax.set_ylim(-10, 10); ax.set_zlim(-10, 10)
-    fig, ax = plt.subplots()
-    galaxy.plot_doppler(fig, ax, blackhole=True)
-    
+
+    plot_all_dopplers([galaxy])
+    plot_all_2d([galaxy], spikes=True, radio=True)
     # galaxy.generate_HR(isoradii=True)
-    fig, ax = plt.subplots()
-    galaxy.plot_2d(fig, ax, spikes=True, radio=True)
-    galaxy.stars[0].generate_blackbodycurve()
-    # galaxy2.plot_2d(fig, ax)
-    # galaxy3.plot_2d(fig, ax)
+    # fig, ax = plt.subplots()
+    # galaxy.plot_2d(fig, ax, spikes=True, radio=True)
+    # galaxy2.plot_2d(fig, ax, spikes=True, radio=True)
+    # galaxy3.plot_2d(fig, ax, spikes=True, radio=True)
 
     
 if __name__ == "__main__":

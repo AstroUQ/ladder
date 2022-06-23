@@ -875,12 +875,9 @@ class Galaxy(object):
                 M += darkMass(R)    # add the average mass of dark matter inside the radius R
                 darkvel[i] = (np.sqrt(G * M / R) / 1000)    # newtonian approximation, now including dark matter
         
-        if self.species[0] == "E":  # we want elliptical galaxies to have random rotation (random sign)
-            velarray =  np.array([vel, darkvel]) * np.random.normal(1, 0.01, len(vel)) * np.random.choice([-1, 1], len(vel))
-        else:
-            velarray = np.array([vel, darkvel]) * np.random.normal(1, 0.01, len(vel))
+        velarray = np.array([vel, darkvel]) * np.random.normal(1, 0.01, len(vel))
         
-        
+
         # now to calculate the direction of the velocity to display the radial component to the observer
         x, y, z, _, _ = self.starpositions
         
@@ -895,7 +892,9 @@ class Galaxy(object):
         points = np.dot(self.galaxyrotation(-phi[0], 'x'), points)
         
         x, y, z = points
-        theta = np.arctan2(y, x)
+        if self.species[0] == "S":  # spiral galaxy! explanation in the comment block below :)
+            theta = np.arctan2(y, x)
+            direction = np.array([np.sin(theta), -np.cos(theta), np.random.normal(0, 0.05, len(theta))])
         #         _______                +y             +y|  /
         #         \   _  \               |                | /  \ theta
         # galaxy->/  /_\  \      -x  ____|____ +x         |/____] +x
@@ -907,7 +906,19 @@ class Galaxy(object):
         #     x => sin(theta), since we want theta angles between 0 and pi to have positive x-motion
         #     y => -cos(theta), since we want theta angles between -pi/2 and pi/2 to have negative y-motion
         #     z => normal(0, 0.05) since we want there to be negligible, but random z motion
-        direction = np.array([np.sin(theta), -np.cos(theta), np.random.normal(0, 0.05, len(theta))])
+        else:   # elliptical galaxy! explanation in the comment block below
+            direction = np.array([np.zeros(len(x)), np.zeros(len(x)), np.zeros(len(x))])
+            for i in range(len(x)):
+                xprop = np.random.uniform(-1, 1)
+                yprop = np.random.uniform(-1, 1)
+                while xprop**2 + yprop**2 > 1:
+                    yprop = np.random.uniform(-1, 1)
+                zprop = np.sqrt(1 - (xprop**2 + yprop**2))  # 1 = x**2 + y**2 + z**2 => z = sqrt(1 - x**2 - y**2)
+                direction[0, i] = xprop; direction[1, i] = yprop; direction[2, i] = zprop
+        # the squares of the directional velocity components must add up to one: 1 = xprop**2 + yprop**2 + zprop**2
+        # so, we can randomly sample xprop and yprop (between -1 and 1 so that the velocity has random xy direction), 
+        # making sure that the sum of their squares is not greater than one. Then, we can subtract the sum of their squares from
+        # 1 to find the z component. All of this together gives more or less random direction to the stars about the galactic center. 
 
         direction = np.dot(self.galaxyrotation(phi[0], 'x'), direction)     # rotate the velocity vectors in the same way as before
         direction = np.dot(self.galaxyrotation(phi[1], 'y'), direction)
@@ -1358,7 +1369,7 @@ def plot_all_2d(galaxies, spikes=False, radio=False):
         
 def main():
     # galaxy = Galaxy('SBb', (0,500,100), 1000, 100, cartesian=True)
-    galaxy = Galaxy('SBb', (180, 90, 200), 1000, 70)
+    galaxy = Galaxy('Sc', (180, 90, 500), 1000, 70)
     # galaxy2 = Galaxy('E0', (104, 131, 500), 1000, 100)
     # galaxy3 = Galaxy('Sc', (110, 128, 1000), 1000, 50)
     galaxies = [galaxy]
@@ -1366,16 +1377,16 @@ def main():
     # ax = fig.add_subplot(projection='3d')
     # galaxy.plot_3d(ax, camera=False)
     
-    galaxy.plot_radio3d()
+    # galaxy.plot_radio3d()
     
     # fig, ax = plt.subplots()
     # galaxy.plot_radio_contour(ax)
-    # galaxy.plot_RotCurve(newtapprox=False, observed=True)
+    galaxy.plot_RotCurve(newtapprox=False, observed=True)
     # galaxy.generate_HR(isoradii=True, xunit="both", yunit="BolLumMag")
     # ax.set_xlim(-15, 15); ax.set_ylim(-15, 15); ax.set_zlim(-15, 15)
     # ax.set_xlim(-10, 10); ax.set_ylim(-10, 10); ax.set_zlim(-10, 10)
 
-    # plot_all_dopplers(galaxies)
+    plot_all_dopplers(galaxies)
     plot_all_2d(galaxies, spikes=True, radio=True)
     # galaxy.generate_HR(isoradii=True)
     # fig, ax = plt.subplots()

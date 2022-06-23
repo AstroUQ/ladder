@@ -29,6 +29,10 @@ class BlackHole(object):
         self.mass = self.initialise_mass(galaxymass)
         self.luminosity = luminosity * self.eddington_luminosity(self.mass)
         self.galaxyradius = galaxyradius
+        if galaxytype[0] == "S":
+            self.BHradio = self.BH_emission(FR=1)
+        else:
+            self.BHradio = self.BH_emission(FR=2)
     
     def initialise_mass(self, galaxymass):
         return (galaxymass * 3 * 10**-2) * np.random.normal(1, 0.1)
@@ -46,6 +50,8 @@ class BlackHole(object):
         ''' Quasar RGB colour. 
         '''
         return np.array([73, 214, 255]) / 255
+    def get_BH_radio(self):
+        return self.BHradio
     
     def get_BH_scale(self):
         '''A basic logarithmic scale to determine how large stars should be in pictures given their luminosity.
@@ -58,8 +64,56 @@ class BlackHole(object):
         scale = 2 if scale > 2 else scale
         return scale
     
-    def BH_emission(self, species=2):
-        if species == 2:
+    def BH_emission(self, FR=2):
+        ''' Produce mock-radio emission lobes from the SMBH in the center of the galaxy according to its Fanaroff-Riley type, FR. 
+        Inspiration for shaping came from  A.H. Bridle et al. 1994, Deep VLA imaging of twelve extended 3CR quasars, AJ 108, 766,
+        available at : https://articles.adsabs.harvard.edu/pdf/1994AJ....108..766B
+        This function emulates emission lobes by randomly scattering dots in 3D space according to rules and specified positions:
+            1. A central core, with 'centerpop' dots and radius 0.1pc
+            2. Jets (non-symmetric if FR-2), extending out of the galactic plane
+            3. Lobes, which expand out from the ends of the jet. 
+        This function purely creates the dots. It is the job of other functions (Galaxy.galaxy_radio) to plot the area density ("intensity")
+        Parameters
+        ----------
+        FR : int
+            {1, 2} depending on which Fanaroff-Riley emission type to simulate. 
+        '''
+        if FR == 1:
+            centerpop = 500
+            centerradius = 0.1
+            # the following distributes points more or less evenly about a sphere centered at the origin
+            theta = np.random.uniform(0, 2*np.pi, centerpop)
+            phi = np.random.uniform(-1, 1, centerpop)
+            phi = np.arccos(phi)
+            centerx = centerradius * (np.cos(theta) * np.sin(phi) * np.random.normal(1, 0.1, centerpop))
+            centery = centerradius * (np.sin(theta) * np.sin(phi) * np.random.normal(1, 0.1, centerpop))
+            centerz = centerradius * (np.cos(phi) * np.random.normal(1, 0.3, centerpop))
+            
+            jetpop = 1000
+            jetradius = 0.5 * self.galaxyradius
+            jetz = jetradius * (np.geomspace(0.01, 1.6, jetpop) * np.random.normal(1, 0.01, jetpop))    
+            jetx = np.random.normal(0, 0.2 * jetz, jetpop)
+            jety = np.random.normal(0, 0.2 * jetz, jetpop)
+            
+            jetreflect = np.random.uniform(0, 1, jetpop)
+            for i, val in enumerate(jetreflect):
+                if val > 0.5:         # half of the points are reflected (symmetrical)
+                    jetz[i] *= -1; jetx[i] *= -1; jety[i] *= -1
+                    
+            lobepop = 4000
+            loberadius = jetradius * 2
+            mult = 5    # arbitrary divisor to compact the lobes towards the jet a little bit
+            lobeangle = np.geomspace(0.5 * np.pi, 1.5 * np.pi, lobepop)
+            lobex = loberadius / mult * (lobeangle * np.cos(1.2 * lobeangle) * np.random.normal(1, 0.1, lobepop) + np.random.normal(0, 0.3 * lobeangle, lobepop))
+            lobey = loberadius / mult * (lobeangle * np.sin(1.2 * lobeangle) * np.random.normal(1, 0.1, lobepop) + np.random.normal(0, 0.3 * lobeangle, lobepop)) - jetradius/2
+            lobez = 0.5 * jetradius + (loberadius / mult * (lobeangle * np.sin(0.7 * lobeangle) * np.random.normal(1, 0.2, lobepop) + np.random.normal(0, 0.2 * lobeangle, lobepop)))
+            
+            lobereflect = np.random.uniform(0, 1, lobepop)
+            for i, val in enumerate(lobereflect):
+                if val > 0.5:       # half of the points are reflected
+                    lobez[i] *= -1; lobex[i] *= -1; lobey[i] *= -1  # reflect the coordinates about their respective axes. 
+        # the next section is functionally identical - i couldn't really be bothered reducing the linecount here
+        else:
             centerpop = 100
             centerradius = 0.1
             theta = np.random.uniform(0, 2*np.pi, centerpop)
@@ -77,14 +131,12 @@ class BlackHole(object):
             
             jetreflect = np.random.uniform(0, 1, jetpop)
             for i, val in enumerate(jetreflect):
-                if val > 0.9:
-                    jetz[i] *= -1
-                    jetx[i] *= -1
-                    jety[i] *= -1
+                if val > 0.9:       # only about 10% of the points are reflected
+                    jetz[i] *= -1; jetx[i] *= -1; jety[i] *= -1
             
             lobepop = 4000
             loberadius = jetradius * 2/3
-            mult = 5
+            mult = 5    # arbitrary divisor to compact the lobes towards the jet a little bit
             lobeangle = np.geomspace(0.5 * np.pi, 1 * np.pi, lobepop)
             lobex = loberadius / mult * (lobeangle * np.cos(lobeangle) * np.random.normal(1, 0.1, lobepop) + np.random.normal(0, 0.2 * lobeangle, lobepop))# * reflect 
             lobey = loberadius / mult * (np.random.normal(0, 0.1, lobepop) + np.random.normal(0, 0.2 * lobeangle, lobepop))# * - reflect + np.random.normal(0, scatter2, lobepop))
@@ -93,15 +145,12 @@ class BlackHole(object):
             lobereflect = np.random.uniform(0, 1, lobepop)
             for i, val in enumerate(lobereflect):
                 if val > 0.6:
-                    lobez[i] *= -1
-                    lobex[i] *= -1
-                    lobey[i] *= -1
+                    lobez[i] *= -1; lobex[i] *= -1; lobey[i] *= -1
             
-            x = np.concatenate((centerx, jetx, lobex), axis=0)
-            y = np.concatenate((centery, jety, lobey), axis=0)
-            z = np.concatenate((centerz, jetz, lobez), axis=0)
-            radius = centerradius + jetradius + loberadius
-        
+        x = np.concatenate((centerx, jetx, lobex), axis=0)
+        y = np.concatenate((centery, jety, lobey), axis=0)
+        z = np.concatenate((centerz, jetz, lobez), axis=0)
+        radius = centerradius + jetradius + loberadius
         return x, y, z, radius
         
         
@@ -442,7 +491,7 @@ class Star(object):
         
 
 class Galaxy(object):
-    def __init__(self, species, position, population, radius, cartesian=False, darkmatter=True):
+    def __init__(self, species, position, population, radius, cartesian=False, BHcluster=True, darkmatter=True):
         '''
         Parameters
         ----------
@@ -452,6 +501,7 @@ class Galaxy(object):
             if cartesian == True, position = [x, y, z]
         '''
         self.darkmatter = darkmatter
+        self.BHcluster = BHcluster
         self.species = species
         self.population = population
         self.radius = radius
@@ -569,6 +619,7 @@ class Galaxy(object):
         bulgecolours = [star.get_star_colour() for star in bulgestars]
         bulgescales = [star.get_star_scale() for star in bulgestars]
         
+        
         if self.species[:2] == "SB":    #this will create the bar, given that the galaxy is a barred type
             barradius = barradii[speciesindex[self.species]] * radius
             barx = np.random.normal(0, 0.07 * barradius, barpop)
@@ -581,6 +632,13 @@ class Galaxy(object):
             bulgecolours = np.append(bulgecolours, barcolours, axis=0)
             bulgescales = np.append(bulgescales, barscales, axis=0)
             bulgestars = np.append(bulgestars, barstars, axis=0)
+        
+        if self.BHcluster == True:
+            BHx, BHy, BHz, BHcolours, BHscales, BHstars = self.generate_BHcluster()
+            bulgex = np.append(bulgex, BHx); bulgey = np.append(bulgey, BHy); bulgez = np.append(bulgez, BHz)
+            bulgecolours = np.append(bulgecolours, BHcolours, axis=0)
+            bulgescales = np.append(bulgescales, BHscales, axis=0)
+            bulgestars = np.append(bulgestars, BHstars, axis=0)
         
         # initialise some lists
         spiralx, spiraly, spiralz, spiralcolours, spiralscales, spiralstars = [], [], [], np.empty((0,3)), [], []
@@ -664,6 +722,13 @@ class Galaxy(object):
         centralcolours = [star.get_star_colour() for star in centralstars]
         centralscales = [star.get_star_scale() for star in centralstars]
         
+        if self.BHcluster == True:
+            BHx, BHy, BHz, BHcolours, BHscales, BHstars = self.generate_BHcluster()
+            centralx = np.append(centralx, BHx); centraly = np.append(centraly, BHy); centralz = np.append(centralz, BHz)
+            centralcolours = np.append(centralcolours, BHcolours, axis=0)
+            centralscales = np.append(centralscales, BHscales, axis=0)
+            centralstars = np.append(centralstars, BHstars, axis=0)
+        
         spherex = sphereR * (np.cos(theta[centralpop:]) * np.sin(phi[centralpop:]) + np.random.normal(0, 0.1, spherepop))
         spherey = sphereR * (np.sin(theta[centralpop:]) * np.sin(phi[centralpop:]) + np.random.normal(0, 0.1, spherepop))
         distanceflat = (1 / radius) * np.sqrt(spherex**2 + spherey**2)
@@ -678,6 +743,25 @@ class Galaxy(object):
         scales = np.append(centralscales, spherescales, axis=0)
         
         stars = np.append(centralstars, spherestars, axis=0)
+        return x, y, z, colours, scales, stars
+    
+    def generate_BHcluster(self):
+        population = 20
+        theta = np.random.uniform(0, 2*np.pi, population)
+        phi = np.random.uniform(-1, 1, population)
+        phi = np.arccos(phi)
+        
+        dists = np.random.exponential(0.4, population)
+        radius = 0.1
+        R = radius * dists**(1/3)
+
+        x = R * (np.cos(theta) * np.sin(phi) + np.random.normal(0, 0.1, population))
+        y = R * (np.sin(theta) * np.sin(phi) + np.random.normal(0, 0.1, population))
+        z = R * (np.cos(phi) + np.random.normal(0, 0.05, population))
+        
+        stars = self.generate_stars("ys", population)
+        colours = [star.get_star_colour() for star in stars]
+        scales = [star.get_star_scale() for star in stars]
         return x, y, z, colours, scales, stars
     
     def generate_galaxy(self):
@@ -759,6 +843,7 @@ class Galaxy(object):
         If the galaxy has dark matter (self.darkmatter == True), then extra mass will be added according to the 
         Navarro-Frenk-White (NFW) dark matter halo mass profile. 
         TO DO: implement different dark matter halo properties for each galaxy type
+        the doppler shift is pretty fundamentally broken right now
         Returns
         -------
         np.array:
@@ -795,55 +880,49 @@ class Galaxy(object):
         else:
             velarray = np.array([vel, darkvel]) * np.random.normal(1, 0.01, len(vel))
         
-        # now to calculate the direction of the velocity to display to the observer
+        
+        # now to calculate the direction of the velocity to display the radial component to the observer
         x, y, z, _, _ = self.starpositions
         
         # now we need to transform the galaxy back to the origin with no rotation
         x, y, z = x - self.cartesian[0], y - self.cartesian[1], z - self.cartesian[2]
         points = np.array([x, y, z])
         phi = self.rotation
+        
         # rotate galaxy in the reverse order and opposite direction as initially
         points = np.dot(self.galaxyrotation(-phi[2], 'z'), points)
         points = np.dot(self.galaxyrotation(-phi[1], 'y'), points)
         points = np.dot(self.galaxyrotation(-phi[0], 'x'), points)
         
         x, y, z = points
-        
-        ## last working state:
-        # theta = np.arctan2(y, x)
-        # print(theta)
-        # direction = np.cos(theta)
-        # velobs = velarray * direction
-        # self.velobs = velobs
-        
         theta = np.arctan2(y, x)
-        direction = np.array([np.sin(theta), -np.cos(theta), np.random.normal(0, 0.05, len(theta))])
-        direction = np.dot(self.galaxyrotation(phi[0], 'x'), direction)
-        direction = np.dot(self.galaxyrotation(phi[1], 'y'), direction)
-        direction = np.dot(self.galaxyrotation(phi[2], 'z'), direction)
-        
-        # we care about velocity in terms of the y-axis.
-        # velocity in the positive y-direction means motion away from the observer
-        # velocity in the negative y-direction means motion towards the observer
-        #         _______                +y
-        #         \   _  \               |
-        # galaxy->/  /_\  \      -x  ____|____ +x
+        #         _______                +y             +y|  /
+        #         \   _  \               |                | /  \ theta
+        # galaxy->/  /_\  \      -x  ____|____ +x         |/____] +x
         #         \  \_/   \             |
         #          \_____  /             |
         #                \/              -y
-                             
-        #              ^
-        #              |
-        #            o.o     <- observer
-        VelObsArray = velarray * direction[0]
-        # velobs = velarray[1] * direction
-        
-        # self.velobs = velobs
+        # taking the arctan of y/x coordinates of stars gives clockwise circular motion about the galactic center
+        # the proportion of motion in the [x, y, z] directions can then be calculated by:
+        #     x => sin(theta), since we want theta angles between 0 and pi to have positive x-motion
+        #     y => -cos(theta), since we want theta angles between -pi/2 and pi/2 to have negative y-motion
+        #     z => normal(0, 0.05) since we want there to be negligible, but random z motion
+        direction = np.array([np.sin(theta), -np.cos(theta), np.random.normal(0, 0.05, len(theta))])
 
-        # if self.species[0] == "E":  # we want elliptical galaxies to have random rotation (random sign)
-        #     return velarray * np.random.choice([-1, 1], len(vel))
-        # else:
-        #     return velarray
+        direction = np.dot(self.galaxyrotation(phi[0], 'x'), direction)     # rotate the velocity vectors in the same way as before
+        direction = np.dot(self.galaxyrotation(phi[1], 'y'), direction)
+        direction = np.dot(self.galaxyrotation(phi[2], 'z'), direction)
+
+        x, y, z, _, _ = self.starpositions  # getting the xyz again is cheaper than doing the rotations again
+        
+        velprops = np.zeros(len(x))
+        for i in range(len(direction[0, :])):
+            vector = direction[:, i]    # velocity vector "v"
+            coord = np.array([x[i], y[i], z[i]])    # distance vector "d"
+            velprops[i] = np.dot(vector, coord) / np.sqrt(x[i]**2 + y[i]**2 + z[i]**2)      # dot product: (v dot d) / ||d||
+            # the dot product above gets the radial component of the velocity (thank you Ciaran!! - linear algebra is hard)
+
+        VelObsArray = velarray * velprops
         return velarray, VelObsArray
     
     def plot_RotCurve(self, newtapprox=False, observed=False):
@@ -1173,7 +1252,7 @@ class Galaxy(object):
                 ax.plot([0, x[i]], [0, y[i]], [0, z[i]], c='g', linewidth=1)
     
     def galaxy_radio(self):
-        x, y, z, radius = self.blackhole.BH_emission()
+        x, y, z, radius = self.blackhole.get_BH_radio()
         return x, y, z, radius
     
     def plot_radio3d(self):
@@ -1269,7 +1348,7 @@ class Galaxy(object):
     
     
 def plot_all_dopplers(galaxies):
-    fig, (ax, cbar_ax) = plt.subplots(1, 2, gridspec_kw={'width_ratios': [20,1]})
+    fig, (ax, cbar_ax) = plt.subplots(1, 2, gridspec_kw={'width_ratios': [30,1]})
     for galaxy in galaxies:
         galaxy.plot_doppler(fig, ax, cbar_ax, blackhole=True)
 def plot_all_2d(galaxies, spikes=False, radio=False):
@@ -1278,16 +1357,16 @@ def plot_all_2d(galaxies, spikes=False, radio=False):
         galaxy.plot_2d(fig, ax, spikes=spikes, radio=radio)
         
 def main():
-    # galaxy = Galaxy('SBb', (40,10,20), 1000, 100, cartesian=True)
-    galaxy = Galaxy('SBb', (180, 90, 400), 1000, 70)
+    # galaxy = Galaxy('SBb', (0,500,100), 1000, 100, cartesian=True)
+    galaxy = Galaxy('SBb', (180, 90, 200), 1000, 70)
     # galaxy2 = Galaxy('E0', (104, 131, 500), 1000, 100)
     # galaxy3 = Galaxy('Sc', (110, 128, 1000), 1000, 50)
-    
+    galaxies = [galaxy]
     # fig = plt.figure()
     # ax = fig.add_subplot(projection='3d')
     # galaxy.plot_3d(ax, camera=False)
     
-    # galaxy.plot_radio3d()
+    galaxy.plot_radio3d()
     
     # fig, ax = plt.subplots()
     # galaxy.plot_radio_contour(ax)
@@ -1296,8 +1375,8 @@ def main():
     # ax.set_xlim(-15, 15); ax.set_ylim(-15, 15); ax.set_zlim(-15, 15)
     # ax.set_xlim(-10, 10); ax.set_ylim(-10, 10); ax.set_zlim(-10, 10)
 
-    plot_all_dopplers([galaxy])
-    plot_all_2d([galaxy], spikes=True, radio=True)
+    # plot_all_dopplers(galaxies)
+    plot_all_2d(galaxies, spikes=True, radio=True)
     # galaxy.generate_HR(isoradii=True)
     # fig, ax = plt.subplots()
     # galaxy.plot_2d(fig, ax, spikes=True, radio=True)

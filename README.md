@@ -6,15 +6,10 @@ I am intending to emulate the "Distance Ladder" universe simulation that was a p
  - Stars:
     - Simulate variability in some regions on the HR diagram. 
  - Create standard galaxy populations and radii for galaxy types. 
- - Galaxy Rotation Curves
-    - Curves given black hole and no black hole
-    - Radial velocity that the observer sees (line of sight motion)
- - Create Black Hole Class
-    - Mass dependent on central bulge mass? Or maybe galaxy mass
+ - Black Holes:
     - Make brightness depend on angle of the galaxy to the viewer? As well as mass and random activity (possibly depending on galaxy type)
-    - Somehow make radio emission contours for elliptical galaxies?
  - Galaxy Clusters
-    - E0 Galaxies in the center of clusters
+    - E0 Galaxies in the center of clusters (or new cD type?)
         - Higher chance of ellipticals closer to the center of the cluster
     - Rotation/Dispersion curves for galaxies within a cluster
  - Type Ia supernovae as a standard candle

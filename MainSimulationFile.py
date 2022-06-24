@@ -7,13 +7,12 @@ Created on Mon Jun  6 09:52:26 2022
 """
 
 import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 from matplotlib import colors
-import pandas as pd
-import scipy.optimize as opt
+import scipy.optimize as opt             # this is to fit two axes in the HR diagram
 import scipy.ndimage                     # this is to smooth out the BH radio lobes
-# import scipy.interpolate
 # import colour as col
 
 class BlackHole(object):
@@ -513,7 +512,7 @@ class Galaxy(object):
             self.cartesian = self.spherical_to_cartesian(position[0], position[1], position[2])
         self.starpositions, self.stars, self.rotation = self.generate_galaxy()
         self.starmasses = [star.get_star_mass() for star in self.stars]
-        self.blackhole = BlackHole(sum(self.starmasses), self.species, self.radius, 0.5)
+        self.blackhole = BlackHole(sum(self.starmasses), self.species, self.radius, 1)
         starorbitradii = [self.starpositions[0] - self.cartesian[0], 
                           self.starpositions[1] - self.cartesian[1], 
                           self.starpositions[2] - self.cartesian[2]]
@@ -746,6 +745,9 @@ class Galaxy(object):
         return x, y, z, colours, scales, stars
     
     def generate_BHcluster(self):
+        ''' Generate a cluster of stars close to the central black hole of a galaxy. The method for doing this is
+        functionally identical to generating stars in an E0 galaxy (uniformly distributed stars in the volume of a sphere)
+        '''
         population = 20
         theta = np.random.uniform(0, 2*np.pi, population)
         phi = np.random.uniform(-1, 1, population)
@@ -754,7 +756,6 @@ class Galaxy(object):
         dists = np.random.exponential(0.4, population)
         radius = 0.1
         R = radius * dists**(1/3)
-
         x = R * (np.cos(theta) * np.sin(phi) + np.random.normal(0, 0.1, population))
         y = R * (np.sin(theta) * np.sin(phi) + np.random.normal(0, 0.1, population))
         z = R * (np.cos(phi) + np.random.normal(0, 0.05, population))
@@ -774,10 +775,10 @@ class Galaxy(object):
         '''
         population, radius = self.population, self.radius
         
-        if self.species[0] == 'E':  #elliptical galaxy
-            x, y, z, colours, scales, stars = self.generate_elliptical(population, radius)
-        else:                       #spiral galaxy
+        if self.species[0] == 'S':  #spiral galaxy
             x, y, z, colours, scales, stars = self.generate_spiral(population, radius)
+        else:        #elliptical galaxy
+            x, y, z, colours, scales, stars = self.generate_elliptical(population, radius)               
         
         points = np.array([x, y, z])
         phi = np.random.uniform(0, 2*np.pi, 3)
@@ -838,12 +839,11 @@ class Galaxy(object):
         stars = [Star(region, species) for species in choice]
         return stars
     
-    def rotation_vels(self, profile="NFW"):
+    def rotation_vels(self):
         ''' Simulates orbit velocities of stars given their distance from the galactic center.
         If the galaxy has dark matter (self.darkmatter == True), then extra mass will be added according to the 
         Navarro-Frenk-White (NFW) dark matter halo mass profile. 
         TO DO: implement different dark matter halo properties for each galaxy type
-        the doppler shift is pretty fundamentally broken right now
         Returns
         -------
         np.array:
@@ -933,7 +933,7 @@ class Galaxy(object):
             velprops[i] = np.dot(vector, coord) / np.sqrt(x[i]**2 + y[i]**2 + z[i]**2)      # dot product: (v dot d) / ||d||
             # the dot product above gets the radial component of the velocity (thank you Ciaran!! - linear algebra is hard)
 
-        VelObsArray = velarray * velprops
+        VelObsArray = velarray * velprops   # multiply the actual velocities by the line of sight proportion of the velocity magnitude
         return velarray, VelObsArray
     
     def plot_RotCurve(self, newtapprox=False, observed=False):
@@ -962,8 +962,24 @@ class Galaxy(object):
         ax.set_xlabel("Orbital Radius (pc)"); ax.set_ylabel("Orbital Velocity (km/s)")
         ax.set_ylim(ymin=0); ax.set_xlim(xmin=-0.1)
         
-    def plot_doppler(self, fig, ax, cbar_ax, blackhole=False):
-        '''
+    def plot_doppler(self, fig, ax, cbar_ax, blackhole=True):
+        ''' Plots the stars locations (similar to plot_2d), with colours indicating the stars radial velocity (line of sight motion)
+        Positive velocities indicate motion away, negative towards. 
+        I recommend initialising the fig, ax and cbar_ax in this way:
+            fig, (ax, cbar_ax) = plt.subplots(1, 2, gridspec_kw={'width_ratios': [30,1]})
+        Since multiple instances of this function may be called onto the same fig/ax, the colour bar updates on each call, 
+        first taking the data on ax and then merging the old and new data into one dataset in order to update the colourbar accordingly. 
+        Help was gotten from https://stackoverflow.com/questions/33336343/recover-data-from-matplotlib-scatter-plot
+        and also https://stackoverflow.com/questions/40614177/how-to-get-a-list-of-collections-on-a-matplotlib-figure
+        Parameters
+        ----------
+        fig : matplotlib figure object
+        ax : matplotlib axes
+            the main axes to plot the stars on
+        cbar_ax : matplotlib axes
+            the secondary axes to plot the colourbar onto. I recommend this be >20 times thinner than the main axes
+        blackhole : bool
+            Whether or not the plot
         '''
         x, y, z, colours, scales = self.starpositions
         equat, polar, radius = self.cartesian_to_spherical(x, y, z)
@@ -973,29 +989,17 @@ class Galaxy(object):
         else:
             starredshift = self.ObsStarVels[0]
         
-        ## last working state (fall back on in emergency)
-        # minvel = min(starredshift); maxvel = max(starredshift)
-        # if maxvel < -minvel:
-        #     maxvel = -minvel
-        # else:
-        #     minvel = -maxvel
-        # cm = plt.cm.get_cmap('bwr')
-        # # red = ax.scatter(equat, polar, s=scales, c=starredshift, vmin=minvel, vmax=maxvel, cmap=cm , marker='.')  #note the colourmap for the redshift amount
-        # red = ax.scatter(equat, polar, s=scales, c=starredshift, cmap=cm , marker='.')  #note the colourmap for the redshift amount
-
-        # cbar = fig.colorbar(red)
-        # cbar.set_label('Radial Velocity (km/s)', rotation=90)
-        
-        ## experimental :
-        # help was gotten from https://stackoverflow.com/questions/33336343/recover-data-from-matplotlib-scatter-plot
-        # and also https://stackoverflow.com/questions/40614177/how-to-get-a-list-of-collections-on-a-matplotlib-figure
+        # firstly, get the scatter data in the axes. If there is no data, then it will be a blank list which is no problem.
         data = [ax.collections[i].get_offsets().data for i in range(len(ax.collections))]
-
-        coords = [data[i] for i in np.arange(0, len(ax.collections), 3)]
-        speeds = [data[i] for i in np.arange(1, len(ax.collections), 3)]
-
+        # first data point for each ax addition is the star coords
+        # the second data point are the star velocities
+        # the third points are black hole locations, which have no use for altering the colourbar
+        coords = [data[i] for i in np.arange(0, len(ax.collections), 3)] 
+        speeds = [data[i] for i in np.arange(1, len(ax.collections), 3)] 
+        
+        # coords and speeds are inherently messy, so need to take data point from each nested array and add them to a neater array
         x, y, v = [], [], []
-        for element in coords:
+        for element in coords:  
             for coord in element:
                 x.append(coord[0])
                 y.append(coord[1])
@@ -1003,38 +1007,40 @@ class Galaxy(object):
             for speed in element:
                 v.append(speed[1])
 
-        x = np.append(np.array(x), equat)
+        x = np.append(np.array(x), equat)   # merge the old and new data
         y = np.append(np.array(y), polar)
         v = np.append(np.array(v), starredshift)
         
         minvel = min(v); maxvel = max(v)
-        if maxvel < -minvel:
+        if maxvel < -minvel:    # this conditional normalises the colourbar such that v=0 is in the middle of the max and min vel
             maxvel = -minvel
         else:
             minvel = -maxvel
     
-        cm = plt.cm.get_cmap('bwr')
-        red = ax.scatter(x, y, c=v, vmin=minvel, vmax=maxvel, cmap=cm , marker='.', s=0.5)  #note the colourmap for the redshift amount
-        ax.scatter(np.zeros(len(v)), v, s=0)  # this gives a speed
+        cm = plt.cm.get_cmap('bwr')     # blue => white => red colourmap
+        red = ax.scatter(x, y, c=v, vmin=minvel, vmax=maxvel, cmap=cm , marker='.', s=0.5)  # note the colourmap for the redshift amount
+        ax.scatter(np.zeros(len(v)), v, s=0)  # plots the speeds as 'nothing', so that speed values may be gathered on future calls of this function
         
-        cbar = fig.colorbar(red, cax=cbar_ax)
+        cbar = fig.colorbar(red, cax=cbar_ax)   # apply the colourbar to the cbar axes.
         cbar.set_label('Radial Velocity (km/s)', rotation=90)
 
         ax.set_xlim(0, 360); ax.set_ylim(0, 180)
         ax.set_facecolor('k')
-        ax.set_aspect(1)
+        ax.set_aspect(1)    # sets it to be twice as wide as high, so that angular ratios are preserved
         fig.tight_layout()
         ax.invert_yaxis()
         ax.set_xlabel("Equatorial Angle (degrees)")
         ax.set_ylabel("Polar Angle (degrees)")
         
-        if (self.blackhole != None) and (blackhole == True):
+        if (self.blackhole != None) and (blackhole == True):    # plots the black hole if there is one, and if the user wants it
             BHequat, BHpolar, distance = self.spherical
             BHcolour = self.blackhole.get_BH_colour()
             BHscale = self.blackhole.get_BH_scale() / (0.05 * distance)
             ax.scatter(BHequat, BHpolar, color=BHcolour, s=BHscale)
+        else:
+            ax.scatter(0, 0, s=0)   # plot 'nothing' so that the function works as intended
             
-    def generate_HR(self, isoradii=False, xunit="temp", yunit="BolLum"):
+    def plot_HR(self, isoradii=False, xunit="temp", yunit="BolLum"):
         '''Plots a Colour-Magnitude (HR) diagram for this galaxy.     
         Parameters
         ----------
@@ -1190,7 +1196,8 @@ class Galaxy(object):
             BHcolour = self.blackhole.get_BH_colour()
             BHscale = self.blackhole.get_BH_scale() / (0.05 * distance)
             if BHscale > 2.5: 
-                ax.errorbar(BHequat, BHpolar, yerr=BHscale, xerr=BHscale, ecolor=BHcolour, fmt='none', elinewidth=0.3)
+                spikesize = BHscale / 2
+                ax.errorbar(BHequat, BHpolar, yerr=spikesize, xerr=spikesize, ecolor=BHcolour, fmt='none', elinewidth=0.3, alpha=0.5)
             ax.scatter(BHequat, BHpolar, color=BHcolour, s=BHscale)
         
         scales = scales / (0.05 * radius)
@@ -1247,7 +1254,7 @@ class Galaxy(object):
         # uncomment the lines below for a pretty view
         ax.set_facecolor('k')
         
-        if camera == True:
+        if camera == True:  # plot a silly little camera showing in which direction and position the observer is looking from in the 2d plot
             ax.scatter(0, 0, 0, c='g', s=60, alpha=0.9) #plots the main camera part
             equat = np.array([-30, -30, 30, 30]) + 180
             polar = np.array([-30, 30, 30, -30]) + 90
@@ -1262,51 +1269,65 @@ class Galaxy(object):
             for i in range(4):
                 ax.plot([0, x[i]], [0, y[i]], [0, z[i]], c='g', linewidth=1)
     
-    def galaxy_radio(self):
-        x, y, z, radius = self.blackhole.get_BH_radio()
-        return x, y, z, radius
-    
     def plot_radio3d(self):
-        x, y, z, radius = self.galaxy_radio()
+        ''' Plots the faux radio emission jets/lobes (the 3D scattered points), with the origin (galaxy SMBH) at the origin. 
+        '''
+        x, y, z, radius = self.blackhole.get_BH_radio()
         fig = plt.figure()
         ax = fig.add_subplot(projection='3d')
         ax.scatter(x, y, z, s=0.8)
-        ax.set_xlim(-radius, radius); ax.set_ylim(-radius, radius), ax.set_zlim(0, radius)
+        ax.set_xlim(-radius, radius); ax.set_ylim(-radius, radius), ax.set_zlim(-radius, radius)
         ax.set_xlabel("x"); ax.set_ylabel("y")
     
-    def plot_radio_contour(self, ax, scatter=False):
+    def plot_radio_contour(self, ax, plot=True, scatter=False, data=False):
+        ''' Plot the radio contours of the SMBH emission onto a 2D sky plot. 
+        Parameters
+        ----------
+        ax : matplotlib axes object
+        plot : bool
+            Whether to actually plot the contour
+        scatter : bool
+            Whether to overlay the raw scatter data for calibration purposes
+        data : bool
+            Whether to return the area density data for the contours
+        Returns (if data=True)
+        -------
+        equatbins, polarbins : numpy arrays (1xN)
+            The equatorial and polar coordinates of the contour density bins. 
+        density : numpy array (NxN)
+            The number count of scatter particles per equat/polar bin. 
         '''
-        '''
-        x, y, z, radius = self.galaxy_radio()
+        x, y, z, radius = self.blackhole.get_BH_radio()
         phi = self.rotation
         points = np.array([x, y, z])
-        points = np.dot(self.galaxyrotation(phi[0], 'x'), points)
-        points = np.dot(self.galaxyrotation(phi[1], 'y'), points)
+        points = np.dot(self.galaxyrotation(phi[0], 'x'), points) # radio scatter is centered at the origin, 
+        points = np.dot(self.galaxyrotation(phi[1], 'y'), points) # so we need to rotate it in the same way as the galaxy was
         points = np.dot(self.galaxyrotation(phi[2], 'z'), points)
         x, y, z = points
-        x, y, z = x + self.cartesian[0], y + self.cartesian[1], z + self.cartesian[2]
+        x, y, z = x + self.cartesian[0], y + self.cartesian[1], z + self.cartesian[2] # and now translate it to where the galaxy is
         equat, polar, distance = self.cartesian_to_spherical(x, y, z)
             
-        extent = [[min(equat) - 3, max(equat) + 3], [min(polar) - 3, max(polar) + 3]]
+        extent = [[min(equat) - 3, max(equat) + 3], [min(polar) - 3, max(polar) + 3]]   # this is so that the edge of the contours aren't cut off
         density, equatedges, polaredges = np.histogram2d(equat, polar, bins=len(equat)//50, range=extent, density=False)
-        equatbins = equatedges[:-1] + (equatedges[1] - equatedges[0]) / 2
+        equatbins = equatedges[:-1] + (equatedges[1] - equatedges[0]) / 2   # this fixes the order of the bins, and centers the bins at the midpoint
         polarbins = polaredges[:-1] + (polaredges[1] - polaredges[0]) / 2
 
-        density = density.T
-        density = scipy.ndimage.zoom(density, 2)
+        density = density.T      # take the transpose of the density matrix
+        density = scipy.ndimage.zoom(density, 2)    # this smooths out the data so that it's less boxy and more curvey
         equatbins = scipy.ndimage.zoom(equatbins, 2)
         polarbins = scipy.ndimage.zoom(polarbins, 2)
-        # density = scipy.ndimage.gaussian_filter(density, sigma=1)  # this smooths the area density even moreso
-        
-        levels = [2, 3, 4, 5, 6, 10]
-        
-        ax.contour(equatbins, polarbins, density, levels, corner_mask=True)
-        
-        if scatter == True:
-            ax.scatter(equat, polar, s=0.5)
-        
-        ax.set_ylim(0, 180); ax.set_xlim(0, 360)
-        ax.invert_yaxis();
+        # density = scipy.ndimage.gaussian_filter(density, sigma=1)  # this smooths the area density even moreso (not necessary, but keeping for posterity)
+
+        if plot == True:    # plot the contour
+            levels = [2, 3, 4, 5, 6, 10, 15]    # having the contour levels start at 2 removes the noise from the smoothing - important!!
+            ax.contour(equatbins, polarbins, density, levels, corner_mask=True)     # plot the radio contours
+            ax.set_ylim(0, 180); ax.set_xlim(0, 360)
+            ax.invert_yaxis();
+            if scatter == True:     # plot the actual scattered points on top of the contour - mainly just for calibration
+                ax.scatter(equat, polar, s=0.5)
+        if data == True:
+            return equatbins, polarbins, density
+            # equat/polar are 1xN matrices, whereas density is a NxN matrix.  
     
     def cartesian_to_spherical(self, x, y, z):
         ''' Converts cartesian coordinates to spherical ones (formulae taken from wikipedia) in units of degrees. 
@@ -1381,14 +1402,14 @@ def main():
     
     # fig, ax = plt.subplots()
     # galaxy.plot_radio_contour(ax)
-    galaxy.plot_RotCurve(newtapprox=False, observed=True)
-    # galaxy.generate_HR(isoradii=True, xunit="both", yunit="BolLumMag")
+    # galaxy.plot_RotCurve(newtapprox=False, observed=True)
+    # galaxy.plot_HR(isoradii=True, xunit="both", yunit="BolLumMag")
     # ax.set_xlim(-15, 15); ax.set_ylim(-15, 15); ax.set_zlim(-15, 15)
     # ax.set_xlim(-10, 10); ax.set_ylim(-10, 10); ax.set_zlim(-10, 10)
 
-    plot_all_dopplers(galaxies)
+    # plot_all_dopplers(galaxies)
     plot_all_2d(galaxies, spikes=True, radio=True)
-    # galaxy.generate_HR(isoradii=True)
+    # galaxy.plot_HR(isoradii=True)
     # fig, ax = plt.subplots()
     # galaxy.plot_2d(fig, ax, spikes=True, radio=True)
     # galaxy2.plot_2d(fig, ax, spikes=True, radio=True)

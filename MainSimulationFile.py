@@ -58,7 +58,6 @@ def main():
     # galaxy3.plot_2d(fig, ax, spikes=True, radio=True)
     
     cluster = GalaxyCluster((180, 90, 2000), 5)
-    print(cluster.galaxies)
     plot_all_2d(cluster.galaxies)
 
     

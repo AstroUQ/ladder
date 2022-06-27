@@ -1415,12 +1415,15 @@ class GalaxyCluster(object):
         y = R * (np.sin(theta) * np.sin(phi) + np.random.normal(0, 0.1, population)) + self.cartesian[1]
         z = R * (np.cos(phi) + np.random.normal(0, 0.05, population)) + self.cartesian[2]
         
+        ## this method implements multiprocessing, and needs the classes in separate files to do so
         # args = [('Sa', [x[i], y[i], z[i]], 600, 70) for i in range(len(x))]
         # print(args)
         # pool = Pool()
         # galaxies = pool.starmap(self.generate_galaxy, args)
         # pool.close()
         # pool.join()
+        
+        ## this method is just using a basic for-loop and is slow, hence the depreciated tag. 
         args = [['Sa', [x[i], y[i], z[i]], 500, 70] for i in range(len(x))]
         galaxies = []
         for i in range(len(x)):

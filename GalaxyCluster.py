@@ -9,7 +9,7 @@ from multiprocessing import Pool
 from Galaxy import Galaxy
 
 class GalaxyCluster(object):
-    def __init__(self, position, population, cartesian=False, local=False):
+    def __init__(self, position, population, cartesian=False, local=False, darkmatter=True, complexity="Normal"):
         '''
         Parameters
         ----------
@@ -21,18 +21,31 @@ class GalaxyCluster(object):
         '''
         self.local = local
         self.radius = 1000
+        self.darkmatter = darkmatter
+        
         if cartesian:
             self.cartesian = position
             self.spherical = self.cartesian_to_spherical(position[0], position[1], position[2])
         else:
             self.spherical = position
             self.cartesian = self.spherical_to_cartesian(position[0], position[1], position[2])
-        self.galaxies = self.generate_galaxies(population)
+        
+        self.galaxies, self.galaxmasses, self.galaxorbits = self.generate_galaxies(population)
     
-    def generate_galaxy(self, species, position, population, radius):
-        return Galaxy(species, position, population, radius, cartesian=True)
+    def generate_galaxy(self, species, position):
+        return Galaxy(species, position, cartesian=True)
     
     def generate_galaxies(self, population):
+        ''' Uniformly distributes and generates galaxies within a sphere.
+        Returns
+        -------
+        galaxies : list
+            list of Galaxy class objects that comprise the cluster
+        galaxmasses : numpy array
+            The mass of each galaxy in the cluster (including dark matter), in units of solar masses.
+        orbitradii : numpy array
+            The orbital radius of each galaxy from the center of the cluster, in units of parsec
+        '''
         theta = np.random.uniform(0, 2*np.pi, population)
         phi = np.random.uniform(-1, 1, population)
         phi = np.arccos(phi)
@@ -40,23 +53,118 @@ class GalaxyCluster(object):
         dists = np.random.exponential(0.4, population)
         R = self.radius * dists**(1/3)
         
-        x = R * (np.cos(theta) * np.sin(phi) + np.random.normal(0, 0.1, population)) + self.cartesian[0]
-        y = R * (np.sin(theta) * np.sin(phi) + np.random.normal(0, 0.1, population)) + self.cartesian[1]
-        z = R * (np.cos(phi) + np.random.normal(0, 0.05, population)) + self.cartesian[2]
+        x = R * (np.cos(theta) * np.sin(phi) + np.random.normal(0, 0.1, population))
+        y = R * (np.sin(theta) * np.sin(phi) + np.random.normal(0, 0.1, population))
+        z = R * (np.cos(phi) + np.random.normal(0, 0.05, population))
+        orbitradii = np.sqrt(x**2 + y**2 + z**2)    # orbit radius for each galaxy from the cluster center, in parsecs
         
-        args = [('Sa', [x[i], y[i], z[i]], 600, 70) for i in range(len(x))]
-        print(args)
-        pool = Pool()
-        galaxies = pool.starmap(self.generate_galaxy, args)
-        pool.close()
-        pool.join()
-        # args = [['Sa', [x[i], y[i], z[i]], 500, 70] for i in range(len(x))]
-        # galaxies = []
-        # for i in range(len(x)):
-        #     species, position, population, radius = args[i]
-        #     print(species, position, population, radius)
-        #     galaxies.append(Galaxy(species, position, population, radius, cartesian=True))
-        return galaxies
+        # now to move the galaxies to their appropriate position in the sky
+        x, y, z = x + self.cartesian[0], y + self.cartesian[1], z + self.cartesian[2]
+        # these are the arguments for each of the galaxies in the cluster ## need to change!
+        args = [('Sa', [x[i], y[i], z[i]]) for i in range(len(x))]
+        # now, use multiprocessing to generate the galaxies in the cluster according to the arguments above and their positions
+        with Pool() as pool:
+            galaxies = pool.starmap(self.generate_galaxy, args)
+        galaxmasses = np.zeros(len(galaxies))
+        for i, galaxy in enumerate(galaxies):
+            galaxmasses[i] = galaxy.galaxymass  # get the mass of each galaxy
+        return galaxies, galaxmasses, orbitradii
+    
+    def rotation_vels(self):
+        ''' Simulates orbit velocities of stars given their distance from the galactic center.
+        If the galaxy has dark matter (self.darkmatter == True), then extra mass will be added according to the 
+        Navarro-Frenk-White (NFW) dark matter halo mass profile. 
+        TO DO: implement different dark matter halo properties for each galaxy type
+        Returns
+        -------
+        np.array:
+            2 element numpy array, with each element corresponding to:
+                1. vel = the newtonian rotation velocities
+                2. darkvel = rotation velocities including dark matter
+            if self.darkmatter == False, then darkvel is an array of zeros
+        '''
+        if self.darkmatter == True:     # time to initialise dark matter properties 
+            density = 0.001 # solar masses per cubic parsec
+            scalerad = 1.3 * self.radius  # parsec
+            Rs = scalerad * 3.086 * 10**16  # convert scalerad to meters
+            p0 = density * (1.988 * 10**30 / (3.086 * 10**16)**3) # convert density to kg/m^3
+            darkMass = lambda r: p0 / ((r / Rs) * (1 + r / Rs)**2) * (4 / 3 * np.pi * r**3)   # NFW dark matter profile (density * volume)
+            
+        G = 6.67 * 10**-11
+        
+        masses, orbits = self.galaxmasses, self.galaxorbits
+        # now, create an array that stores the mass and orbital radius of each star in the form of [[m1, r1], [m2,r2], ...]
+        MassRadii = np.array([[masses[i] * 1.988 * 10**30, orbits[i] * 3.086 * 10**16] for i in range(len(masses))])
+        vel = np.zeros(len(MassRadii)); darkvel = np.zeros(len(MassRadii))  # initialise arrays to store velocities in
+        for i in range(len(MassRadii)):
+            R = MassRadii[i, 1] 
+            # now to sum up all of the mass inside the radius R
+            M = sum([MassRadii[n, 0] if MassRadii[n, 1] < R else 0 for n in range(len(MassRadii))])
+            vel[i] = (np.sqrt(G * M / R) / 1000)    # calculate newtonian approximation of orbital velocity
+            if self.darkmatter == True:
+                M += darkMass(R)    # add the average mass of dark matter inside the radius R
+                darkvel[i] = (np.sqrt(G * M / R) / 1000)    # newtonian approximation, now including dark matter
+        
+        velarray = np.array([vel, darkvel]) * np.random.normal(1, 0.01, len(vel))
+        
+
+        # now to calculate the direction of the velocity to display the radial component to the observer
+        x, y, z, _, _ = self.starpositions
+        
+        # now we need to transform the galaxy back to the origin with no rotation
+        x, y, z = x - self.cartesian[0], y - self.cartesian[1], z - self.cartesian[2]
+        points = np.array([x, y, z])
+        phi = self.rotation
+        
+        # rotate galaxy in the reverse order and opposite direction as initially
+        points = np.dot(self.galaxyrotation(-phi[2], 'z'), points)
+        points = np.dot(self.galaxyrotation(-phi[1], 'y'), points)
+        points = np.dot(self.galaxyrotation(-phi[0], 'x'), points)
+        
+        x, y, z = points
+        if self.species[0] == "S":  # spiral galaxy! explanation in the comment block below :)
+            theta = np.arctan2(y, x)
+            direction = np.array([np.sin(theta), -np.cos(theta), np.random.normal(0, 0.05, len(theta))])
+        #         _______                +y             +y|  /
+        #         \   _  \               |                | /  \ theta
+        # galaxy->/  /_\  \      -x  ____|____ +x         |/____] +x
+        #         \  \_/   \             |
+        #          \_____  /             |
+        #                \/              -y
+        # taking the arctan of y/x coordinates of stars gives clockwise circular motion about the galactic center
+        # the proportion of motion in the [x, y, z] directions can then be calculated by:
+        #     x => sin(theta), since we want theta angles between 0 and pi to have positive x-motion
+        #     y => -cos(theta), since we want theta angles between -pi/2 and pi/2 to have negative y-motion
+        #     z => normal(0, 0.05) since we want there to be negligible, but random z motion
+        else:   # elliptical galaxy! explanation in the comment block below
+            direction = np.array([np.zeros(len(x)), np.zeros(len(x)), np.zeros(len(x))])
+            for i in range(len(x)):
+                xprop = np.random.uniform(-1, 1)
+                yprop = np.random.uniform(-1, 1)
+                while xprop**2 + yprop**2 > 1:
+                    yprop = np.random.uniform(-1, 1)
+                zprop = np.sqrt(1 - (xprop**2 + yprop**2))  # 1 = x**2 + y**2 + z**2 => z = sqrt(1 - x**2 - y**2)
+                direction[0, i] = xprop; direction[1, i] = yprop; direction[2, i] = zprop
+        # the squares of the directional velocity components must add up to one: 1 = xprop**2 + yprop**2 + zprop**2
+        # so, we can randomly sample xprop and yprop (between -1 and 1 so that the velocity has random xy direction), 
+        # making sure that the sum of their squares is not greater than one. Then, we can subtract the sum of their squares from
+        # 1 to find the z component. All of this together gives more or less random direction to the stars about the galactic center. 
+
+        direction = np.dot(self.galaxyrotation(phi[0], 'x'), direction)     # rotate the velocity vectors in the same way as before
+        direction = np.dot(self.galaxyrotation(phi[1], 'y'), direction)
+        direction = np.dot(self.galaxyrotation(phi[2], 'z'), direction)
+
+        x, y, z, _, _ = self.starpositions  # getting the xyz again is cheaper than doing the rotations again
+        
+        velprops = np.zeros(len(x))
+        for i in range(len(direction[0, :])):
+            vector = direction[:, i]    # velocity vector "v"
+            coord = np.array([x[i], y[i], z[i]])    # distance vector "d"
+            velprops[i] = np.dot(vector, coord) / np.sqrt(x[i]**2 + y[i]**2 + z[i]**2)      # dot product: (v dot d) / ||d||
+            # the dot product above gets the radial component of the velocity (thank you Ciaran!! - linear algebra is hard)
+
+        VelObsArray = velarray * velprops   # multiply the actual velocities by the line of sight proportion of the velocity magnitude
+        return velarray, VelObsArray
             
     def cartesian_to_spherical(self, x, y, z):
         ''' Converts cartesian coordinates to spherical ones (formulae taken from wikipedia) in units of degrees. 

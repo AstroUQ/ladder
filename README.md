@@ -6,7 +6,6 @@ I am intending to emulate the "Distance Ladder" universe simulation that was a p
  - Stars:
     - Simulate variability in some regions on the HR diagram. 
  - Galaxies:
-	- Create standard galaxy populations and radii for galaxy types. 
 	- Change dark matter properties based on galaxy type (in rotation velocity function)
  - Black Holes:
     - Make brightness depend on angle of the galaxy to the viewer? As well as mass and random activity (possibly depending on galaxy type)

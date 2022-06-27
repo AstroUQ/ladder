@@ -14,7 +14,7 @@ from Star import Star
 
 
 class Galaxy(object):
-    def __init__(self, species, position, population, radius, cartesian=False, BHcluster=True, darkmatter=True):
+    def __init__(self, species, position, cartesian=False, BHcluster=True, darkmatter=True, complexity="Normal"):
         '''
         Parameters
         ----------
@@ -23,11 +23,12 @@ class Galaxy(object):
             if cartesian == False, position = [equatorial angle, polar angle, radius (distance away)]
             if cartesian == True, position = [x, y, z]
         '''
-        self.darkmatter = darkmatter
         self.BHcluster = BHcluster
+        self.darkmatter = darkmatter
+        self.complexity = complexity
         self.species = species
-        self.population = population
-        self.radius = radius
+        self.population = self.determine_population(self.species)
+        self.radius = self.determine_radius(self.species)
         if cartesian:
             self.cartesian = position
             self.spherical = self.cartesian_to_spherical(position[0], position[1], position[2])
@@ -41,7 +42,8 @@ class Galaxy(object):
                           self.starpositions[1] - self.cartesian[1], 
                           self.starpositions[2] - self.cartesian[2]]
         self.starorbits = self.star_orbits(starorbitradii[0], starorbitradii[1], starorbitradii[2])
-        self.starvels, self.ObsStarVels = self.rotation_vels()
+        self.starvels, self.ObsStarVels, self.darkmattermass = self.rotation_vels()
+        self.galaxymass = sum(self.starmasses) + self.darkmattermass
         
     def galaxyrotation(self, angle, axis):
         '''Rotate a point in cartesian coordinates about the origin by some angle along the specified axis. 
@@ -69,6 +71,74 @@ class Galaxy(object):
         else:
             m = np.array([[np.cos(angle), -np.sin(angle), 0], [np.sin(angle), np.cos(angle), 0], [0, 0, 1]])
             return m
+    
+    def determine_population(self, species):
+        '''
+        Parameters
+        ----------
+        species : str
+            One of {cD, E0-7, S0, Sa, Sb, Sc, SBa, SBb, SBc} as per the galaxy type. 
+        '''
+        if species[0] == "S":
+            if species[1] == "B":
+                if species == "SBa":
+                    mean = 1100; SD = 100
+                elif species == "SBb":
+                    mean = 1000; SD = 100
+                else:   # species == "SBc":
+                    mean = 900; SD = 80
+            else:
+                if species == "S0":
+                    mean = 1100; SD = 50
+                elif species == "Sa":
+                    mean = 1000; SD = 100
+                elif species == "Sb":
+                    mean = 900; SD = 100
+                else:   # species == "Sc":
+                    mean = 800; SD = 80
+        else:
+            if species == "cD":
+                mean = 2000; SD = 200
+            else:   # normal elliptical => species == "E#":
+                num = species[1]
+                mean = 1600 - 120 * num
+                SD = 200 / (num + 1)
+        population = np.random.normal(mean, SD)
+        if self.complexity == "Basic":
+            population *= 0.2
+        return int(population)
+    
+    def determine_radius(self, species):
+        '''
+        '''
+        if species[0] == "S":
+            if species[1] == "B":
+                if species == "SBa":
+                    mean = 90; SD = 10
+                elif species == "SBb":
+                    mean = 85; SD = 7
+                else:   # species == "SBc":
+                    mean = 75; SD = 5
+            else:
+                if species == "S0":
+                    mean = 90; SD = 8
+                elif species == "Sa":
+                    mean = 80; SD = 8
+                elif species == "Sb":
+                    mean = 75; SD = 6
+                else:   # species == "Sc":
+                    mean = 70; SD = 5
+        else:
+            if species == "cD":
+                mean = 300; SD = 60
+            else:   # normal elliptical => species == "E#":
+                num = species[1]
+                mean = 200 - 20 * num
+                SD = 40 / (num + 1)
+        radius = np.random.normal(mean, SD)
+        if self.complexity == "Basic":
+            radius *= 0.6
+        return radius
     
     def generate_spiral(self, population, radius):
         '''Barred spiral galaxies generated using Fermat's spiral, and standard spiral galaxies generated using Archimedean spiral. 
@@ -370,11 +440,15 @@ class Galaxy(object):
         TO DO: implement different dark matter halo properties for each galaxy type
         Returns
         -------
-        np.array:
+        velarray : np.array
             2 element numpy array, with each element corresponding to:
                 1. vel = the newtonian rotation velocities
                 2. darkvel = rotation velocities including dark matter
             if self.darkmatter == False, then darkvel is an array of zeros
+        VelObsArray : np.array
+            Same format as velarray, but is the line-of-sight (radial) velocities as seen by the observer at the origin
+        darkmattermass : float
+            The mass of dark matter in 1.5x the galaxy radius (maximum width of a star from the galactic center). Units are solar masses
         '''
         if self.darkmatter == True:     # time to initialise dark matter properties 
             density = 0.01 # solar masses per cubic parsec
@@ -400,8 +474,10 @@ class Galaxy(object):
                 darkvel[i] = (np.sqrt(G * M / R) / 1000)    # newtonian approximation, now including dark matter
         
         velarray = np.array([vel, darkvel]) * np.random.normal(1, 0.01, len(vel))
+   
+        darkmattermass = darkMass(1.5 * max(MassRadii[:, 1])) if self.darkmatter == True else 0
+        darkmattermass /= 1.988 * 10**30
         
-
         # now to calculate the direction of the velocity to display the radial component to the observer
         x, y, z, _, _ = self.starpositions
         
@@ -458,7 +534,7 @@ class Galaxy(object):
             # the dot product above gets the radial component of the velocity (thank you Ciaran!! - linear algebra is hard)
 
         VelObsArray = velarray * velprops   # multiply the actual velocities by the line of sight proportion of the velocity magnitude
-        return velarray, VelObsArray
+        return velarray, VelObsArray, darkmattermass
     
     def plot_RotCurve(self, newtapprox=False, observed=False):
         ''' Produces a rotation curve of this galaxy. If the galaxy has dark matter and the user opts to display the newtonian

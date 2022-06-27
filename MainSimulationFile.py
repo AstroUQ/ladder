@@ -29,11 +29,16 @@ def plot_all_2d(galaxies, spikes=False, radio=False):
     fig, ax = plt.subplots()
     for galaxy in galaxies:
         galaxy.plot_2d(fig, ax, spikes=spikes, radio=radio)
+def plot_all_3d(galaxies):
+    fig = plt.figure()
+    ax = fig.add_subplot(projection='3d')
+    for galaxy in galaxies:
+        galaxy.plot_3d(ax, camera=False)
         
 def main():
     # galaxy = Galaxy('SBb', (0,500,100), 1000, 100, cartesian=True)
     # galaxy = Galaxy('Sc', (180, 90, 500), 1000, 70)
-    # galaxy2 = Galaxy('E0', (104, 131, 500), 1000, 100)
+    # galaxy2 = Galaxy('E4', (104, 131, 500), 1000, 100)
     # galaxy3 = Galaxy('Sc', (110, 128, 1000), 1000, 50)
     # galaxies = [galaxy]
     # fig = plt.figure()
@@ -59,6 +64,7 @@ def main():
     
     cluster = GalaxyCluster((180, 90, 2000), 5)
     plot_all_2d(cluster.galaxies)
+    plot_all_3d(cluster.galaxies)
 
     
 if __name__ == "__main__":

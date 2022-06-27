@@ -61,8 +61,17 @@ class GalaxyCluster(object):
         # now to move the galaxies to their appropriate position in the sky
         x, y, z = x + self.cartesian[0], y + self.cartesian[1], z + self.cartesian[2]
         # these are the arguments for each of the galaxies in the cluster ## need to change!
-        args = [('Sa', [x[i], y[i], z[i]]) for i in range(len(x))]
+        if population >= 10:
+            args = [('Sa', [x[i], y[i], z[i]]) for i in range(len(x) - 1)]
+            args.insert(0, ('cD', self.cartesian))  # insert a cD galaxy in the center of the cluster
+        elif population >= 5:
+            args = [('Sa', [x[i], y[i], z[i]]) for i in range(len(x) - 1)]
+            num = 9 - population
+            args.insert(0, (f'E{num}', self.cartesian))     # insert an elliptical galaxy in the center of the cluster
+        else:
+            args = [('Sa', [x[i], y[i], z[i]]) for i in range(len(x))]
         # now, use multiprocessing to generate the galaxies in the cluster according to the arguments above and their positions
+        print(args)
         with Pool() as pool:
             galaxies = pool.starmap(self.generate_galaxy, args)
         galaxmasses = np.zeros(len(galaxies))

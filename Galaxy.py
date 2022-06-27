@@ -100,7 +100,7 @@ class Galaxy(object):
             if species == "cD":
                 mean = 2000; SD = 200
             else:   # normal elliptical => species == "E#":
-                num = species[1]
+                num = float(species[1])
                 mean = 1600 - 120 * num
                 SD = 200 / (num + 1)
         population = np.random.normal(mean, SD)
@@ -132,7 +132,7 @@ class Galaxy(object):
             if species == "cD":
                 mean = 300; SD = 60
             else:   # normal elliptical => species == "E#":
-                num = species[1]
+                num = float(species[1])
                 mean = 200 - 20 * num
                 SD = 40 / (num + 1)
         radius = np.random.normal(mean, SD)
@@ -293,6 +293,8 @@ class Galaxy(object):
             an array of Star objects, for each star in the galaxy
         '''
         centralpop = int(0.2 * population); spherepop = int(0.8 * population)
+        if centralpop + spherepop != population:    # fixes issue where populations dont add up as needed
+            spherepop += population - (spherepop + centralpop)
         
         centralradius = radius / 6
         

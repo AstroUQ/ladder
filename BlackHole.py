@@ -17,16 +17,25 @@ class BlackHole(object):
         luminosity : float
             the fraction of the eddington luminosity that the black hole should be
         '''
+        self.galaxytype = galaxytype
         self.mass = self.initialise_mass(galaxymass)
         self.luminosity = luminosity * self.eddington_luminosity(self.mass)
         self.galaxyradius = galaxyradius
+        
         if galaxytype[0] == "S":
             self.BHradio = self.BH_emission(FR=1)
         else:
             self.BHradio = self.BH_emission(FR=2)
     
     def initialise_mass(self, galaxymass):
-        return (galaxymass * 3 * 10**-2) * np.random.normal(1, 0.1)
+        # return (galaxymass * 3 * 10**-2) * np.random.normal(1, 0.1)
+        m = (galaxymass * 3 * 10**-2) * np.random.normal(1, 0.1)
+        if self.galaxytype[0] == "E":
+            m *= (2.5 - 0.05 * float(self.galaxytype[1]))
+        elif self.galaxytype == "cD":
+            m *= 3
+        print("BH mass =", m, "Solar Masses")
+        return m
     
     def eddington_luminosity(self, mass):
         ''' Eddington luminosity for an accreting black hole. 

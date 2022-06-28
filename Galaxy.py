@@ -436,7 +436,6 @@ class Galaxy(object):
         ''' Simulates orbit velocities of stars given their distance from the galactic center.
         If the galaxy has dark matter (self.darkmatter == True), then extra mass will be added according to the 
         Navarro-Frenk-White (NFW) dark matter halo mass profile. 
-        TO DO: implement different dark matter halo properties for each galaxy type
         Returns
         -------
         velarray : np.array
@@ -451,7 +450,9 @@ class Galaxy(object):
         '''
         if self.darkmatter == True:     # time to initialise dark matter properties 
             density = 0.01 # solar masses per cubic parsec
-            scalerad = 150  # parsec
+            if self.species[0] in ["E", "c"]:
+                density *= 2
+            scalerad = 1.2 * self.radius  # parsec
             Rs = scalerad * 3.086 * 10**16  # convert scalerad to meters
             p0 = density * (1.988 * 10**30 / (3.086 * 10**16)**3) # convert density to kg/m^3
             darkMass = lambda r: p0 / ((r / Rs) * (1 + r / Rs)**2) * (4 / 3 * np.pi * r**3)   # NFW dark matter profile (density * volume)

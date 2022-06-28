@@ -39,10 +39,10 @@ def plot_all_3d(galaxies):
 def main():
     # np.random.seed(3080)
     # galaxy = Galaxy('SBb', (0,500,100), 1000, 100, cartesian=True)
-    galaxy = Galaxy('cD', (180, 90, 500))
+    # galaxy = Galaxy('cD', (180, 90, 500))
     # galaxy2 = Galaxy('E4', (104, 131, 500), 1000, 100)
     # galaxy3 = Galaxy('Sc', (110, 128, 1000), 1000, 50)
-    galaxies = [galaxy]
+    # galaxies = [galaxy]
     # fig = plt.figure()
     # ax = fig.add_subplot(projection='3d')
     # galaxy.plot_3d(ax, camera=False)
@@ -51,22 +51,22 @@ def main():
     
     # fig, ax = plt.subplots()
     # galaxy.plot_radio_contour(ax)
-    galaxy.plot_RotCurve(newtapprox=False, observed=True)
+    # galaxy.plot_RotCurve(newtapprox=False, observed=True)
     # galaxy.plot_HR(isoradii=True, xunit="both", yunit="BolLumMag")
     # ax.set_xlim(-15, 15); ax.set_ylim(-15, 15); ax.set_zlim(-15, 15)
     # ax.set_xlim(-10, 10); ax.set_ylim(-10, 10); ax.set_zlim(-10, 10)
 
-    plot_all_dopplers(galaxies)
+    # plot_all_dopplers(galaxies)
     # plot_all_2d(galaxies, spikes=True, radio=True)
     # galaxy.plot_HR(isoradii=True)
     # fig, ax = plt.subplots()
     # galaxy.plot_2d(fig, ax, spikes=True, radio=True)
     # galaxy2.plot_2d(fig, ax, spikes=True, radio=True)
     # galaxy3.plot_2d(fig, ax, spikes=True, radio=True)
+    # t0 = time()
+    cluster = GalaxyCluster((180, 90, 2000), 8)
     
-    # cluster = GalaxyCluster((180, 90, 2000), 5)
-    
-    # plot_all_2d(cluster.galaxies)
+    plot_all_2d(cluster.galaxies)
     # plot_all_3d(cluster.galaxies)
     
     # t1 = time()

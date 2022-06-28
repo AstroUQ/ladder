@@ -75,7 +75,7 @@ class Star(object):
             lumin = 3.2 * 10**4 * mass
         else: ValueError("something is wrong")
         lumin += np.random.normal(0, 0.005 * mass)
-        lumin = 0.23 * 0.04**2.3 if lumin < 0.23 * 0.04**2.3 else lumin
+        lumin = max(0.23 * 0.04**2.3, lumin)
         return lumin
 
     def MS_radius(self, mass):
@@ -104,7 +104,7 @@ class Star(object):
         L = 3.828 * 10**26 * lumin
         temp = (L / (sigma * 4 * np.pi * R**2 ))**(1/4)
         temp += np.random.normal(0, 0.1 * temp)
-        temp = 40000 if temp > 40000 else temp
+        temp = min(40000, temp)
         return temp
     
     def WD_masses(self):
@@ -133,8 +133,8 @@ class Star(object):
             mass = np.random.normal(0.658, 0.2)
         else:
             mass = np.random.normal(1.081, 0.2)
-        mass = 1.33 if mass > 1.33 else mass
-        mass = 0.17 if mass < 0.17 else mass
+        mass = min(1.33, mass)
+        mass = max(0.17, mass)
         return mass
     
     def WD_radii(self, mass):
@@ -164,8 +164,7 @@ class Star(object):
         sigma = 5.67037 * 10**-8
         R = 696340000 * radii
         solLum = 3.828 * 10**26
-        mult =  1 / solLum
-        return 4 * np.pi * R**2 * sigma * temps**4 * mult * np.random.normal(1, 0.1)
+        return 4 * np.pi * R**2 * sigma * temps**4 * np.random.normal(1, 0.1) / solLum
 
     def SGB_temp(self):
         '''Beta temperature distribution, weighted to be just higher in temperature than the midpoint. 
@@ -258,8 +257,8 @@ class Star(object):
         # rgb = col.XYZ_to_RGB(XYZ)
         # return rgb
         temperature = self.temperature
-        temperature = 40000 if temperature > 40000 else temperature
-        temperature = 1000 if temperature < 1000 else temperature
+        temperature = min(40000, temperature)
+        temperature = max(1000, temperature)
         temp = round(temperature / 100) * 100
         r, g, b = self.colourdata.loc[self.colourdata['Temperature'] == temp].iloc[0, 9:12]
         rgb = np.array([r, g, b]) / 255
@@ -273,7 +272,8 @@ class Star(object):
             the number to be input into the 'scale' kwarg in a matplotlib figure. 
         '''
         scale = 3 * np.log(2 * self.luminosity + 1)
-        scale = 2 if scale > 2 else scale
+        # scale = 2 if scale > 2 else scale
+        scale = min(scale, 2)
         return scale
     
     def generate_BandLumin(self, temp, radius):

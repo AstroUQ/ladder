@@ -22,3 +22,7 @@ def progress_bar(progress, total):
 # for i, x in enumerate(numbers):
 #     results.append(math.factorial(x))
 #     progress_bar(i + 1, len(numbers))
+
+class Universe(object):
+    def __init__(self):
+        self.clusters = 0

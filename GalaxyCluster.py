@@ -20,7 +20,7 @@ class GalaxyCluster(object):
             Whether this is the local galaxy cluster (i.e. the one that the observer at the origin is in)
         '''
         self.local = local
-        self.radius = 1000
+        self.radius = 200 * population**(5/6)
         self.darkmatter = darkmatter
         
         if cartesian:
@@ -33,10 +33,26 @@ class GalaxyCluster(object):
         self.galaxies, self.galaxmasses, self.galaxorbits = self.generate_galaxies(population)
     
     def generate_galaxy(self, species, position):
+        ''' Generate a Galaxy class object.
+        Parameters
+        ----------
+        species : str
+            The type of galaxy to generate
+        position : 3-tuple
+            The xyz position of the galaxy (cartesian coords)
+        Returns
+        -------
+        Galaxy : Galaxy object
+        '''
         return Galaxy(species, position, cartesian=True)
     
     def generate_galaxies(self, population):
-        ''' Uniformly distributes and generates galaxies within a sphere.
+        ''' Uniformly distributes and generates galaxies within a sphere, with a central elliptical galaxy if the cluster
+        population is high enough (>=5).
+        Parameters
+        ----------
+        population : int
+            The number of galaxies to generate
         Returns
         -------
         galaxies : list
@@ -50,7 +66,8 @@ class GalaxyCluster(object):
         phi = np.random.uniform(-1, 1, population)
         phi = np.arccos(phi)
         
-        dists = np.random.exponential(0.4, population)
+        # dists = np.random.exponential(0.4, population)
+        dists = np.random.uniform(0, 1, population)
         R = self.radius * dists**(1/3)
         
         x = R * (np.cos(theta) * np.sin(phi) + np.random.normal(0, 0.1, population))
@@ -60,24 +77,73 @@ class GalaxyCluster(object):
         
         # now to move the galaxies to their appropriate position in the sky
         x, y, z = x + self.cartesian[0], y + self.cartesian[1], z + self.cartesian[2]
-        # these are the arguments for each of the galaxies in the cluster ## need to change!
+        
+        # determine the types of galaxies in this cluster
+        species = self.species_picker(orbitradii, population)
+        # print(species)
+        if population >= 5:     # need a central elliptical galaxy, so generate n-1 galaxies
+            args = [(species[i], [x[i], y[i], z[i]]) for i in range(len(x) - 1)]    # species type at galaxy location
+        else:       # no central elliptical needed, so generate n galaxies
+            args = [(species[i], [x[i], y[i], z[i]]) for i in range(len(x))]
+
         if population >= 10:
-            args = [('Sa', [x[i], y[i], z[i]]) for i in range(len(x) - 1)]
             args.insert(0, ('cD', self.cartesian))  # insert a cD galaxy in the center of the cluster
         elif population >= 5:
-            args = [('Sa', [x[i], y[i], z[i]]) for i in range(len(x) - 1)]
-            num = 9 - population
+            num = 9 - population    # more populous clusters will have a bigger, more spherical elliptical in their center
             args.insert(0, (f'E{num}', self.cartesian))     # insert an elliptical galaxy in the center of the cluster
-        else:
-            args = [('Sa', [x[i], y[i], z[i]]) for i in range(len(x))]
+            
         # now, use multiprocessing to generate the galaxies in the cluster according to the arguments above and their positions
-        print(args)
         with Pool() as pool:
             galaxies = pool.starmap(self.generate_galaxy, args)
+        
         galaxmasses = np.zeros(len(galaxies))
         for i, galaxy in enumerate(galaxies):
             galaxmasses[i] = galaxy.galaxymass  # get the mass of each galaxy
+            
         return galaxies, galaxmasses, orbitradii
+    
+    def species_picker(self, orbitradii, population):
+        ''' A function to determine the type of galaxies in the cluster, given their orbital radii from the cluster center
+        and the cluster population. 
+        Parameters
+        ----------
+        orbitradii : list or numpy array
+            The radius of each orbit of the galaxies with the cluster, in units of parsec
+        population : int 
+            Population of galaxies in the cluster
+        Returns
+        -------
+        types : list
+            The species of each galaxy, in the same order as the galaxies in orbitradii
+        '''
+        if population == 1:
+            types = ['S0']
+        else:
+            types = []
+            for i in range(len(orbitradii)):
+                prop = orbitradii[i] / self.radius  # determine how far from the center the galaxy is
+                elliptcheck = np.random.uniform(0, 1)   # generate a RV to determine whether a galaxy is elliptical
+                
+                if population >= 5:     # dense cluster
+                    # the below makes it more likely for ellipticals the larger the cluster pop is, up to a pop of 10 when it then has 
+                    # constant probability
+                    elliptical = True if elliptcheck <= (min(0.1 * population, 1) - prop) else False
+                    spiral = not elliptical     # of course the galaxy can't be both a spiral and elliptical
+                else:
+                    elliptical = True if elliptcheck <= 0.1 else False  # about 10% chance of an elliptical galaxy outside of a dense cluster
+                    spiral = not elliptical
+    
+                if spiral == True:
+                    barcheck = np.random.uniform(0, 1)
+                    barred = True if barcheck <= 0.7 else False     # 70% of spiral galaxies have central bars
+                    if barred == True:
+                        types.append(np.random.choice(['SBa', 'SBb', 'SBc']))   # choose a barred galaxy
+                    else:
+                        types.append(np.random.choice(['S0', 'Sa', 'Sb', 'Sc']))    # choose a non-barred galaxy
+                else:   # elliptical == True:
+                    n = int(7 * min(prop, 1))   # more likely for spherical ellipticals closer to the center of the cluster
+                    types.append(f'E{n}')
+        return types
     
     def rotation_vels(self):
         ''' Simulates orbit velocities of stars given their distance from the galactic center.

@@ -63,14 +63,11 @@ class Galaxy(object):
             where 'b' is an 3 dimensional array of coordinates.
         '''
         if axis == 'x':
-            m = np.array([[1, 0, 0], [0, np.cos(angle), -np.sin(angle)], [0, np.sin(angle), np.cos(angle)]])
-            return m
+            return np.array([[1, 0, 0], [0, np.cos(angle), -np.sin(angle)], [0, np.sin(angle), np.cos(angle)]])
         elif axis == 'y':
-            m = np.array([[np.cos(angle), 0, np.sin(angle)], [0, 1, 0], [-np.sin(angle), 0, np.cos(angle)]])
-            return m
+            return np.array([[np.cos(angle), 0, np.sin(angle)], [0, 1, 0], [-np.sin(angle), 0, np.cos(angle)]])
         else:
-            m = np.array([[np.cos(angle), -np.sin(angle), 0], [np.sin(angle), np.cos(angle), 0], [0, 0, 1]])
-            return m
+            return np.array([[np.cos(angle), -np.sin(angle), 0], [np.sin(angle), np.cos(angle), 0], [0, 0, 1]])
     
     def determine_population(self, species):
         '''
@@ -202,7 +199,7 @@ class Galaxy(object):
         bulgeR = bulgeradius * bulgedists**(1/3)    #bulgedists was meant to be RVs between 0 and 1, but the mult makes up for it
         bulgex = bulgeR * (np.cos(theta) * np.sin(phi) + np.random.normal(0, 0.1, bulgepop))
         bulgey = bulgeR * (np.sin(theta) * np.sin(phi) + np.random.normal(0, 0.1, bulgepop))
-        distanceflat = (1 / radius) * np.sqrt(bulgex**2 + bulgey**2)     #this makes the z lower for stars further from the center
+        distanceflat = (1 / radius) * np.sqrt(np.square(bulgex) + np.square(bulgey))     #this makes the z lower for stars further from the center
         bulgez = (0.83 * bulgeR * (np.cos(phi) + np.random.normal(0, 0.1, bulgepop))) * 0.9**distanceflat
         
         # bulgex = np.cos(theta) * bulgedists
@@ -249,9 +246,10 @@ class Galaxy(object):
                 else:
                     spiralangle = np.linspace(lower, upper, pop)
                 reflect = np.random.choice([-1, 1], pop)
-                power = 1/2 if self.species[:2] == "SB" else 1
-                x = (radius / mult) * (spiralangle**power * np.cos(spiralangle + lag)  * np.random.normal(1, scatter, pop) * reflect + np.random.normal(0, scatter2, pop))
-                y = (radius / mult) * (spiralangle**power * np.sin(spiralangle + lag) * np.random.normal(1, scatter, pop) * - reflect + np.random.normal(0, scatter2, pop))
+                # power = 1/2 if self.species[:2] == "SB" else 1
+                spiralpow = np.sqrt(spiralangle) if self.species[:2] == "SB" else spiralangle
+                x = (radius / mult) * (spiralpow * np.cos(spiralangle + lag)  * np.random.normal(1, scatter, pop) * reflect + np.random.normal(0, scatter2, pop))
+                y = (radius / mult) * (spiralpow * np.sin(spiralangle + lag) * np.random.normal(1, scatter, pop) * - reflect + np.random.normal(0, scatter2, pop))
                 z = np.random.normal(0, zscatter * radius, pop)
                 stars = self.generate_stars(region, pop)
                 colours = [star.get_star_colour() for star in stars]
@@ -298,7 +296,8 @@ class Galaxy(object):
         
         centralradius = radius / 6
         
-        ellipsoid_mult = (1 - float(self.species[1]) / 10) # this makes later type ellipticals flatter (oblate)
+        # this makes later type ellipticals flatter (oblate), and accounts for cD galaxies. 
+        ellipsoid_mult = (1 - float(self.species[1]) / 10) if self.species[0]=='E' else 1
         
         theta = np.random.uniform(0, 2*np.pi, population)
         phi = np.random.uniform(-1, 1, population)
@@ -306,8 +305,8 @@ class Galaxy(object):
         
         spheredists = np.random.exponential(0.4, spherepop)
         centraldists = np.random.exponential(1/5, centralpop)
-        centralR = centralradius * centraldists**(1/3)
-        sphereR = radius * spheredists**(1/3)
+        centralR = centralradius * np.cbrt(centraldists)
+        sphereR = radius * np.cbrt(spheredists)
         
         centralx = centralR * (np.cos(theta[:centralpop]) * np.sin(phi[:centralpop]) + np.random.normal(0, 0.1, centralpop))
         centraly = centralR * (np.sin(theta[:centralpop]) * np.sin(phi[:centralpop]) + np.random.normal(0, 0.1, centralpop))
@@ -326,7 +325,7 @@ class Galaxy(object):
         
         spherex = sphereR * (np.cos(theta[centralpop:]) * np.sin(phi[centralpop:]) + np.random.normal(0, 0.1, spherepop))
         spherey = sphereR * (np.sin(theta[centralpop:]) * np.sin(phi[centralpop:]) + np.random.normal(0, 0.1, spherepop))
-        distanceflat = (1 / radius) * np.sqrt(spherex**2 + spherey**2)
+        distanceflat = (1 / radius) * np.sqrt(np.square(spherex) + np.square(spherey))
         spherez = (sphereR * (np.cos(phi[centralpop:]) + np.random.normal(0, 0.1, spherepop))) * ellipsoid_mult**distanceflat
         
         spherestars = self.generate_stars("disk", spherepop)
@@ -351,7 +350,7 @@ class Galaxy(object):
         
         dists = np.random.exponential(0.4, population)
         radius = 0.1
-        R = radius * dists**(1/3)
+        R = radius * np.cbrt(dists)
         x = R * (np.cos(theta) * np.sin(phi) + np.random.normal(0, 0.1, population))
         y = R * (np.sin(theta) * np.sin(phi) + np.random.normal(0, 0.1, population))
         z = R * (np.cos(phi) + np.random.normal(0, 0.05, population))
@@ -398,9 +397,7 @@ class Galaxy(object):
         -------
         radii : np.array
         '''
-        radii = np.zeros(len(x))
-        for i in range(len(x)):
-            radii[i] = np.sqrt(x[i]**2 + y[i]**2 + z[i]**2)
+        radii = np.sqrt(x**2 + y**2 + z**2)
         return radii
     
     def generate_stars(self, region, n):
@@ -474,6 +471,13 @@ class Galaxy(object):
             if self.darkmatter == True:
                 M += darkMass(R)    # add the average mass of dark matter inside the radius R
                 darkvel[i] = (np.sqrt(G * M / R) / 1000)    # newtonian approximation, now including dark matter
+        # R = MassRadii[:, 1]
+        # # now to sum up all of the mass inside the radius R
+        # M = np.array([sum([MassRadii[n, 0] if MassRadii[n, 1] < r else 0 for n in range(len(MassRadii))]) + BHmass for r in R])
+        # vel = (np.sqrt(G * M / R) / 1000)    # calculate newtonian approximation of orbital velocity
+        # if self.darkmatter == True:
+        #     M += darkMass(R)    # add the average mass of dark matter inside the radius R
+        #     darkvel = (np.sqrt(G * M / R) / 1000)    # newtonian approximation, now including dark matter
         
         velarray = np.array([vel, darkvel]) * np.random.normal(1, 0.01, len(vel))
    
@@ -510,13 +514,13 @@ class Galaxy(object):
         #     z => normal(0, 0.05) since we want there to be negligible, but random z motion
         else:   # elliptical galaxy! explanation in the comment block below
             direction = np.array([np.zeros(len(x)), np.zeros(len(x)), np.zeros(len(x))])
-            for i in range(len(x)):
-                xprop = np.random.uniform(-1, 1)
-                yprop = np.random.uniform(-1, 1)
-                while xprop**2 + yprop**2 > 1:
-                    yprop = np.random.uniform(-1, 1)
-                zprop = np.sqrt(1 - (xprop**2 + yprop**2))  # 1 = x**2 + y**2 + z**2 => z = sqrt(1 - x**2 - y**2)
-                direction[0, i] = xprop; direction[1, i] = yprop; direction[2, i] = zprop
+            xprop = np.random.uniform(-1, 1, len(x))
+            yprop = np.random.uniform(-1, 1, len(x))
+            for i in range(len(xprop)):
+                while xprop[i]**2 + yprop[i]**2 > 1:
+                    yprop[i] = np.random.uniform(-1, 1)
+            zprop = np.random.choice([-1, 1], len(xprop)) * np.sqrt(1 - (xprop**2 + yprop**2))  # 1 = x**2 + y**2 + z**2 => z = sqrt(1 - x**2 - y**2)
+            direction[0, :] = xprop; direction[1, :] = yprop; direction[2, :] = zprop
         # the squares of the directional velocity components must add up to one: 1 = xprop**2 + yprop**2 + zprop**2
         # so, we can randomly sample xprop and yprop (between -1 and 1 so that the velocity has random xy direction), 
         # making sure that the sum of their squares is not greater than one. Then, we can subtract the sum of their squares from
@@ -528,11 +532,11 @@ class Galaxy(object):
 
         x, y, z, _, _ = self.starpositions  # getting the xyz again is cheaper than doing the rotations again
         
-        velprops = np.zeros(len(x))
+        velprops = np.zeros(len(x)); dists = np.sqrt(x**2 + y**2 + z**2)
         for i in range(len(direction[0, :])):
             vector = direction[:, i]    # velocity vector "v"
             coord = np.array([x[i], y[i], z[i]])    # distance vector "d"
-            velprops[i] = np.dot(vector, coord) / np.sqrt(x[i]**2 + y[i]**2 + z[i]**2)      # dot product: (v dot d) / ||d||
+            velprops[i] = np.dot(vector, coord) / dists[i]      # dot product: (v dot d) / ||d||
             # the dot product above gets the radial component of the velocity (thank you Ciaran!! - linear algebra is hard)
 
         VelObsArray = velarray * velprops   # multiply the actual velocities by the line of sight proportion of the velocity magnitude
@@ -552,11 +556,11 @@ class Galaxy(object):
         if self.darkmatter == True:
             ax.scatter(self.starorbits, self.starvels[1], s=0.5, label="With Dark Matter")  # plot the dark matter curve data
             if observed == True:
-                ax.scatter(self.starorbits, self.ObsStarVels[1], s=0.5, label="Observed")   # plot the data that the observer would see
+                ax.scatter(self.starorbits, abs(self.ObsStarVels[1]), s=0.5, label="Observed")   # plot the data that the observer would see
             if newtapprox == True:
                 ax.scatter(self.starorbits, self.starvels[0], s=0.5, label="Newtonian Approximation") # plot the newtonian approx as well
                 if observed == True:
-                    ax.scatter(self.starorbits, self.ObsStarVels[0], s=0.5, label="Observed")   # and plot the newtonian approx that the observer would see
+                    ax.scatter(self.starorbits, abs(self.ObsStarVels[0]), s=0.5, label="Observed")   # and plot the newtonian approx that the observer would see
                 ax.legend()
         else: 
             ax.scatter(self.starorbits, self.starvels[0], s=0.5)    # plot the newtonian data

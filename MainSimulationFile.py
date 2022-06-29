@@ -64,7 +64,9 @@ def main():
     # galaxy2.plot_2d(fig, ax, spikes=True, radio=True)
     # galaxy3.plot_2d(fig, ax, spikes=True, radio=True)
     # t0 = time()
-    cluster = GalaxyCluster((180, 90, 2000), 8)
+    # cluster = GalaxyCluster((180, 90, 2000), 8)
+    cluster = GalaxyCluster((180, 90, 20000), 50, complexity="Distant")
+    
     
     plot_all_2d(cluster.galaxies)
     # plot_all_3d(cluster.galaxies)

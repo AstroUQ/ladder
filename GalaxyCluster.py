@@ -22,6 +22,7 @@ class GalaxyCluster(object):
         self.local = local
         self.radius = 200 * population**(5/6)
         self.darkmatter = darkmatter
+        self.complexity = complexity
         
         if cartesian:
             self.cartesian = position
@@ -44,7 +45,7 @@ class GalaxyCluster(object):
         -------
         Galaxy : Galaxy object
         '''
-        return Galaxy(species, position, cartesian=True)
+        return Galaxy(species, position, cartesian=True, complexity=self.complexity)
     
     def generate_galaxies(self, population):
         ''' Uniformly distributes and generates galaxies within a sphere, with a central elliptical galaxy if the cluster

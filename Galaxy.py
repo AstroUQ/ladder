@@ -76,65 +76,41 @@ class Galaxy(object):
         species : str
             One of {cD, E0-7, S0, Sa, Sb, Sc, SBa, SBb, SBc} as per the galaxy type. 
         '''
-        if species[0] == "S":
-            if species[1] == "B":
-                if species == "SBa":
-                    mean = 1100; SD = 100
-                elif species == "SBb":
-                    mean = 1000; SD = 100
-                else:   # species == "SBc":
-                    mean = 900; SD = 80
-            else:
-                if species == "S0":
-                    mean = 1100; SD = 50
-                elif species == "Sa":
-                    mean = 1000; SD = 100
-                elif species == "Sb":
-                    mean = 900; SD = 100
-                else:   # species == "Sc":
-                    mean = 800; SD = 80
+        if self.species[0] == "E":
+            num = float(species[1])
+            index = "E"
         else:
-            if species == "cD":
-                mean = 2000; SD = 200
-            else:   # normal elliptical => species == "E#":
-                num = float(species[1])
-                mean = 1600 - 120 * num
-                SD = 200 / (num + 1)
+            num = 0
+            index = self.species
+        poplookup = {"S0":[1100, 50], "Sa":[1000, 100], "Sb":[900, 100], "Sc":[800, 80],
+                      "SBa":[1100, 100], "SBb":[1000, 100], "SBc":[900, 80],
+                      "cD":[2000, 200], "E":[1600 - 120 * num, 200 / (num + 1)]}
+        mean, SD = poplookup[index]
         population = np.random.normal(mean, SD)
         if self.complexity == "Basic":
             population *= 0.2
+        elif self.complexity == "Distant":
+            population /= 12
         return int(population)
     
     def determine_radius(self, species):
         '''
         '''
-        if species[0] == "S":
-            if species[1] == "B":
-                if species == "SBa":
-                    mean = 90; SD = 10
-                elif species == "SBb":
-                    mean = 85; SD = 7
-                else:   # species == "SBc":
-                    mean = 75; SD = 5
-            else:
-                if species == "S0":
-                    mean = 90; SD = 8
-                elif species == "Sa":
-                    mean = 80; SD = 8
-                elif species == "Sb":
-                    mean = 75; SD = 6
-                else:   # species == "Sc":
-                    mean = 70; SD = 5
+        if self.species[0] == "E":
+            num = float(species[1])
+            index = "E"
         else:
-            if species == "cD":
-                mean = 300; SD = 60
-            else:   # normal elliptical => species == "E#":
-                num = float(species[1])
-                mean = 200 - 20 * num
-                SD = 40 / (num + 1)
+            num = 0
+            index = self.species
+        radlookup = {"S0":[90, 8], "Sa":[80, 8], "Sb":[75, 6], "Sc":[70, 5],
+                      "SBa":[90, 10], "SBb":[85, 7], "SBc":[75, 5],
+                      "cD":[300, 60], "E":[200 - 20 * num, 40 / (num + 1)]}
+        mean, SD = radlookup[index]
         radius = np.random.normal(mean, SD)
         if self.complexity == "Basic":
             radius *= 0.6
+        elif self.complexity == "Distant":
+            radius *= 0.4
         return radius
     
     def generate_spiral(self, population, radius):
@@ -807,7 +783,7 @@ class Galaxy(object):
                 ax.errorbar(BHequat, BHpolar, yerr=spikesize, xerr=spikesize, ecolor=BHcolour, fmt='none', elinewidth=0.3, alpha=0.5)
             ax.scatter(BHequat, BHpolar, color=BHcolour, s=BHscale)
         
-        scales = scales / (0.05 * radius)
+        scales = scales / (0.05 * radius) if self.complexity != "Distant" else scales / (0.01 * radius)
         if spikes == True:
             brightequat, brightpolar, brightscale, brightcolour = [], [], [], np.empty((0, 3))
             for i, scale in enumerate(scales):

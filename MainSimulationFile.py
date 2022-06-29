@@ -19,6 +19,7 @@ from BlackHole import BlackHole
 from Galaxy import Galaxy
 from GalaxyCluster import GalaxyCluster
 from Star import Star
+from Universe import Universe
 from time import time
 
     
@@ -65,15 +66,20 @@ def main():
     # galaxy3.plot_2d(fig, ax, spikes=True, radio=True)
     # t0 = time()
     # cluster = GalaxyCluster((180, 90, 2000), 8)
-    cluster = GalaxyCluster((180, 90, 20000), 50, complexity="Distant")
+    # cluster = GalaxyCluster((180, 90, 20000), 50, complexity="Distant")
     
     
-    plot_all_2d(cluster.galaxies)
+    # plot_all_2d(cluster.galaxies)
     # plot_all_3d(cluster.galaxies)
     
     # t1 = time()
     # total = t1 - t0
     # print("Time taken =", total, "s")
+    universe = Universe()
+    clusters = universe.clusters
+    galaxies = [cluster.galaxies for cluster in clusters]
+    flatgalaxies = [galaxy for cluster in galaxies for galaxy in cluster]
+    plot_all_2d(flatgalaxies)
 
     
 if __name__ == "__main__":

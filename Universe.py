@@ -5,6 +5,8 @@ Created on Mon Jun 27 13:08:36 2022
 @author: ryanw
 """
 
+from GalaxyCluster import GalaxyCluster
+import numpy as np
 import math
 
 def progress_bar(progress, total):
@@ -25,4 +27,22 @@ def progress_bar(progress, total):
 
 class Universe(object):
     def __init__(self):
-        self.clusters = 0
+        self.clusterpop = 10
+        self.clusters = self.generate_clusters()
+    
+    def generate_clusters(self):
+        progress_bar(0, self.clusterpop)
+        clusters = []
+        for i in range(self.clusterpop):
+            equat = np.random.uniform(0, 360)
+            polar = np.random.uniform(0, 180)
+            dist = np.random.uniform(1000, 100000)
+            pos = (equat, polar, dist)
+            pop = int(np.random.exponential(5))
+            pop = pop if pop >= 1 else 1
+            if dist > 50000:
+                clusters.append(GalaxyCluster(pos, pop, complexity="Distant"))
+            else:
+                clusters.append(GalaxyCluster(pos, pop))
+            progress_bar(i+1, self.clusterpop)
+        return clusters

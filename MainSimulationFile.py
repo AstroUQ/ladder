@@ -36,6 +36,10 @@ def plot_all_3d(galaxies):
     ax = fig.add_subplot(projection='3d')
     for galaxy in galaxies:
         galaxy.plot_3d(ax, camera=False)
+
+class UniverseSim(object):
+    def __init__(self):
+        self.h = "h"
         
 def main():
     # np.random.seed(3080)
@@ -75,12 +79,9 @@ def main():
     # t1 = time()
     # total = t1 - t0
     # print("Time taken =", total, "s")
-    universe = Universe()
-    clusters = universe.clusters
-    galaxies = [cluster.galaxies for cluster in clusters]
-    flatgalaxies = [galaxy for cluster in galaxies for galaxy in cluster]
-    plot_all_2d(flatgalaxies)
-
+    universe = Universe(450000, 50)
+    flatgalaxies = universe.get_all_galaxies()
+    plot_all_2d(flatgalaxies, spikes=True)
     
 if __name__ == "__main__":
     main()

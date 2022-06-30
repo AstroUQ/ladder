@@ -33,7 +33,7 @@ class GalaxyCluster(object):
         
         self.galaxies, self.galaxmasses, self.galaxorbits = self.generate_galaxies(population)
     
-    def generate_galaxy(self, species, position):
+    def generate_galaxy(self, species, position, local):
         ''' Generate a Galaxy class object.
         Parameters
         ----------
@@ -45,7 +45,7 @@ class GalaxyCluster(object):
         -------
         Galaxy : Galaxy object
         '''
-        return Galaxy(species, position, cartesian=True, complexity=self.complexity)
+        return Galaxy(species, position, cartesian=True, rotate=local, complexity=self.complexity)
     
     def generate_galaxies(self, population):
         ''' Uniformly distributes and generates galaxies within a sphere, with a central elliptical galaxy if the cluster
@@ -83,16 +83,22 @@ class GalaxyCluster(object):
         species = self.species_picker(orbitradii, population)
         # print(species)
         if population >= 5:     # need a central elliptical galaxy, so generate n-1 galaxies
-            args = [(species[i], [x[i], y[i], z[i]]) for i in range(len(x) - 1)]    # species type at galaxy location
+            args = [(species[i], [x[i], y[i], z[i]], True) for i in range(len(x) - 1)]    # species type at galaxy location
         else:       # no central elliptical needed, so generate n galaxies
-            args = [(species[i], [x[i], y[i], z[i]]) for i in range(len(x))]
+            args = [(species[i], [x[i], y[i], z[i]], True) for i in range(len(x))]
 
         if population >= 10:
-            args.insert(0, ('cD', self.cartesian))  # insert a cD galaxy in the center of the cluster
+            args.insert(0, ('cD', self.cartesian, True))  # insert a cD galaxy in the center of the cluster
         elif population >= 5:
             num = 9 - population    # more populous clusters will have a bigger, more spherical elliptical in their center
-            args.insert(0, (f'E{num}', self.cartesian))     # insert an elliptical galaxy in the center of the cluster
-            
+            args.insert(0, (f'E{num}', self.cartesian, True))     # insert an elliptical galaxy in the center of the cluster
+        
+        if self.local == True:  # generate a spiral galaxy near the observer, with no rotation
+            localgalaxy = np.random.choice(['SBa', 'SBb', 'SBc', 'S0', 'Sa', 'Sb', 'Sc'])   # choose spiral type
+            localdist = np.random.uniform(10, 65)   # we don't want the observer in the center of the galaxy, but also not outside of it
+            localx, localy, localz = self.spherical_to_cartesian(180, 90, localdist)
+            args[-1] = (localgalaxy, [localx, localy, localz], False)   # replace the last galaxy in the cluster with this galaxy, with no rotation!
+        
         # now, use multiprocessing to generate the galaxies in the cluster according to the arguments above and their positions
         with Pool() as pool:
             galaxies = pool.starmap(self.generate_galaxy, args)

@@ -28,7 +28,8 @@ class BlackHole(object):
             self.BHradio = self.BH_emission(FR=2)
     
     def initialise_mass(self, galaxymass):
-        # return (galaxymass * 3 * 10**-2) * np.random.normal(1, 0.1)
+        '''
+        '''
         m = (galaxymass * 3 * 10**-2) * np.random.normal(1, 0.1)
         if self.galaxytype[0] == "E":
             m *= (2.5 - 0.05 * float(self.galaxytype[1]))

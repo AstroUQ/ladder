@@ -14,7 +14,7 @@ from Star import Star
 
 
 class Galaxy(object):
-    def __init__(self, species, position, cartesian=False, BHcluster=True, darkmatter=True, complexity="Normal"):
+    def __init__(self, species, position, cartesian=False, BHcluster=True, darkmatter=True, rotate=True, complexity="Normal"):
         '''
         Parameters
         ----------
@@ -29,6 +29,7 @@ class Galaxy(object):
         self.species = species
         self.population = self.determine_population(self.species)
         self.radius = self.determine_radius(self.species)
+        self.rotate = rotate
         if cartesian:
             self.cartesian = position
             self.spherical = self.cartesian_to_spherical(position[0], position[1], position[2])
@@ -87,10 +88,10 @@ class Galaxy(object):
                       "cD":[2000, 200], "E":[1600 - 120 * num, 200 / (num + 1)]}
         mean, SD = poplookup[index]
         population = np.random.normal(mean, SD)
-        if self.complexity == "Basic":
-            population *= 0.2
-        elif self.complexity == "Distant":
-            population /= 12
+        if self.complexity == "Distant":
+            population /= 18
+        elif self.complexity == "Basic":
+            population *= 0.15
         return int(population)
     
     def determine_radius(self, species):
@@ -109,8 +110,6 @@ class Galaxy(object):
         radius = np.random.normal(mean, SD)
         if self.complexity == "Basic":
             radius *= 0.6
-        elif self.complexity == "Distant":
-            radius *= 0.4
         return radius
     
     def generate_spiral(self, population, radius):
@@ -354,10 +353,11 @@ class Galaxy(object):
         points = np.array([x, y, z])
         phi = np.random.uniform(0, 2*np.pi, 3)
         
-        #rotate the galaxy randomly
-        points = np.dot(self.galaxyrotation(phi[0], 'x'), points)
-        points = np.dot(self.galaxyrotation(phi[1], 'y'), points)
-        points = np.dot(self.galaxyrotation(phi[2], 'z'), points)
+        if self.rotate == True:
+            #rotate the galaxy randomly
+            points = np.dot(self.galaxyrotation(phi[0], 'x'), points)
+            points = np.dot(self.galaxyrotation(phi[1], 'y'), points)
+            points = np.dot(self.galaxyrotation(phi[2], 'z'), points)
         x0, y0, z0 = self.cartesian
         x, y, z = points[0] + x0, points[1] + y0, points[2] + z0  #move the galaxy away from the origin to its desired position
         return [x, y, z, colours, scales], stars, phi
@@ -778,12 +778,12 @@ class Galaxy(object):
             BHequat, BHpolar, distance = self.spherical
             BHcolour = self.blackhole.get_BH_colour()
             BHscale = self.blackhole.get_BH_scale() / (0.05 * distance)
-            if BHscale > 2.5: 
+            if spikes == True and BHscale > 2.5: 
                 spikesize = BHscale / 2
                 ax.errorbar(BHequat, BHpolar, yerr=spikesize, xerr=spikesize, ecolor=BHcolour, fmt='none', elinewidth=0.3, alpha=0.5)
             ax.scatter(BHequat, BHpolar, color=BHcolour, s=BHscale)
         
-        scales = scales / (0.05 * radius) if self.complexity != "Distant" else scales / (0.01 * radius)
+        scales = scales / (0.05 * radius) if self.complexity != "Distant" else scales / (0.001 * radius)
         if spikes == True:
             brightequat, brightpolar, brightscale, brightcolour = [], [], [], np.empty((0, 3))
             for i, scale in enumerate(scales):
@@ -793,7 +793,7 @@ class Galaxy(object):
                     brightscale = brightscale + [scale / 4]
                     brightcolour = np.append(brightcolour, [colours[i]], axis=0)
             ax.errorbar(brightequat, brightpolar, yerr=brightscale, xerr=brightscale, ecolor=brightcolour, fmt='none', elinewidth=0.3)
-        scales = [4 if scale > 4 else abs(scale) for scale in scales]
+        scales = [3 if scale > 3 else abs(scale) for scale in scales]
         ax.scatter(equat, polar, s=scales, c=colours)
         ax.set_xlim(0, 360); ax.set_ylim(0, 180)
         ax.set_facecolor('k')

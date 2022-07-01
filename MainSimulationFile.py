@@ -11,8 +11,6 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 from matplotlib import colors
-import scipy.optimize as opt             # this is to fit two axes in the HR diagram
-import scipy.ndimage                     # this is to smooth out the BH radio lobes
 from multiprocessing import Pool
 # import colour as col
 from BlackHole import BlackHole
@@ -39,7 +37,10 @@ def plot_all_3d(galaxies):
 
 class UniverseSim(object):
     def __init__(self):
-        self.h = "h"
+        self.universe = Universe(450000, 50)
+        self.galaxies = self.universe.get_all_galaxies()
+        self.supernovae = self.universe.supernovae
+        
         
 def main():
     # np.random.seed(3080)

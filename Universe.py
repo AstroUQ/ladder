@@ -4,10 +4,9 @@ Created on Mon Jun 27 13:08:36 2022
 
 @author: ryanw
 """
-
-from GalaxyCluster import GalaxyCluster
 import numpy as np
 from tqdm import tqdm     # this is a progress bar for a for loop
+from GalaxyCluster import GalaxyCluster
 
 class Universe(object):
     def __init__(self, radius, clusters, complexity="Normal", homogeneous=False):

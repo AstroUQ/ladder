@@ -61,6 +61,18 @@ class Universe(object):
         clusters = [cluster.galaxies for cluster in self.clusters]
         flatgalaxies = [galaxy for cluster in clusters for galaxy in cluster]
         return flatgalaxies
+    def get_all_stars(self):
+        galaxydata = [galaxy.get_stars() for galaxy in self.galaxies]
+        x = [galaxy[0] for galaxy in galaxydata]; x = np.array([coord for xs in x for coord in xs])
+        y = [galaxy[1] for galaxy in galaxydata]; y = np.array([coord for xs in y for coord in xs])
+        z = [galaxy[2] for galaxy in galaxydata]; z = np.array([coord for xs in z for coord in xs])
+        colours = [galaxy[3] for galaxy in galaxydata]; colours = [coord for xs in colours for coord in xs]
+        scales = [galaxy[4] for galaxy in galaxydata]; scales = np.array([coord for xs in scales for coord in xs])
+        stars = np.array([x, y, z, colours, scales])
+        return stars
+    def get_blackholes(self):
+        blackholes = [galaxy.blackhole for galaxy in self.galaxies]
+        return blackholes
     
     def explode_supernovae(self, frequency):
         '''

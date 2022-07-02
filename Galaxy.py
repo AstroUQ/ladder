@@ -881,12 +881,13 @@ class Galaxy(object):
             The number count of scatter particles per equat/polar bin. 
         '''
         x, y, z, radius = self.blackhole.get_BH_radio()
-        phi = self.rotation
-        points = np.array([x, y, z])
-        points = np.dot(self.galaxyrotation(phi[0], 'x'), points) # radio scatter is centered at the origin, 
-        points = np.dot(self.galaxyrotation(phi[1], 'y'), points) # so we need to rotate it in the same way as the galaxy was
-        points = np.dot(self.galaxyrotation(phi[2], 'z'), points)
-        x, y, z = points
+        if self.rotate == True:
+            phi = self.rotation
+            points = np.array([x, y, z])
+            points = np.dot(self.galaxyrotation(phi[0], 'x'), points) # radio scatter is centered at the origin, 
+            points = np.dot(self.galaxyrotation(phi[1], 'y'), points) # so we need to rotate it in the same way as the galaxy was
+            points = np.dot(self.galaxyrotation(phi[2], 'z'), points)
+            x, y, z = points
         x, y, z = x + self.cartesian[0], y + self.cartesian[1], z + self.cartesian[2] # and now translate it to where the galaxy is
         equat, polar, distance = self.cartesian_to_spherical(x, y, z)
             

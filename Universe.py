@@ -21,13 +21,17 @@ class Universe(object):
         self.supernovae = self.explode_supernovae(min(55, len(self.galaxies)))
     
     def generate_clusters(self):
+        ''' Generate all of the galaxy clusters in the universe.
+        Returns
+        -------
+        clusters : list
+            List of GalaxyCluster objects
         '''
-        '''
-        threshold = 100000
+        threshold = 100000  # the distance threshold at which galaxies are simulated in low resolution form
         population = self.clusterpop
         clusters = []
 
-        equat = np.random.uniform(0, 360, population)
+        equat = np.random.uniform(0, 360, population)   # generate cluster positions in sky
         polar = np.random.uniform(0, 180, population)
         
         lowerbound = 2000 / self.radius     # we want a certain area around the origin to be empty (to make space for the local cluster)
@@ -36,19 +40,19 @@ class Universe(object):
         else:
             median = threshold / self.radius    # we want half of the galaxies to be resolved, half to not be
             mean = median / np.log(2)       #  the mean of the exponential distribution is = median / ln(2)
-            dists = np.random.exponential(mean, population) + lowerbound    # we don't want galaxy clusters within the lowerbounded sphere
+            dists = np.random.exponential(mean**3, population) + lowerbound    # we don't want galaxy clusters within the lowerbounded sphere
         R = self.radius * np.cbrt(dists)
         
-        populations = np.random.exponential(8, population)
-        populations = [1 if pop < 1 else int(pop) for pop in populations]
+        populations = np.random.exponential(8, population)  # generate number of galaxies per cluster
+        populations = [1 if pop < 1 else int(pop) for pop in populations]   # make sure each cluster has at least one galaxy
         
-        localequat = np.random.uniform(0, 360); localpolar = np.random.uniform(45, 135)
+        localequat = np.random.uniform(0, 360); localpolar = np.random.uniform(45, 135)     # choose position of local cluster in the sky
 
         for i in tqdm(range(self.clusterpop)):
             pos = (equat[i], polar[i], R[i])
-            if i == self.clusterpop - 1:
+            if i == self.clusterpop - 1:    # make the last cluster in the list the local cluster
                 clusters.append(GalaxyCluster((localequat, localpolar, 2000), 15, local=True, complexity=self.complexity))
-            elif R[i] > threshold:
+            elif R[i] > threshold:  # this must be a distant galaxy
                 clusters.append(GalaxyCluster(pos, populations[i], complexity="Distant"))
             else:
                 clusters.append(GalaxyCluster(pos, populations[i], complexity=self.complexity))
@@ -68,7 +72,7 @@ class Universe(object):
         z = [galaxy[2] for galaxy in galaxydata]; z = np.array([coord for xs in z for coord in xs])
         colours = [galaxy[3] for galaxy in galaxydata]; colours = [coord for xs in colours for coord in xs]
         scales = [galaxy[4] for galaxy in galaxydata]; scales = np.array([coord for xs in scales for coord in xs])
-        stars = np.array([x, y, z, colours, scales])
+        stars = [x, y, z, colours, scales]
         return stars
     def get_blackholes(self):
         blackholes = [galaxy.blackhole for galaxy in self.galaxies]

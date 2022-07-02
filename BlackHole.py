@@ -39,7 +39,11 @@ class BlackHole(object):
         return m
     
     def eddington_luminosity(self, mass):
-        ''' Eddington luminosity for an accreting black hole. 
+        ''' Approximate Eddington luminosity for an accreting black hole. 
+        Parameters
+        ----------
+        mass : float
+            Mass of the black hole (solar masses)
         '''
         return 3 * 10**4 * (mass)
     
@@ -48,7 +52,7 @@ class BlackHole(object):
     def get_BH_lumin(self):
         return self.luminosity
     def get_BH_colour(self):
-        ''' Quasar RGB colour. 
+        ''' Quasar RGB colour. Source: http://www.vendian.org/mncharity/dir3/starcolor/
         '''
         return np.array([73, 214, 255]) / 255
     def get_BH_radio(self):

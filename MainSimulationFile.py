@@ -49,9 +49,8 @@ class UniverseSim(object):
         '''
         '''
         fig, ax = plt.subplots()
-        stars = np.array(self.stars)
+        stars = self.stars
         x, y, z, colours, scales = stars[0], stars[1], stars[2], stars[3], stars[4]
-        # scales = scales.astype(float)
         equat, polar, radius = self.cartesian_to_spherical(x, y, z)
         
         for i, blackhole in enumerate(self.blackholes):
@@ -63,16 +62,14 @@ class UniverseSim(object):
                 ax.errorbar(BHequat, BHpolar, yerr=spikesize, xerr=spikesize, ecolor=BHcolour, fmt='none', elinewidth=0.3, alpha=0.5)
             ax.scatter(BHequat, BHpolar, color=BHcolour, s=BHscale)
         
-        # scales = [scales[i] / (0.05 * radius[i]) if self.galaxies[i].complexity != "Distant" else scales[i] / (0.001 * radius[i]) for i in range(len(x))]
-        # j = [len(stars) for stars in]
-        j = np.zeros(len(self.galaxies)+1)
+        j = np.zeros(len(self.galaxies) + 1)
         for i, galaxy in enumerate(self.galaxies):
             pop = len(galaxy.get_stars()[0])
-            j[i+1] = pop
-        for i, pop in enumerate(j):
-            if i != 0:
-                j[i] = sum(j[:i])
-        scales = [[scales[i+j[k]] / (0.05 * radius[i+j[k]]) if galaxy.complexity != "Distant" else scales[i+j[k]] / (0.001 * radius[i+j[k]]) for i in range(len(galaxy.get_stars()[0]))] for k, galaxy in enumerate(self.galaxies)]
+            j[i+1] = int(pop)
+        cumpops = [int(sum(j[:i + 1])) if i != 0 else int(j[i]) for i in range(len(j))]
+        scales = [[scales[i+cumpops[k]] / (0.05 * radius[i+cumpops[k]]) if galaxy.complexity != "Distant" 
+                   else scales[i+cumpops[k]] / (0.001 * radius[i+cumpops[k]]) for i in range(len(galaxy.get_stars()[0]))] 
+                  for k, galaxy in enumerate(self.galaxies)]
         scales = [scale for galaxy in scales for scale in galaxy]
         if spikes == True:
             brightequat, brightpolar, brightscale, brightcolour = [], [], [], np.empty((0, 3))
@@ -113,33 +110,14 @@ class UniverseSim(object):
         density : numpy array (NxN)
             The number count of scatter particles per equat/polar bin. 
         '''
-        # x, y, z, radius = [blackhole.get_BH_radio() for blackhole in self.blackholes]
         
-        # phi = self.rotation
-        # points = np.array([x, y, z])
-        # points = np.dot(self.galaxyrotation(phi[0], 'x'), points) # radio scatter is centered at the origin, 
-        # points = np.dot(self.galaxyrotation(phi[1], 'y'), points) # so we need to rotate it in the same way as the galaxy was
-        # points = np.dot(self.galaxyrotation(phi[2], 'z'), points)
-        # x, y, z = points
-        # x, y, z = x + self.cartesian[0], y + self.cartesian[1], z + self.cartesian[2] # and now translate it to where the galaxy is
-        # equat, polar, distance = self.cartesian_to_spherical(x, y, z)
-            
-        # extent = [[min(equat) - 3, max(equat) + 3], [min(polar) - 3, max(polar) + 3]]   # this is so that the edge of the contours aren't cut off
-        # density, equatedges, polaredges = np.histogram2d(equat, polar, bins=len(equat)//50, range=extent, density=False)
-        # equatbins = equatedges[:-1] + (equatedges[1] - equatedges[0]) / 2   # this fixes the order of the bins, and centers the bins at the midpoint
-        # polarbins = polaredges[:-1] + (polaredges[1] - polaredges[0]) / 2
+        # equatbins, polarbins, density = [galaxy.plot_radio_contour(0, plot=False, data=True) for galaxy in self.galaxies]
 
-        # density = density.T      # take the transpose of the density matrix
-        # density = scipy.ndimage.zoom(density, 2)    # this smooths out the data so that it's less boxy and more curvey
-        # equatbins = scipy.ndimage.zoom(equatbins, 2)
-        # polarbins = scipy.ndimage.zoom(polarbins, 2)
-        # # density = scipy.ndimage.gaussian_filter(density, sigma=1)  # this smooths the area density even moreso (not necessary, but keeping for posterity)
-        
-        equatbins, polarbins, density = [galaxy.plot_radio_contour(0, plot=False, data=True) for galaxy in self.galaxies]
-        
         if plot == True:    # plot the contour
             levels = [2, 3, 4, 5, 6, 10, 15]    # having the contour levels start at 2 removes the noise from the smoothing - important!!
-            ax.contour(equatbins, polarbins, density, levels, corner_mask=True)     # plot the radio contours
+            for galaxy in self.galaxies:
+                equatbins, polarbins, density = galaxy.plot_radio_contour(0, plot=False, data=True)
+                ax.contour(equatbins, polarbins, density, levels, corner_mask=True)     # plot the radio contours
             ax.set_ylim(0, 180); ax.set_xlim(0, 360)
             ax.invert_yaxis();
         if data == True:
@@ -165,7 +143,7 @@ class UniverseSim(object):
         equat, polar, radius : numpy array
             equatorial and polar angles (in degrees), and radius from origin
         '''
-        x = x.astype(float); y = y.astype(float); z = z.astype(float)
+        # x = x.astype(float); y = y.astype(float); z = z.astype(float)
         radius = np.sqrt(x**2 + y**2 + z**2)
         equat = np.arctan2(y, x)    #returns equatorial angle in radians, maps to [-pi, pi]
         polar = np.arccos(z / radius)
@@ -224,16 +202,17 @@ def main():
     # galaxy.plot_2d(fig, ax, spikes=True, radio=True)
     # galaxy2.plot_2d(fig, ax, spikes=True, radio=True)
     # galaxy3.plot_2d(fig, ax, spikes=True, radio=True)
+    
+    
     # t0 = time()
     # cluster = GalaxyCluster((180, 90, 2000), 8)
     # cluster = GalaxyCluster((180, 90, 20000), 50, complexity="Distant")
-    
-    
     # plot_all_2d(cluster.galaxies)
     # plot_all_3d(cluster.galaxies)
-    
     # t1 = time()
     # total = t1 - t0
+    
+    
     # print("Time taken =", total, "s")
     # universe = Universe(450000, 2)
     # flatgalaxies = universe.get_all_galaxies()
@@ -242,7 +221,8 @@ def main():
     # t1 = time(); total = t1 - t0; print("Time taken =", total, "s")
     # print(universe.get_all_stars())
     
-    sim = UniverseSim(2)
+    
+    sim = UniverseSim(20)
     t0 = time()
     sim.plot_universe()
     t1 = time(); total = t1 - t0; print("Time taken =", total, "s")

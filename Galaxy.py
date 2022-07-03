@@ -105,7 +105,7 @@ class Galaxy(object):
             index = self.species
         radlookup = {"S0":[90, 8], "Sa":[80, 8], "Sb":[75, 6], "Sc":[70, 5],
                       "SBa":[90, 10], "SBb":[85, 7], "SBc":[75, 5],
-                      "cD":[300, 60], "E":[200 - 20 * num, 40 / (num + 1)]}
+                      "cD":[200, 60], "E":[200 - 20 * num, 40 / (num + 1)]}
         mean, SD = radlookup[index]
         radius = np.random.normal(mean, SD)
         if self.complexity == "Basic":

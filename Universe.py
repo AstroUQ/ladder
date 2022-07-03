@@ -32,7 +32,9 @@ class Universe(object):
         clusters = []
 
         equat = np.random.uniform(0, 360, population)   # generate cluster positions in sky
-        polar = np.random.uniform(0, 180, population)
+        # polar = np.random.uniform(0, 180, population)
+        polar = np.random.uniform(-1, 1, population)
+        polar = np.arccos(polar); polar = np.rad2deg(polar)
         
         lowerbound = 2000 / self.radius     # we want a certain area around the origin to be empty (to make space for the local cluster)
         if self.homogeneous:
@@ -65,7 +67,7 @@ class Universe(object):
         clusters = [cluster.galaxies for cluster in self.clusters]
         flatgalaxies = [galaxy for cluster in clusters for galaxy in cluster]
         return flatgalaxies
-    def get_all_stars(self):
+    def get_all_starpositions(self):
         galaxydata = [galaxy.get_stars() for galaxy in self.galaxies]
         x = [galaxy[0] for galaxy in galaxydata]; x = np.array([coord for xs in x for coord in xs])
         y = [galaxy[1] for galaxy in galaxydata]; y = np.array([coord for xs in y for coord in xs])

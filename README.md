@@ -12,5 +12,4 @@ I am intending to emulate the "Distance Ladder" universe simulation that was a p
  - Generate a new type of galaxy (very distant) that is not comprised of stars
     - Needs size (arcseconds), luminosity data, radial velocity and position. 
  - Data output/creation:
-    - Generate parallax angles for all stars
-	- Divide luminosities by distance squared
+	- Add together radial velocities for stars/galaxies/galaxy clusters, etc and put them in the stardata file

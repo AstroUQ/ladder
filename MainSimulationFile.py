@@ -11,6 +11,7 @@ import matplotlib.ticker as ticker
 from matplotlib import colors
 from multiprocessing import Pool
 import numpy as np
+import os
 import pandas as pd
 import scipy.ndimage                     # this is to smooth out the BH radio lobes
 from time import time
@@ -38,18 +39,22 @@ def plot_all_3d(galaxies):
         galaxy.plot_3d(ax, camera=False)
 
 class UniverseSim(object):
-    def __init__(self, numclusters):
+    def __init__(self, numclusters, seed=3080):
+        '''
+        '''
+        np.random.seed(seed)
+        self.seed = seed
         self.universe = Universe(450000, numclusters)
         self.galaxies = self.universe.get_all_galaxies()
         self.supernovae = self.universe.supernovae
-        self.stars = self.universe.get_all_stars()
-        self.blackholes = self.universe.get_blackholes()
+        self.starpositions = self.universe.get_all_starpositions()
+        self.blackholes = self.universe.get_blackholes()    
         
-    def plot_universe(self, spikes=True, radio=False):
+    def plot_universe(self, spikes=True, radio=False, save=False):
         '''
         '''
         fig, ax = plt.subplots()
-        stars = self.stars
+        stars = self.starpositions
         x, y, z, colours, scales = stars[0], stars[1], stars[2], stars[3], stars[4]
         equat, polar, radius = self.cartesian_to_spherical(x, y, z)
         
@@ -60,7 +65,10 @@ class UniverseSim(object):
             if spikes == True and BHscale > 2.5: 
                 spikesize = BHscale / 2
                 ax.errorbar(BHequat, BHpolar, yerr=spikesize, xerr=spikesize, ecolor=BHcolour, fmt='none', elinewidth=0.3, alpha=0.5)
-            ax.scatter(BHequat, BHpolar, color=BHcolour, s=BHscale)
+            if save == True:
+                ax.scatter(BHequat, BHpolar, color=BHcolour, s=BHscale, linewidths=0)
+            else:
+                ax.scatter(BHequat, BHpolar, color=BHcolour, s=BHscale)
         
         j = np.zeros(len(self.galaxies) + 1)
         for i, galaxy in enumerate(self.galaxies):
@@ -81,7 +89,11 @@ class UniverseSim(object):
                     brightcolour = np.append(brightcolour, [colours[i]], axis=0)
             ax.errorbar(brightequat, brightpolar, yerr=brightscale, xerr=brightscale, ecolor=brightcolour, fmt='none', elinewidth=0.3)
         scales = [3 if scale > 3 else abs(scale) for scale in scales]
-        ax.scatter(equat, polar, s=scales, c=colours)
+        if save == True:
+            # ax.scatter(equat, polar, s=scales, c=colours, marker='.')
+            ax.scatter(equat, polar, s=scales, c=colours, linewidths=0)
+        else:
+            ax.scatter(equat, polar, s=scales, c=colours)
         ax.set_xlim(0, 360); ax.set_ylim(0, 180)
         ax.set_facecolor('k')
         ax.set_aspect(1)
@@ -91,6 +103,8 @@ class UniverseSim(object):
         ax.set_ylabel("Polar Angle (degrees)")
         if radio == True:
             self.plot_radio(ax)
+        if save == True:
+            return fig
     
     def plot_radio(self, ax, plot=True, scatter=False, data=False):
         ''' Plot the radio contours of the SMBH emission onto a 2D sky plot. 
@@ -112,7 +126,6 @@ class UniverseSim(object):
         '''
         
         # equatbins, polarbins, density = [galaxy.plot_radio_contour(0, plot=False, data=True) for galaxy in self.galaxies]
-
         if plot == True:    # plot the contour
             levels = [2, 3, 4, 5, 6, 10, 15]    # having the contour levels start at 2 removes the noise from the smoothing - important!!
             for galaxy in self.galaxies:
@@ -123,6 +136,81 @@ class UniverseSim(object):
         if data == True:
             return equatbins, polarbins, density
             # equat/polar are 1xN matrices, whereas density is a NxN matrix. 
+            
+    def save_data(self, pic=True, stars=True, distantgalax=True, variable=True, supernovae=True):
+        ''' Generates some data, takes other data, and saves it to the system in a new directory within the file directory.
+        Parameters
+        ----------
+        pic : bool
+            Whether to generate and save a 2d plot of the universe.
+        stars : bool
+            Generate and save star data
+        distantgalax : bool
+            Generate and save distant galaxy data
+        variable : bool
+            Generate and save variable star data within a subdirectory
+        supernovae : bool
+            Generate and save supernovae data
+        '''
+        print("Starting data saving..."); t0 = time()
+        # first, initialise the directory where all data will be saved
+        self.directory = os.path.dirname(os.path.realpath(__file__))    # this is where this .py file is located on the system
+        self.datadirectory = self.directory + f"\\Sim Data {self.seed}"
+        if os.path.exists(self.datadirectory):  # if this directory exists, we need to append a number to the end of it
+            i = 1
+            while os.path.exists(self.datadirectory):   # this accounts for multiple copies that may exist
+                self.datadirectory = self.directory + f"\\Sim Data {self.seed} ({i})"   # add the number to the end
+                i += 1
+            os.makedirs(self.datadirectory)     # now create the duplicate directory with the number on the end
+        else:
+            os.makedirs(self.datadirectory)     # if directory doesn't exist, create it
+        
+        if pic:
+            fig = self.plot_universe(save=True)
+            fig.set_size_inches(12, 6, forward=True)
+            fig.savefig(self.datadirectory + '\\Universe Image.png', dpi=1500, bbox_inches='tight', pad_inches = 0.01)
+            fig.savefig(self.datadirectory + '\\Universe Image.pdf', dpi=1500, bbox_inches='tight', pad_inches = 0.01)
+            
+        if stars:   # generate and save star data
+            #firstly, get star xyz positions and convert them to equatorial/polar
+            starpos = self.starpositions    
+            x, y, z, _, _ = starpos[0], starpos[1], starpos[2], starpos[3], starpos[4]
+            equat, polar, radius = self.cartesian_to_spherical(x, y, z)
+            
+            # generate parallax according to p = 1/d (pc) formula, with +/- 1 arcsecond of uncertainty
+            parallax = (1 / radius) + np.random.uniform(-0.001, 0.001, len(radius))    
+            parallax = [angle if angle >= 0.001 else 0 for angle in parallax]
+            parallax = np.around(parallax, decimals=3)
+            
+            # round position values to 4 decimal places which is about ~1/3 of an arcsecond (or rather 0.0001 degrees)
+            equat = np.around(equat, decimals=4); polar = np.around(polar, decimals=4);  
+            
+            # now generate names for each star
+            width = int(-(-np.log10(len(equat)) // 1))   # find the "size" of the number of stars, and round up to the closest decimal
+            names = [f"S{i:0{width}d}" for i in range(len(equat))]   # generate pretty useless names for each of the stars
+            
+            # now to work with the band luminosity data. First, get the data for each star in the universe
+            blueflux = [[star.bandlumin[0] for star in galaxy.stars] for galaxy in self.galaxies]
+            greenflux = [[star.bandlumin[1] for star in galaxy.stars] for galaxy in self.galaxies]
+            redflux = [[star.bandlumin[2] for star in galaxy.stars] for galaxy in self.galaxies]
+            # now, flatten the above arrays and divide them by the distance to the star, squared
+            blueflux = np.array([flux for galaxy in blueflux for flux in galaxy]) / (3.086 * 10**16 * radius)**2
+            greenflux = np.array([flux for galaxy in greenflux for flux in galaxy]) / (3.086 * 10**16 * radius)**2
+            redflux = np.array([flux for galaxy in redflux for flux in galaxy]) / (3.086 * 10**16 * radius)**2
+            blueflux = [format(flux, '.3e') for flux in blueflux]   # now round each data point to 3 decimal places
+            greenflux = [format(flux, '.3e') for flux in greenflux]; redflux = [format(flux, '.3e') for flux in redflux]
+            
+            obsvel = np.zeros(len(equat))
+            
+            # now, write all star data to a pandas dataframe
+            stardata = {'Name':names, 'Equatorial':equat, 'Polar':polar,        # units of the equat/polar are in degrees
+                        'BlueF':blueflux, 'GreenF':greenflux, 'RedF':redflux,   # units of these fluxes are in W/m^2/nm
+                        'Parallax':parallax, 'RadialVelocity':obsvel}
+            starfile = pd.DataFrame(stardata)
+            
+            starfile.to_csv(self.datadirectory + "\\Star Data.txt", index=None, sep=' ')    # and finally save the dataframe to the directory
+            
+        t1 = time(); total = t1 - t0; print("Data generated and saved in =", total, "s")
     
     def cartesian_to_spherical(self, x, y, z):
         ''' Converts cartesian coordinates to spherical ones (formulae taken from wikipedia) in units of degrees. 
@@ -143,7 +231,6 @@ class UniverseSim(object):
         equat, polar, radius : numpy array
             equatorial and polar angles (in degrees), and radius from origin
         '''
-        # x = x.astype(float); y = y.astype(float); z = z.astype(float)
         radius = np.sqrt(x**2 + y**2 + z**2)
         equat = np.arctan2(y, x)    #returns equatorial angle in radians, maps to [-pi, pi]
         polar = np.arccos(z / radius)
@@ -222,10 +309,11 @@ def main():
     # print(universe.get_all_stars())
     
     
-    sim = UniverseSim(20)
+    sim = UniverseSim(2)
     t0 = time()
-    sim.plot_universe()
+    # sim.plot_universe()
     t1 = time(); total = t1 - t0; print("Time taken =", total, "s")
+    sim.save_data()
     
 if __name__ == "__main__":
     main()

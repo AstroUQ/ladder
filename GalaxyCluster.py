@@ -32,7 +32,7 @@ class GalaxyCluster(object):
             self.cartesian = self.spherical_to_cartesian(position[0], position[1], position[2])
         
         self.galaxies, self.galaxmasses, self.galaxorbits, self.galaxpositions = self.generate_galaxies(population)
-        self.galaxvels, self.ObsGalaxVels = self.rotation_vels()
+        self.galaxvels, self.ObsGalaxVels, self.directions = self.rotation_vels()
     
     def generate_galaxy(self, species, position, local):
         ''' Generate a Galaxy class object.
@@ -220,7 +220,7 @@ class GalaxyCluster(object):
             # the dot product above gets the radial component of the velocity (thank you Ciaran!! - linear algebra is hard)
 
         VelObsArray = velarray * velprops   # multiply the actual velocities by the line of sight proportion of the velocity magnitude
-        return velarray, VelObsArray
+        return velarray, VelObsArray, direction
             
     def cartesian_to_spherical(self, x, y, z):
         ''' Converts cartesian coordinates to spherical ones (formulae taken from wikipedia) in units of degrees. 

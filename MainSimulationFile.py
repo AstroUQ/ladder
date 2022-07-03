@@ -135,9 +135,47 @@ class UniverseSim(object):
             ax.invert_yaxis();
         if data == True:
             return equatbins, polarbins, density
-            # equat/polar are 1xN matrices, whereas density is a NxN matrix. 
+        
+    def plot_doppler(self, save=False):
+        '''
+        '''
+        fig, (ax, cbar_ax) = plt.subplots(1, 2, gridspec_kw={'width_ratios': [30,1]})
+        stars = self.starpositions
+        x, y, z, _, scales = stars[0], stars[1], stars[2], stars[3], stars[4]
+        equat, polar, radius = self.cartesian_to_spherical(x, y, z)
+        
+        obsvel = []
+        for i, cluster in enumerate(self.universe.clusters):
+            for j, galaxy in enumerate(cluster.galaxies):
+                vels = np.array(galaxy.ObsStarVels[1]) + cluster.ObsGalaxVels[1, j] + self.universe.clustervels[i]
+                obsvel.append(vels)
+        obsvel = [starvel for galaxy in obsvel for starvel in galaxy]
+        
+        minvel = min(obsvel); maxvel = max(obsvel)
+        if maxvel < -minvel:    # this conditional normalises the colourbar such that v=0 is in the middle of the max and min vel
+            maxvel = -minvel
+        else:
+            minvel = -maxvel
+    
+        cm = plt.cm.get_cmap('bwr')     # blue => white => red colourmap
+        red = ax.scatter(equat, polar, c=obsvel, vmin=minvel, vmax=maxvel, cmap=cm , marker='.', s=scales)  # note the colourmap for the redshift amount
+        
+        cbar = fig.colorbar(red, cax=cbar_ax)   # apply the colourbar to the cbar axes.
+        cbar.set_label('Radial Velocity (km/s)', rotation=90)
+
+        ax.set_xlim(0, 360); ax.set_ylim(0, 180)
+        ax.set_facecolor('k')
+        ax.set_aspect(1)    # sets it to be twice as wide as high, so that angular ratios are preserved
+        fig.tight_layout()
+        ax.invert_yaxis()
+        ax.set_xlabel("Equatorial Angle (degrees)")
+        ax.set_ylabel("Polar Angle (degrees)")
+        
+        if save == True:
+            return fig
+        
             
-    def save_data(self, pic=True, stars=True, distantgalax=True, variable=True, supernovae=True):
+    def save_data(self, pic=True, stars=True, distantgalax=True, variable=True, supernovae=True, doppler=True):
         ''' Generates some data, takes other data, and saves it to the system in a new directory within the file directory.
         Parameters
         ----------
@@ -170,6 +208,12 @@ class UniverseSim(object):
             fig.set_size_inches(12, 6, forward=True)
             fig.savefig(self.datadirectory + '\\Universe Image.png', dpi=1500, bbox_inches='tight', pad_inches = 0.01)
             fig.savefig(self.datadirectory + '\\Universe Image.pdf', dpi=1500, bbox_inches='tight', pad_inches = 0.01)
+        
+        if doppler:
+            fig = self.plot_doppler(save=True)
+            fig.set_size_inches(12, 6, forward=True)
+            fig.savefig(self.datadirectory + '\\Doppler Image.png', dpi=1500, bbox_inches='tight', pad_inches = 0.01)
+            fig.savefig(self.datadirectory + '\\Doppler Image.pdf', dpi=1500, bbox_inches='tight', pad_inches = 0.01)
             
         if stars:   # generate and save star data
             #firstly, get star xyz positions and convert them to equatorial/polar
@@ -200,7 +244,16 @@ class UniverseSim(object):
             blueflux = [format(flux, '.3e') for flux in blueflux]   # now round each data point to 3 decimal places
             greenflux = [format(flux, '.3e') for flux in greenflux]; redflux = [format(flux, '.3e') for flux in redflux]
             
-            obsvel = np.zeros(len(equat))
+            # obsvel = np.zeros(len(equat))
+            obsvel = []
+            for i, cluster in enumerate(self.universe.clusters):
+                for j, galaxy in enumerate(cluster.galaxies):
+                    vels = np.array(galaxy.ObsStarVels[1]) + cluster.ObsGalaxVels[1, j] + self.universe.clustervels[i]
+                    obsvel.append(vels)
+            print(obsvel)
+            obsvel = [starvel for galaxy in obsvel for starvel in galaxy]
+            print(obsvel)
+            print(len(obsvel), len(equat))
             
             # now, write all star data to a pandas dataframe
             stardata = {'Name':names, 'Equatorial':equat, 'Polar':polar,        # units of the equat/polar are in degrees
@@ -310,10 +363,7 @@ def main():
     
     
     sim = UniverseSim(2)
-    t0 = time()
-    # sim.plot_universe()
-    t1 = time(); total = t1 - t0; print("Time taken =", total, "s")
-    sim.save_data()
+    sim.save_data(pic=False)
     
 if __name__ == "__main__":
     main()

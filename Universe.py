@@ -16,7 +16,8 @@ class Universe(object):
         self.radius = radius
         self.complexity = complexity
         self.homogeneous = homogeneous
-        self.clusters = self.generate_clusters()
+        self.hubble = 1000
+        self.clusters, self.clustervels = self.generate_clusters()
         self.galaxies = self.get_all_galaxies()
         self.supernovae = self.explode_supernovae(min(55, len(self.galaxies)))
     
@@ -58,8 +59,10 @@ class Universe(object):
                 clusters.append(GalaxyCluster(pos, populations[i], complexity="Distant"))
             else:
                 clusters.append(GalaxyCluster(pos, populations[i], complexity=self.complexity))
-
-        return clusters
+        
+        clustervels = (self.hubble * R / (10**6)) * np.random.normal(1, 0.05, len(R))  # the radial velocity of each cluster according to v = HD
+        
+        return clusters, clustervels
     
     def get_all_galaxies(self):
         '''

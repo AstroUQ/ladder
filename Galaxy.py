@@ -43,7 +43,7 @@ class Galaxy(object):
                           self.starpositions[1] - self.cartesian[1], 
                           self.starpositions[2] - self.cartesian[2]]
         self.starorbits = self.star_orbits(starorbitradii[0], starorbitradii[1], starorbitradii[2])
-        self.starvels, self.ObsStarVels, self.darkmattermass = self.rotation_vels()
+        self.starvels, self.ObsStarVels, self.darkmattermass, self.directions = self.rotation_vels()
         self.galaxymass = sum(self.starmasses) + self.darkmattermass
         
     def galaxyrotation(self, angle, axis):
@@ -448,6 +448,8 @@ class Galaxy(object):
             if self.darkmatter == True:
                 M += darkMass(R)    # add the average mass of dark matter inside the radius R
                 darkvel[i] = (np.sqrt(G * M / R) / 1000)    # newtonian approximation, now including dark matter
+            else:
+                darkvel[i] = vel[i]
         # R = MassRadii[:, 1]
         # # now to sum up all of the mass inside the radius R
         # M = np.array([sum([MassRadii[n, 0] if MassRadii[n, 1] < r else 0 for n in range(len(MassRadii))]) + BHmass for r in R])
@@ -517,7 +519,7 @@ class Galaxy(object):
             # the dot product above gets the radial component of the velocity (thank you Ciaran!! - linear algebra is hard)
 
         VelObsArray = velarray * velprops   # multiply the actual velocities by the line of sight proportion of the velocity magnitude
-        return velarray, VelObsArray, darkmattermass
+        return velarray, VelObsArray, darkmattermass, direction
     
     def plot_RotCurve(self, newtapprox=False, observed=False):
         ''' Produces a rotation curve of this galaxy. If the galaxy has dark matter and the user opts to display the newtonian

@@ -100,7 +100,11 @@ class GalaxyCluster(object):
             localdist = np.random.uniform(10, 65)   # we don't want the observer in the center of the galaxy, but also not outside of it
             localx, localy, localz = self.spherical_to_cartesian(180, 90, localdist)
             args[-1] = (localgalaxy, [localx, localy, localz], False)   # replace the last galaxy in the cluster with this galaxy, with no rotation!
-        
+            # galaxpositions[-1, :] = np.array([localx, localy, localz])
+            galaxpositions[-1, 0] = localx
+            galaxpositions[-1, 1] = localy
+            galaxpositions[-1, 2] = localz
+            orbitradii[-1] = np.sqrt(localx**2 + localy**2 + localz**2)
         # now, use multiprocessing to generate the galaxies in the cluster according to the arguments above and their positions
         with Pool() as pool:
             galaxies = pool.starmap(self.generate_galaxy, args)
@@ -168,7 +172,7 @@ class GalaxyCluster(object):
             if self.darkmatter == False, then darkvel is an array of zeros
         '''
         if self.darkmatter == True:     # time to initialise dark matter properties 
-            density = 0.001 # solar masses per cubic parsec
+            density = 0.00001 # solar masses per cubic parsec
             scalerad = 1.3 * self.radius  # parsec
             Rs = scalerad * 3.086 * 10**16  # convert scalerad to meters
             p0 = density * (1.988 * 10**30 / (3.086 * 10**16)**3) # convert density to kg/m^3
@@ -188,6 +192,8 @@ class GalaxyCluster(object):
             if self.darkmatter == True:
                 M += darkMass(R)    # add the average mass of dark matter inside the radius R
                 darkvel[i] = (np.sqrt(G * M / R) / 1000)    # newtonian approximation, now including dark matter
+            else:
+                darkvel[i] = vel[i]
         
         velarray = np.array([vel, darkvel]) * np.random.normal(1, 0.01, len(vel))
 

@@ -44,12 +44,77 @@ class UniverseSim(object):
         '''
         np.random.seed(seed)
         self.seed = seed
-        self.universe = Universe(450000, numclusters)
+        self.hubble = 1000
+        self.universe = Universe(450000, self.hubble, numclusters)
         self.galaxies = self.universe.get_all_galaxies()
         self.supernovae = self.universe.supernovae
         self.starpositions = self.universe.get_all_starpositions()
         self.blackholes = self.universe.get_blackholes()    
         
+    def get_radial_velocities(self):
+        stars = self.starpositions
+        x, y, z, _, _ = stars[0], stars[1], stars[2], stars[3], stars[4]
+        equat, polar, radius = self.cartesian_to_spherical(x, y, z)
+        
+        locgalaxymovement = self.universe.clusters[-1].directions[:, -1]  # the local galaxy is the last galaxy in the last cluster
+        localgalaxydist = self.universe.clusters[-1].galaxies[-1].spherical[2]
+        localgalaxy = self.universe.clusters[-1].galaxies[-1]
+        closestar = min(localgalaxy.starorbits, key=lambda x:abs(x - localgalaxydist))
+        # closestarindex = localgalaxy.starorbits.index[closestar]
+        closestarindex = np.where(localgalaxy.starorbits == closestar)
+        approxlocalstarvel = localgalaxy.starvels[1, closestarindex[0]]
+        localstarmovement = approxlocalstarvel * np.array([0, 1, np.random.normal(0, 0.05)])
+        print(approxlocalstarvel)
+        # print(locgalaxymovement)
+        print(localstarmovement)
+        
+        galaxydirection = []
+        for cluster in self.universe.clusters:
+            for i in range(len(cluster.galaxies)):
+                # add the vector of the local galaxy movement with the current galaxy movement
+                galaxydirection.append(cluster.directions[:, i]) 
+        galaxydirection = np.array(galaxydirection)
+        
+        stardirections = []
+        for h, cluster in enumerate(self.universe.clusters):
+            galaxyvels = cluster.galaxvels[1, :]
+            for i, galaxy in enumerate(cluster.galaxies):
+                stardirection = galaxy.directions
+                starvels = galaxy.starvels[1, :]
+                galaxyvel = galaxyvels[i]
+                for j in range(len(stardirection[0, :])):
+                    if h == len(self.universe.clusters) - 1 and i == len(cluster.galaxies) - 1:      # must be the local galaxy
+                        stardirection[:, j] = (stardirection[:, j] * starvels[j])
+                    else:
+                        stardirection[:, j] = (stardirection[:, j] * starvels[j]) + (galaxydirection[i] * galaxyvel)
+                    stardirections.append(stardirection[:, j])
+        
+        k = 0
+        obsvel = np.zeros(len(stardirections))
+        for h, cluster in enumerate(self.universe.clusters):
+            if h != len(self.universe.clusters) - 1:
+                clustervel = self.universe.clustervels[h]
+                addclustervel = True
+            else:
+                addclustervel = False
+            for i, galaxy in enumerate(cluster.galaxies):
+                if addclustervel == False and i == len(cluster.galaxies) - 1:
+                    addgalaxyvel = False
+                else:
+                    addgalaxyvel = True
+                for j in range(len(galaxy.stars)):
+                    if addgalaxyvel:
+                        vector = stardirections[k] + locgalaxymovement + localstarmovement    # velocity vector "v"
+                    else:
+                        vector = stardirections[k] + localstarmovement
+                    coord = np.array([x[k], y[k], z[k]])    # distance vector "d"
+                    obsvel[k] = np.dot(vector, coord) / radius[k]      # dot product: (v dot d) / ||d||
+                    # the dot product above gets the radial component of the velocity (thank you Ciaran!! - linear algebra is hard)
+                    if addclustervel:
+                        obsvel[k] += clustervel
+                    k += 1
+        return obsvel
+    
     def plot_universe(self, spikes=True, radio=False, save=False):
         '''
         '''
@@ -136,20 +201,29 @@ class UniverseSim(object):
         if data == True:
             return equatbins, polarbins, density
         
-    def plot_doppler(self, save=False):
+    def plot_doppler(self, log=True, save=False):
         '''
         '''
         fig, (ax, cbar_ax) = plt.subplots(1, 2, gridspec_kw={'width_ratios': [30,1]})
         stars = self.starpositions
         x, y, z, _, scales = stars[0], stars[1], stars[2], stars[3], stars[4]
-        equat, polar, radius = self.cartesian_to_spherical(x, y, z)
+        equat, polar, _ = self.cartesian_to_spherical(x, y, z)
         
-        obsvel = []
-        for i, cluster in enumerate(self.universe.clusters):
-            for j, galaxy in enumerate(cluster.galaxies):
-                vels = np.array(galaxy.ObsStarVels[1]) + cluster.ObsGalaxVels[1, j] + self.universe.clustervels[i]
-                obsvel.append(vels)
-        obsvel = [starvel for galaxy in obsvel for starvel in galaxy]
+        obsvel = self.get_radial_velocities()
+        # obsvel = []
+        # for i, cluster in enumerate(self.universe.clusters):
+        #     for j, galaxy in enumerate(cluster.galaxies):
+        #         vels = np.array(galaxy.ObsStarVels[1])
+        #         obsvel.append(vels)
+        # obsvel = [starvel for galaxy in obsvel for starvel in galaxy]
+        # print(len(obsvel))
+        
+        # obsvel = []
+        # for i, cluster in enumerate(self.universe.clusters):
+        #     for j, galaxy in enumerate(cluster.galaxies):
+        #         vels = np.array(galaxy.ObsStarVels[1]) + cluster.ObsGalaxVels[1, j] + self.universe.clustervels[i]
+        #         obsvel.append(vels)
+        # obsvel = [starvel for galaxy in obsvel for starvel in galaxy]
         
         minvel = min(obsvel); maxvel = max(obsvel)
         if maxvel < -minvel:    # this conditional normalises the colourbar such that v=0 is in the middle of the max and min vel
@@ -158,7 +232,11 @@ class UniverseSim(object):
             minvel = -maxvel
     
         cm = plt.cm.get_cmap('bwr')     # blue => white => red colourmap
-        red = ax.scatter(equat, polar, c=obsvel, vmin=minvel, vmax=maxvel, cmap=cm , marker='.', s=scales)  # note the colourmap for the redshift amount
+        if log:
+            red = ax.scatter(equat, polar, c=obsvel, cmap=cm , marker='.', s=scales, 
+                          norm=colors.SymLogNorm(linthresh=0.03, vmin=minvel, vmax=maxvel))  # note the colourmap for the redshift amount
+        else:
+            red = ax.scatter(equat, polar, c=obsvel, vmin=minvel, vmax=maxvel, cmap=cm , marker='.', s=scales)  # note the colourmap for the redshift amount
         
         cbar = fig.colorbar(red, cax=cbar_ax)   # apply the colourbar to the cbar axes.
         cbar.set_label('Radial Velocity (km/s)', rotation=90)
@@ -175,7 +253,7 @@ class UniverseSim(object):
             return fig
         
             
-    def save_data(self, pic=True, stars=True, distantgalax=True, variable=True, supernovae=True, doppler=True):
+    def save_data(self, pic=True, stars=True, distantgalax=True, variable=True, supernovae=True, doppler=[True, False]):
         ''' Generates some data, takes other data, and saves it to the system in a new directory within the file directory.
         Parameters
         ----------
@@ -189,6 +267,9 @@ class UniverseSim(object):
             Generate and save variable star data within a subdirectory
         supernovae : bool
             Generate and save supernovae data
+        doppler : list of bool
+            First bool in list is whether or not to save a doppler graph with log scale. Second bool is whether to save a linear
+            scaled one as well.
         '''
         print("Starting data saving..."); t0 = time()
         # first, initialise the directory where all data will be saved
@@ -209,11 +290,16 @@ class UniverseSim(object):
             fig.savefig(self.datadirectory + '\\Universe Image.png', dpi=1500, bbox_inches='tight', pad_inches = 0.01)
             fig.savefig(self.datadirectory + '\\Universe Image.pdf', dpi=1500, bbox_inches='tight', pad_inches = 0.01)
         
-        if doppler:
+        if doppler[0]:
             fig = self.plot_doppler(save=True)
             fig.set_size_inches(12, 6, forward=True)
-            fig.savefig(self.datadirectory + '\\Doppler Image.png', dpi=1500, bbox_inches='tight', pad_inches = 0.01)
-            fig.savefig(self.datadirectory + '\\Doppler Image.pdf', dpi=1500, bbox_inches='tight', pad_inches = 0.01)
+            fig.savefig(self.datadirectory + '\\Doppler Image Log Scale.png', dpi=1500, bbox_inches='tight', pad_inches = 0.01)
+            fig.savefig(self.datadirectory + '\\Doppler Image Log Scale.pdf', dpi=1500, bbox_inches='tight', pad_inches = 0.01)
+            if doppler[1]:
+                fig = self.plot_doppler(log=False, save=True)
+                fig.set_size_inches(12, 6, forward=True)
+                fig.savefig(self.datadirectory + '\\Doppler Image Linear Scale.png', dpi=1500, bbox_inches='tight', pad_inches = 0.01)
+                fig.savefig(self.datadirectory + '\\Doppler Image Linear Scale.pdf', dpi=1500, bbox_inches='tight', pad_inches = 0.01)
             
         if stars:   # generate and save star data
             #firstly, get star xyz positions and convert them to equatorial/polar
@@ -245,15 +331,13 @@ class UniverseSim(object):
             greenflux = [format(flux, '.3e') for flux in greenflux]; redflux = [format(flux, '.3e') for flux in redflux]
             
             # obsvel = np.zeros(len(equat))
-            obsvel = []
-            for i, cluster in enumerate(self.universe.clusters):
-                for j, galaxy in enumerate(cluster.galaxies):
-                    vels = np.array(galaxy.ObsStarVels[1]) + cluster.ObsGalaxVels[1, j] + self.universe.clustervels[i]
-                    obsvel.append(vels)
-            print(obsvel)
-            obsvel = [starvel for galaxy in obsvel for starvel in galaxy]
-            print(obsvel)
-            print(len(obsvel), len(equat))
+            # obsvel = []
+            # for i, cluster in enumerate(self.universe.clusters):
+            #     for j, galaxy in enumerate(cluster.galaxies):
+            #         vels = np.array(galaxy.ObsStarVels[1]) + cluster.ObsGalaxVels[1, j] + self.universe.clustervels[i]
+            #         obsvel.append(vels)
+            # obsvel = [starvel for galaxy in obsvel for starvel in galaxy]
+            obsvel = self.get_radial_velocities()
             
             # now, write all star data to a pandas dataframe
             stardata = {'Name':names, 'Equatorial':equat, 'Polar':polar,        # units of the equat/polar are in degrees
@@ -362,7 +446,7 @@ def main():
     # print(universe.get_all_stars())
     
     
-    sim = UniverseSim(2)
+    sim = UniverseSim(30)
     sim.save_data(pic=False)
     
 if __name__ == "__main__":

@@ -9,14 +9,26 @@ from tqdm import tqdm     # this is a progress bar for a for loop
 from GalaxyCluster import GalaxyCluster
 
 class Universe(object):
-    def __init__(self, radius, clusters, complexity="Normal", homogeneous=False):
+    def __init__(self, radius, hubble, clusters, complexity="Normal", homogeneous=False):
         '''
+        Parameters
+        ----------
+        radius : float
+            The radius of the observable universe (in units of parsec)
+        hubble : float
+            The value of the Hubble Constant (in units of km/s/Mpc) - essentially the recession velocity of galaxies
+        clusters : int
+            The number of galaxy clusters to generate
+        complexity : str
+            Whether or not the cluster is composed of normal or 'distant' galaxies
+        homogeneous : bool
+            Whether the universe is homogeneous or not (approx constant density with distance)
         '''
-        self.clusterpop = clusters
         self.radius = radius
+        self.hubble = hubble
+        self.clusterpop = clusters
         self.complexity = complexity
         self.homogeneous = homogeneous
-        self.hubble = 1000
         self.clusters, self.clustervels = self.generate_clusters()
         self.galaxies = self.get_all_galaxies()
         self.supernovae = self.explode_supernovae(min(55, len(self.galaxies)))

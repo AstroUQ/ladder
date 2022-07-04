@@ -211,17 +211,6 @@ class UniverseSim(object):
             fig.set_size_inches(12, 6, forward=True)
             fig.savefig(self.datadirectory + '\\Universe Image.png', dpi=1500, bbox_inches='tight', pad_inches = 0.01)
             fig.savefig(self.datadirectory + '\\Universe Image.pdf', dpi=1500, bbox_inches='tight', pad_inches = 0.01)
-        
-        if doppler[0]:
-            fig = self.plot_doppler(save=True)
-            fig.set_size_inches(12, 6, forward=True)
-            fig.savefig(self.datadirectory + '\\Doppler Image Log Scale.png', dpi=1500, bbox_inches='tight', pad_inches = 0.01)
-            fig.savefig(self.datadirectory + '\\Doppler Image Log Scale.pdf', dpi=1500, bbox_inches='tight', pad_inches = 0.01)
-            if doppler[1]:
-                fig = self.plot_doppler(log=False, save=True)
-                fig.set_size_inches(12, 6, forward=True)
-                fig.savefig(self.datadirectory + '\\Doppler Image Linear Scale.png', dpi=1500, bbox_inches='tight', pad_inches = 0.01)
-                fig.savefig(self.datadirectory + '\\Doppler Image Linear Scale.pdf', dpi=1500, bbox_inches='tight', pad_inches = 0.01)
             
         if stars:   # generate and save star data
             #firstly, get star xyz positions and convert them to equatorial/polar
@@ -239,7 +228,7 @@ class UniverseSim(object):
             
             # now generate names for each star
             width = int(-(-np.log10(len(equat)) // 1))   # find the "size" of the number of stars, and round up to the closest decimal
-            names = [f"S{i:0{width}d}" for i in range(len(equat))]   # generate pretty useless names for each of the stars
+            names = [f"S{i:0{width}d}" for i in range(1, len(equat)+1)]   # generate pretty useless names for each of the stars
             
             # now to work with the band luminosity data. First, get the data for each star in the universe
             blueflux = [[star.bandlumin[0] for star in galaxy.stars] for galaxy in self.galaxies]
@@ -252,16 +241,37 @@ class UniverseSim(object):
             blueflux = [format(flux, '.3e') for flux in blueflux]   # now round each data point to 3 decimal places
             greenflux = [format(flux, '.3e') for flux in greenflux]; redflux = [format(flux, '.3e') for flux in redflux]
             
-            obsvel = self.universe.radialvelocities
+            obsvel = self.universe.radialvelocities     # retrieve the radial velocities from the universe object
             
             # now, write all star data to a pandas dataframe
             stardata = {'Name':names, 'Equatorial':equat, 'Polar':polar,        # units of the equat/polar are in degrees
                         'BlueF':blueflux, 'GreenF':greenflux, 'RedF':redflux,   # units of these fluxes are in W/m^2/nm
-                        'Parallax':parallax, 'RadialVelocity':obsvel}
+                        'Parallax':parallax, 'RadialVelocity':obsvel}           # units of parallax are in arcsec, obsvel in km/s
             starfile = pd.DataFrame(stardata)
             
             starfile.to_csv(self.datadirectory + "\\Star Data.txt", index=None, sep=' ')    # and finally save the dataframe to the directory
             
+        if supernovae:
+            pos, peak = self.supernovae
+            equats = [format(abs(equat), '3.2f') for equat in pos[0]]
+            polars = [format(abs(polar), '3.2f') for polar in pos[1]]
+            peak = [format(flux, '.3e') for flux in peak]
+            supernovadata = {"Equatorial":equats, "Polar":polars, "PeakFlux(W)":peak}
+            
+            supernovafile = pd.DataFrame(supernovadata)
+            supernovafile.to_csv(self.datadirectory + "\\Supernova Data.txt", index=None, sep=' ')
+            
+        if doppler[0]:
+            fig = self.plot_doppler(save=True)
+            fig.set_size_inches(12, 6, forward=True)
+            fig.savefig(self.datadirectory + '\\Doppler Image Log Scale.png', dpi=1500, bbox_inches='tight', pad_inches = 0.01)
+            fig.savefig(self.datadirectory + '\\Doppler Image Log Scale.pdf', dpi=1500, bbox_inches='tight', pad_inches = 0.01)
+            if doppler[1]:
+                fig = self.plot_doppler(log=False, save=True)
+                fig.set_size_inches(12, 6, forward=True)
+                fig.savefig(self.datadirectory + '\\Doppler Image Linear Scale.png', dpi=1500, bbox_inches='tight', pad_inches = 0.01)
+                fig.savefig(self.datadirectory + '\\Doppler Image Linear Scale.pdf', dpi=1500, bbox_inches='tight', pad_inches = 0.01)
+                
         t1 = time(); total = t1 - t0; print("Data generated and saved in =", total, "s")
     
     def cartesian_to_spherical(self, x, y, z):
@@ -301,7 +311,6 @@ class UniverseSim(object):
         ----------
         equat, polar, distance : numpy array
             equatorial and polar angles, as well as radial distance from the origin
-        
         Returns
         -------
         x, y, z : numpy array
@@ -361,7 +370,7 @@ def main():
     # print(universe.get_all_stars())
     
     
-    sim = UniverseSim(100)
+    sim = UniverseSim(5)
     sim.save_data()
     
 if __name__ == "__main__":

@@ -165,17 +165,19 @@ class Universe(object):
             The number of supernovae to generate
         '''
         indexes = np.random.uniform(0, len(self.galaxies) - 1, frequency - 2)
-        closeindexes = len(self.galaxies) - np.random.uniform(1, 14, 2)
+        closeindexes = len(self.galaxies) - np.random.uniform(0, 14, 2)     # gets two indexes within the last 14 of the galaxy list
         indexes = np.append(indexes, closeindexes); np.random.shuffle(indexes)
         galaxies = [self.galaxies[int(i)] for i in indexes]
         positions = np.array([galaxy.spherical for galaxy in galaxies])
-        intrinsic = 1.5 * 10**44 / (4 * np.pi * (7 * 10**6)**2)     # rough energy release of R=7000km white dwarf Type Ia supernova (W/m^2)
+        # intrinsic = 1.5 * 10**44 / (4 * np.pi * (7 * 10**6)**2)     # rough energy release of R=7000km white dwarf Type Ia supernova (W/m^2)
+        peakmag = -18.4; sunmag = 4.74; sunlumin = 3.828 * 10**26   # peak magnitude of a type 1a supernova (M_V), bol abs mag of the sun, bol lumin of the sun
+        peaklumin = sunlumin * 10**((peakmag - sunmag) / (-2.5))    # this is the mag/lumin formula rearranged to give L
+        intrinsicflux = peaklumin / (4 * np.pi * (5 * 10**6)**2)    # rough energy release of R=7000km white dwarf Type Ia supernova (W/m^2)
+        
         distances = positions[:, 2] * 3.086 * 10**16    # convert from parsec to meters
-        peakfluxes = (intrinsic / distances**2) * np.random.normal(1, 0.01, frequency)
-        skypositions = [positions[:, 0] * np.random.normal(1, 0.01, frequency), 
-                        positions[:, 1] * np.random.normal(1, 0.01, frequency)]   # [equat, polar]
-        # print(skypositions)
-        # print(fluxes)
+        peakfluxes = (intrinsicflux / distances**2) * np.random.normal(1, 0.01, frequency)
+        skypositions = [positions[:, 0] + np.random.normal(0, 0.01, frequency), 
+                        positions[:, 1] + np.random.normal(0, 0.01, frequency)]   # [equat, polar]
         return skypositions, peakfluxes
         
         

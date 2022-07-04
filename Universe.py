@@ -32,6 +32,7 @@ class Universe(object):
         self.clusters, self.clustervels = self.generate_clusters()
         self.galaxies = self.get_all_galaxies()
         self.supernovae = self.explode_supernovae(min(55, len(self.galaxies)))
+        self.radialvelocities = self.get_radial_velocities()
     
     def generate_clusters(self):
         ''' Generate all of the galaxy clusters in the universe.
@@ -94,6 +95,67 @@ class Universe(object):
     def get_blackholes(self):
         blackholes = [galaxy.blackhole for galaxy in self.galaxies]
         return blackholes
+    
+    def get_radial_velocities(self):
+        stars = self.get_all_starpositions()
+        x, y, z, _, _ = stars[0], stars[1], stars[2], stars[3], stars[4]
+        equat, polar, radius = self.cartesian_to_spherical(x, y, z)
+        
+        locgalaxymovement = self.clusters[-1].directions[:, -1]  # the local galaxy is the last galaxy in the last cluster
+        localgalaxydist = self.clusters[-1].galaxies[-1].spherical[2]
+        localgalaxy = self.clusters[-1].galaxies[-1]
+        closestar = min(localgalaxy.starorbits, key=lambda x:abs(x - localgalaxydist))
+        # closestarindex = localgalaxy.starorbits.index[closestar]
+        closestarindex = np.where(localgalaxy.starorbits == closestar)
+        approxlocalstarvel = localgalaxy.starvels[1, closestarindex[0]]
+        localstarmovement = approxlocalstarvel * np.array([0, 1, np.random.normal(0, 0.05)])
+        
+        galaxydirection = []
+        for cluster in self.clusters:
+            for i in range(len(cluster.galaxies)):
+                # add the vector of the local galaxy movement with the current galaxy movement
+                galaxydirection.append(cluster.directions[:, i]) 
+        galaxydirection = np.array(galaxydirection)
+        
+        stardirections = []
+        for h, cluster in enumerate(self.clusters):
+            galaxyvels = cluster.galaxvels[1, :]
+            for i, galaxy in enumerate(cluster.galaxies):
+                stardirection = galaxy.directions
+                starvels = galaxy.starvels[1, :]
+                galaxyvel = galaxyvels[i]
+                for j in range(len(stardirection[0, :])):
+                    if h == len(self.clusters) - 1 and i == len(cluster.galaxies) - 1:      # must be the local galaxy
+                        stardirection[:, j] = (stardirection[:, j] * starvels[j])
+                    else:
+                        stardirection[:, j] = (stardirection[:, j] * starvels[j]) + (galaxydirection[i] * galaxyvel)
+                    stardirections.append(stardirection[:, j])
+        
+        k = 0
+        obsvel = np.zeros(len(stardirections))
+        for h, cluster in enumerate(self.clusters):
+            if h != len(self.clusters) - 1:
+                clustervel = self.clustervels[h]
+                addclustervel = True
+            else:
+                addclustervel = False
+            for i, galaxy in enumerate(cluster.galaxies):
+                if addclustervel == False and i == len(cluster.galaxies) - 1:
+                    addgalaxyvel = False
+                else:
+                    addgalaxyvel = True
+                for j in range(len(galaxy.stars)):
+                    if addgalaxyvel:
+                        vector = stardirections[k] + locgalaxymovement + localstarmovement    # velocity vector "v"
+                    else:
+                        vector = stardirections[k] + localstarmovement
+                    coord = np.array([x[k], y[k], z[k]])    # distance vector "d"
+                    obsvel[k] = np.dot(vector, coord) / radius[k]      # dot product: (v dot d) / ||d||
+                    # the dot product above gets the radial component of the velocity (thank you Ciaran!! - linear algebra is hard)
+                    if addclustervel:
+                        obsvel[k] += clustervel
+                    k += 1
+        return obsvel
     
     def explode_supernovae(self, frequency):
         '''

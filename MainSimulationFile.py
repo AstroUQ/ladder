@@ -43,7 +43,8 @@ class UniverseSim(object):
         self.seed = seed
         self.hubble = 1000
         self.universe = Universe(450000, self.hubble, numclusters)
-        self.galaxies = self.universe.get_all_galaxies()
+        self.galaxies, self.distantgalaxies = self.universe.get_all_galaxies()
+        self.allgalaxies = self.galaxies + self.distantgalaxies
         self.supernovae = self.universe.supernovae
         self.starpositions = self.universe.get_all_starpositions()
         self.blackholes = self.universe.get_blackholes()    
@@ -57,7 +58,7 @@ class UniverseSim(object):
         equat, polar, radius = self.cartesian_to_spherical(x, y, z)
         
         for i, blackhole in enumerate(self.blackholes):
-            BHequat, BHpolar, distance = self.galaxies[i].spherical
+            BHequat, BHpolar, distance = self.allgalaxies[i].spherical
             BHcolour = blackhole.get_BH_colour()
             BHscale = blackhole.get_BH_scale() / (0.05 * distance)
             if spikes == True and BHscale > 2.5: 
@@ -87,6 +88,16 @@ class UniverseSim(object):
                     brightcolour = np.append(brightcolour, [colours[i]], axis=0)
             ax.errorbar(brightequat, brightpolar, yerr=brightscale, xerr=brightscale, ecolor=brightcolour, fmt='none', elinewidth=0.3)
         scales = [3 if scale > 3 else abs(scale) for scale in scales]
+        
+        DGspherical = np.array([galaxy.spherical for galaxy in self.distantgalaxies])
+        DGequat, DGpolar, DGdists = DGspherical[:, 0], DGspherical[:, 1], DGspherical[:, 2]
+        equat, polar = np.append(equat, DGequat), np.append(polar, DGpolar)
+        
+        DGscales = 1 / (0.0001 * DGdists)
+        for scale in DGscales:
+            scales.append(scale)
+            colours.append([1.0000, 0.8286, 0.7187])
+        
         if save == True:
             # ax.scatter(equat, polar, s=scales, c=colours, marker='.')
             ax.scatter(equat, polar, s=scales, c=colours, linewidths=0)
@@ -142,7 +153,13 @@ class UniverseSim(object):
         x, y, z, _, scales = stars[0], stars[1], stars[2], stars[3], stars[4]
         equat, polar, radius = self.cartesian_to_spherical(x, y, z)
         
+        DGspherical = np.array([galaxy.spherical for galaxy in self.distantgalaxies])
+        DGequat, DGpolar, DGdists = DGspherical[:, 0], DGspherical[:, 1], DGspherical[:, 2]
+        equat, polar, radius = np.append(equat, DGequat), np.append(polar, DGpolar), np.append(radius, DGdists)
+        
         obsvel = self.universe.radialvelocities
+        DGobsvel = self.universe.distantradialvelocities
+        obsvel = np.append(obsvel, DGobsvel)
         
         scales = 1 / (0.01 * np.sqrt(radius))
         
@@ -175,7 +192,7 @@ class UniverseSim(object):
             return fig
         
             
-    def save_data(self, pic=True, stars=True, distantgalax=True, variable=True, supernovae=True, doppler=[True, False]):
+    def save_data(self, pic=True, stars=True, variable=True, distantgalax=True, supernovae=True, doppler=[True, False]):
         ''' Generates some data, takes other data, and saves it to the system in a new directory within the file directory.
         Parameters
         ----------
@@ -242,6 +259,7 @@ class UniverseSim(object):
             greenflux = [format(flux, '.3e') for flux in greenflux]; redflux = [format(flux, '.3e') for flux in redflux]
             
             obsvel = self.universe.radialvelocities     # retrieve the radial velocities from the universe object
+            obsvel = np.around(obsvel, decimals=2)
             
             # now, write all star data to a pandas dataframe
             stardata = {'Name':names, 'Equatorial':equat, 'Polar':polar,        # units of the equat/polar are in degrees
@@ -250,6 +268,36 @@ class UniverseSim(object):
             starfile = pd.DataFrame(stardata)
             
             starfile.to_csv(self.datadirectory + "\\Star Data.txt", index=None, sep=' ')    # and finally save the dataframe to the directory
+            
+        if distantgalax:
+            sphericals = np.array([galaxy.spherical for galaxy in self.distantgalaxies])
+            equat, polar, dists = sphericals[:, 0], sphericals[:, 1], sphericals[:, 2]
+            distsMeters = dists * 3.086 * 10**16
+            
+            bandlumin = np.array([galaxy.bandlumin for galaxy in self.distantgalaxies])
+            bluelumin, greenlumin, redlumin = bandlumin[:, 0], bandlumin[:, 1], bandlumin[:, 2]
+            blueflux, greenflux, redflux = bluelumin / distsMeters**2, greenlumin / distsMeters**2, redlumin / distsMeters**2  
+            blueflux = [format(flux, '.3e') for flux in blueflux]   # now round each data point to 3 decimal places
+            greenflux = [format(flux, '.3e') for flux in greenflux]; redflux = [format(flux, '.3e') for flux in redflux]
+            
+            radii = np.array([galaxy.radius for galaxy in self.distantgalaxies])
+            sizes = 2 * np.arctan((radii / 2) / dists)
+            sizes = np.rad2deg(sizes) * 3600    # this gives the size of the galaxy in units of arcseconds
+            sizes = np.around(sizes, decimals=4)
+            
+            DGobsvel = self.universe.distantradialvelocities
+            DGobsvel = np.around(DGobsvel, decimals=2)
+            
+            width = int(-(-np.log10(len(equat)) // 1))
+            names = [f"DG{i:0{width}d}" for i in range(1, len(equat)+1)]
+            
+            equat = [format(coord, '3.4f') for coord in equat]; polar = [format(coord, '3.4f') for coord in polar]
+            
+            DGdata = {"Name":names, 'Equatorial':equat, 'Polar':polar,
+                      'BlueF':blueflux, 'GreenF':greenflux, 'RedF':redflux,
+                      'Size':sizes, 'RadialVelocity':DGobsvel}
+            DGfile = pd.DataFrame(DGdata)
+            DGfile.to_csv(self.datadirectory + "\\Distant Galaxy Data.txt", index=None, sep=' ')
             
         if supernovae:
             pos, peak = self.supernovae
@@ -348,9 +396,10 @@ def main():
     #           "with SD =", [sdbluef, sdgreenf, sdredf])
     
     
-    # sim = UniverseSim(5)
-    # sim.save_data()
+    sim = UniverseSim(300)
+    sim.save_data()
     
+
     
     
 if __name__ == "__main__":

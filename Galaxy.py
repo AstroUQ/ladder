@@ -36,15 +36,39 @@ class Galaxy(object):
         else:
             self.spherical = position
             self.cartesian = self.spherical_to_cartesian(position[0], position[1], position[2])
-        self.starpositions, self.stars, self.rotation = self.generate_galaxy()
-        self.starmasses = [star.get_star_mass() for star in self.stars]
-        self.blackhole = BlackHole(sum(self.starmasses), self.species, self.radius, 1)
-        starorbitradii = [self.starpositions[0] - self.cartesian[0], 
-                          self.starpositions[1] - self.cartesian[1], 
-                          self.starpositions[2] - self.cartesian[2]]
-        self.starorbits = self.star_orbits(starorbitradii[0], starorbitradii[1], starorbitradii[2])
-        self.starvels, self.ObsStarVels, self.darkmattermass, self.directions = self.rotation_vels()
-        self.galaxymass = sum(self.starmasses) + self.darkmattermass
+        if self.complexity != "Distant":
+            self.starpositions, self.stars, self.rotation = self.generate_galaxy()
+            self.starmasses = [star.get_star_mass() for star in self.stars]
+            self.blackhole = BlackHole(sum(self.starmasses), self.species, self.radius, 1)
+            starorbitradii = [self.starpositions[0] - self.cartesian[0], 
+                              self.starpositions[1] - self.cartesian[1], 
+                              self.starpositions[2] - self.cartesian[2]]
+            self.starorbits = self.star_orbits(starorbitradii[0], starorbitradii[1], starorbitradii[2])
+            self.starvels, self.ObsStarVels, self.darkmattermass, self.directions = self.rotation_vels()
+            self.galaxymass = sum(self.starmasses) + self.darkmattermass
+        else:   # distant galaxy
+            self.galaxymass, self.bandlumin, self.rotation = self.distant_galaxy()
+            self.blackhole = BlackHole(self.galaxymass/2, self.species, self.radius, 1)
+
+    def distant_galaxy(self):
+        ''' Lookup data taken from "Galaxy Averages.txt"
+        '''
+        masslookup = {"S0":26751, "Sa":17531, "Sb":15599, "Sc":13303, "SBa":25834, "SBb":22521, "SBc":16538,
+                      "cD":800885, "E0":578472, "E1":418379, "E2":268095, "E3":177070, "E4":105890,
+                      "E5":65450, "E6":30775, "E7":14545}
+        mass = masslookup[self.species] * np.random.normal(1, 0.1)
+        
+        bandluminlookup = {"S0":[9.18e+27, 7.11e+27, 3.24e+27], "Sa":[1.74e+28, 1.30e+28, 5.44e+27], "Sb":[1.25e+28, 9.71e+27, 4.41e+27],
+                           "Sc":[1.26e+28, 9.59e+27, 4.23e+27], "SBa":[1.33e+28, 1.03e+28, 4.64e+27], "SBb":[1.42e+28, 1.11e+28, 5.11e+27], 
+                           "SBc":[1.26e+28, 9.77e+27, 4.43e+27], "cD":[3.35e+28, 2.34e+28, 8.69e+27], "E0":[8.44e+27, 6.53e+27, 2.96e+27], 
+                           "E1":[9.37e+27, 7.24e+27, 3.27e+27], "E2":[8.68e+27, 6.75e+27, 3.10e+27], "E3":[1.02e+28, 7.88e+27, 3.58e+27], 
+                           "E4":[9.01e+27, 7.00e+27, 3.21e+27], "E5":[8.46e+27, 6.51e+27, 2.91e+27], 
+                           "E6":[9.14e+27, 7.12e+27, 3.27e+27], "E7":[9.09e+27, 7.07e+27, 3.24e+27]}
+        bandlumin = np.array(bandluminlookup[self.species]) * np.random.normal(1, 0.15, 3)
+        
+        rotation = np.random.uniform(0, 2*np.pi, 3)
+        
+        return mass, bandlumin, rotation
         
     def galaxyrotation(self, angle, axis):
         '''Rotate a point in cartesian coordinates about the origin by some angle along the specified axis. 

@@ -30,9 +30,9 @@ class Universe(object):
         self.complexity = complexity
         self.homogeneous = homogeneous
         self.clusters, self.clustervels = self.generate_clusters()
-        self.galaxies = self.get_all_galaxies()
-        self.supernovae = self.explode_supernovae(min(55, len(self.galaxies)))
-        self.radialvelocities = self.get_radial_velocities()
+        self.galaxies, self.distantgalaxies = self.get_all_galaxies()
+        self.supernovae = self.explode_supernovae(min(55, len(self.galaxies) + len(self.distantgalaxies)))
+        self.radialvelocities, self.distantradialvelocities = self.get_radial_velocities()
     
     def generate_clusters(self):
         ''' Generate all of the galaxy clusters in the universe.
@@ -82,7 +82,13 @@ class Universe(object):
         '''
         clusters = [cluster.galaxies for cluster in self.clusters]
         flatgalaxies = [galaxy for cluster in clusters for galaxy in cluster]
-        return flatgalaxies
+        distantgalaxies = []
+        for i, galaxy in enumerate(flatgalaxies):
+            if galaxy.complexity == "Distant":
+                distantgalaxies.append(galaxy)
+                flatgalaxies[i] = None
+        galaxies = [galaxy for galaxy in flatgalaxies if galaxy != None]
+        return galaxies, distantgalaxies
     def get_all_starpositions(self):
         galaxydata = [galaxy.get_stars() for galaxy in self.galaxies]
         x = [galaxy[0] for galaxy in galaxydata]; x = np.array([coord for xs in x for coord in xs])
@@ -94,45 +100,63 @@ class Universe(object):
         return stars
     def get_blackholes(self):
         blackholes = [galaxy.blackhole for galaxy in self.galaxies]
-        return blackholes
+        distantblackholes = [galaxy.blackhole for galaxy in self.distantgalaxies]
+        allblackholes = blackholes + distantblackholes
+        return allblackholes
     
     def get_radial_velocities(self):
         stars = self.get_all_starpositions()
         x, y, z, _, _ = stars[0], stars[1], stars[2], stars[3], stars[4]
-        equat, polar, radius = self.cartesian_to_spherical(x, y, z)
+        _, _, radius = self.cartesian_to_spherical(x, y, z)
         
         locgalaxymovement = self.clusters[-1].directions[:, -1]  # the local galaxy is the last galaxy in the last cluster
         localgalaxydist = self.clusters[-1].galaxies[-1].spherical[2]
         localgalaxy = self.clusters[-1].galaxies[-1]
         closestar = min(localgalaxy.starorbits, key=lambda x:abs(x - localgalaxydist))
-        # closestarindex = localgalaxy.starorbits.index[closestar]
         closestarindex = np.where(localgalaxy.starorbits == closestar)
         approxlocalstarvel = localgalaxy.starvels[1, closestarindex[0]]
         localstarmovement = approxlocalstarvel * np.array([0, 1, np.random.normal(0, 0.05)])
         
         galaxydirection = []
+        distantgalaxydirection = []
         for cluster in self.clusters:
             for i in range(len(cluster.galaxies)):
                 # add the vector of the local galaxy movement with the current galaxy movement
-                galaxydirection.append(cluster.directions[:, i]) 
+                if cluster.galaxies[i].complexity != "Distant":
+                    galaxydirection.append(cluster.directions[:, i]) 
+                else:
+                    distantgalaxydirection.append(cluster.directions[:, i]) 
         galaxydirection = np.array(galaxydirection)
+        distantgalaxydirection = np.array(distantgalaxydirection)
+        DGcartesians = np.array([galaxy.cartesian for galaxy in self.distantgalaxies])    # distant galaxy cartesians
+        DGx, DGy, DGz = DGcartesians[:, 0], DGcartesians[:, 1], DGcartesians[:, 2]     # distant galaxy x, distant galaxy y, etc
+        DGradius = [galaxy.spherical[2] for galaxy in self.distantgalaxies]
         
         stardirections = []
+        distantgalaxyvectors = []
+        k = 0; m = 0
         for h, cluster in enumerate(self.clusters):
             galaxyvels = cluster.galaxvels[1, :]
             for i, galaxy in enumerate(cluster.galaxies):
-                stardirection = galaxy.directions
-                starvels = galaxy.starvels[1, :]
-                galaxyvel = galaxyvels[i]
-                for j in range(len(stardirection[0, :])):
-                    if h == len(self.clusters) - 1 and i == len(cluster.galaxies) - 1:      # must be the local galaxy
-                        stardirection[:, j] = (stardirection[:, j] * starvels[j])
-                    else:
-                        stardirection[:, j] = (stardirection[:, j] * starvels[j]) + (galaxydirection[i] * galaxyvel)
-                    stardirections.append(stardirection[:, j])
-        
+                if galaxy.complexity != "Distant":  # close galaxy, so we're dealing with stars
+                    stardirection = galaxy.directions
+                    starvels = galaxy.starvels[1, :]
+                    galaxyvel = galaxyvels[i]
+                    for j in range(len(stardirection[0, :])):
+                        if h == len(self.clusters) - 1 and i == len(cluster.galaxies) - 1:      # must be the local galaxy
+                            stardirection[:, j] = (stardirection[:, j] * starvels[j])
+                        else:
+                            stardirection[:, j] = (stardirection[:, j] * starvels[j]) + (galaxydirection[k] * galaxyvel)
+                        stardirections.append(stardirection[:, j])
+                    k += 1
+                else:   # distant galaxy, so we're dealing with galaxy as a whole
+                    vector = distantgalaxydirection[m] * galaxyvels[i]
+                    distantgalaxyvectors.append(vector)
+                    m += 1
         k = 0
+        m = 0
         obsvel = np.zeros(len(stardirections))
+        distantobsvel = np.zeros(len(distantgalaxyvectors))
         for h, cluster in enumerate(self.clusters):
             if h != len(self.clusters) - 1:
                 clustervel = self.clustervels[h]
@@ -140,22 +164,30 @@ class Universe(object):
             else:
                 addclustervel = False
             for i, galaxy in enumerate(cluster.galaxies):
-                if addclustervel == False and i == len(cluster.galaxies) - 1:
-                    addgalaxyvel = False
-                else:
-                    addgalaxyvel = True
-                for j in range(len(galaxy.stars)):
-                    if addgalaxyvel:
-                        vector = stardirections[k] + locgalaxymovement + localstarmovement    # velocity vector "v"
+                if galaxy.complexity != "Distant":  # close galaxy, so we're working with individual stars
+                    if addclustervel == False and i == len(cluster.galaxies) - 1:
+                        addgalaxyvel = False
                     else:
-                        vector = stardirections[k] + localstarmovement
-                    coord = np.array([x[k], y[k], z[k]])    # distance vector "d"
-                    obsvel[k] = np.dot(vector, coord) / radius[k]      # dot product: (v dot d) / ||d||
-                    # the dot product above gets the radial component of the velocity (thank you Ciaran!! - linear algebra is hard)
+                        addgalaxyvel = True
+                    for j in range(len(galaxy.stars)):
+                        if addgalaxyvel:
+                            vector = stardirections[k] + locgalaxymovement + localstarmovement    # velocity vector "v"
+                        else:
+                            vector = stardirections[k] + localstarmovement
+                        coord = np.array([x[k], y[k], z[k]])    # distance vector "d"
+                        obsvel[k] = np.dot(vector, coord) / radius[k]      # dot product: (v dot d) / ||d||
+                        # the dot product above gets the radial component of the velocity (thank you Ciaran!! - linear algebra is hard)
+                        if addclustervel:
+                            obsvel[k] += clustervel
+                        k += 1
+                else:   # distant galaxy, so we're working with galaxies as a whole
+                    vector = distantgalaxyvectors[m] + locgalaxymovement + localstarmovement
+                    coord = np.array([DGx[m], DGy[m], DGz[m]])
+                    distantobsvel[m] = np.dot(vector, coord) / DGradius[m]
                     if addclustervel:
-                        obsvel[k] += clustervel
-                    k += 1
-        return obsvel
+                        distantobsvel[m] += clustervel
+                    m += 1
+        return obsvel, distantobsvel
     
     def explode_supernovae(self, frequency):
         '''
@@ -164,10 +196,11 @@ class Universe(object):
         frequency : int
             The number of supernovae to generate
         '''
-        indexes = np.random.uniform(0, len(self.galaxies) - 1, frequency - 2)
-        closeindexes = len(self.galaxies) - np.random.uniform(0, 14, 2)     # gets two indexes within the last 14 of the galaxy list
+        allgalaxies = self.distantgalaxies + self.galaxies
+        indexes = np.random.uniform(0, len(allgalaxies) - 1, frequency - 2)
+        closeindexes = len(allgalaxies) - np.random.uniform(1, 14, 2)     # gets two indexes within the last 14 of the galaxy list
         indexes = np.append(indexes, closeindexes); np.random.shuffle(indexes)
-        galaxies = [self.galaxies[int(i)] for i in indexes]
+        galaxies = [allgalaxies[int(i)] for i in indexes]
         positions = np.array([galaxy.spherical for galaxy in galaxies])
         # intrinsic = 1.5 * 10**44 / (4 * np.pi * (7 * 10**6)**2)     # rough energy release of R=7000km white dwarf Type Ia supernova (W/m^2)
         peakmag = -18.4; sunmag = 4.74; sunlumin = 3.828 * 10**26   # peak magnitude of a type 1a supernova (M_V), bol abs mag of the sun, bol lumin of the sun

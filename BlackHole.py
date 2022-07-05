@@ -35,7 +35,6 @@ class BlackHole(object):
             m *= (2.5 - 0.05 * float(self.galaxytype[1]))
         elif self.galaxytype == "cD":
             m *= 3
-        print("BH mass =", m, "Solar Masses")
         return m
     
     def eddington_luminosity(self, mass):

@@ -12,7 +12,7 @@ import numpy as np
 import os
 import pandas as pd
 from time import time
-# import colour as col
+from tqdm import tqdm     # this is a progress bar for a for loop
 from BlackHole import BlackHole
 from Galaxy import Galaxy
 from GalaxyCluster import GalaxyCluster
@@ -324,54 +324,34 @@ class UniverseSim(object):
         
         
 def main():
-    # np.random.seed(3080)
-    # galaxy = Galaxy('SBb', (0,500,100), 1000, 100, cartesian=True)
-    # galaxy = Galaxy('cD', (180, 90, 500))
-    # galaxy2 = Galaxy('E4', (104, 131, 500), 1000, 100)
-    # galaxy3 = Galaxy('Sc', (110, 128, 1000), 1000, 50)
-    # galaxies = [galaxy]
-    # fig = plt.figure()
-    # ax = fig.add_subplot(projection='3d')
-    # galaxy.plot_3d(ax, camera=False)
-    
-    # galaxy.plot_radio3d()
-    
-    # fig, ax = plt.subplots()
-    # galaxy.plot_radio_contour(ax)
-    # galaxy.plot_RotCurve(newtapprox=False, observed=True)
-    # galaxy.plot_HR(isoradii=True, xunit="both", yunit="BolLumMag")
-    # ax.set_xlim(-15, 15); ax.set_ylim(-15, 15); ax.set_zlim(-15, 15)
-    # ax.set_xlim(-10, 10); ax.set_ylim(-10, 10); ax.set_zlim(-10, 10)
-
-    # plot_all_dopplers(galaxies)
-    # plot_all_2d(galaxies, spikes=True, radio=True)
-    # galaxy.plot_HR(isoradii=True)
-    # fig, ax = plt.subplots()
-    # galaxy.plot_2d(fig, ax, spikes=True, radio=True)
-    # galaxy2.plot_2d(fig, ax, spikes=True, radio=True)
-    # galaxy3.plot_2d(fig, ax, spikes=True, radio=True)
+    ### -- this was used to find galaxy averages -- ###
+    # number = 40
+    # specieslist = ['S0', 'Sa', 'Sb', 'Sc', 'SBa', 'SBb', 'SBc', 'cD', 'E0', 'E1', 'E2', 'E3', 'E4', 'E5', 'E6', 'E7']
+    # for species in specieslist:
+    #     galaxies = []
+    #     for i in tqdm(range(number)):
+    #         galaxies.append(Galaxy(species, (0, 0, 0)))
+    #     # galaxies = [Galaxy(species, (0, 0, 0)) for i in range(number)]
+    #     masses = [galaxy.galaxymass for galaxy in galaxies]
+    #     radii = [galaxy.radius for galaxy in galaxies]
+    #     bluef = []; greenf = []; redf = []
+    #     for galaxy in galaxies:
+    #         for star in galaxy.stars:
+    #             bluef.append(star.bandlumin[0])
+    #             greenf.append(star.bandlumin[1])
+    #             redf.append(star.bandlumin[2])
+    #     meanbluef, meangreenf, meanredf = np.mean(bluef), np.mean(greenf), np.mean(redf)
+    #     sdbluef, sdgreenf, sdredf = np.std(bluef), np.std(greenf), np.std(redf)
+    #     print(f"Galaxy Mass for {number} {species} galaxies: Mean =", np.mean(masses), "with SD =", np.std(masses))
+    #     print(f"Galaxy Radius for {number} {species} galaxies: Mean =", np.mean(radii), "with SD =", np.std(radii))
+    #     print(f"Galaxy bandlumin for {number} {species} galaxies: Mean =", [meanbluef, meangreenf, meanredf], 
+    #           "with SD =", [sdbluef, sdgreenf, sdredf])
     
     
-    # t0 = time()
-    # cluster = GalaxyCluster((180, 90, 2000), 8)
-    # cluster = GalaxyCluster((180, 90, 20000), 50, complexity="Distant")
-    # plot_all_2d(cluster.galaxies)
-    # plot_all_3d(cluster.galaxies)
-    # t1 = time()
-    # total = t1 - t0
+    # sim = UniverseSim(5)
+    # sim.save_data()
     
     
-    # print("Time taken =", total, "s")
-    # universe = Universe(450000, 2)
-    # flatgalaxies = universe.get_all_galaxies()
-    # t0 = time()
-    # plot_all_2d(flatgalaxies, spikes=True)
-    # t1 = time(); total = t1 - t0; print("Time taken =", total, "s")
-    # print(universe.get_all_stars())
-    
-    
-    sim = UniverseSim(5)
-    sim.save_data()
     
 if __name__ == "__main__":
     main()

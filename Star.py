@@ -12,7 +12,6 @@ from matplotlib import colors
 
 class Star(object):
     def __init__(self, location, species="MS"):
-        self.colourdata = pd.read_csv("blackbodycolours.txt", delimiter=' ')
         if species == "MS":
             self.mass = abs(self.MS_masses(location))
             self.luminosity = abs(self.MS_lumin(self.mass))
@@ -256,11 +255,12 @@ class Star(object):
         # XYZ = col.xy_to_XYZ(xy)
         # rgb = col.XYZ_to_RGB(XYZ)
         # return rgb
+        colourdata = pd.read_csv("blackbodycolours.txt", delimiter=' ')
         temperature = self.temperature
         temperature = min(40000, temperature)
         temperature = max(1000, temperature)
         temp = round(temperature / 100) * 100
-        r, g, b = self.colourdata.loc[self.colourdata['Temperature'] == temp].iloc[0, 9:12]
+        r, g, b = colourdata.loc[colourdata['Temperature'] == temp].iloc[0, 9:12]
         rgb = np.array([r, g, b]) / 255
         return rgb
     

@@ -396,7 +396,7 @@ def main():
     #           "with SD =", [sdbluef, sdgreenf, sdredf])
     
     
-    sim = UniverseSim(300)
+    sim = UniverseSim(100)
     sim.save_data()
     
 

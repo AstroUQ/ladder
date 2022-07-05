@@ -41,7 +41,7 @@ class Universe(object):
         clusters : list
             List of GalaxyCluster objects
         '''
-        threshold = 100000  # the distance threshold at which galaxies are simulated in low resolution form
+        threshold = 50000  # the distance threshold at which galaxies are simulated in low resolution form
         population = self.clusterpop
         clusters = []
 
@@ -50,14 +50,23 @@ class Universe(object):
         polar = np.random.uniform(-1, 1, population)
         polar = np.arccos(polar); polar = np.rad2deg(polar)
         
-        lowerbound = 2000 / self.radius     # we want a certain area around the origin to be empty (to make space for the local cluster)
+        lowerbound = 5000 / self.radius     # we want a certain area around the origin to be empty (to make space for the local cluster)
         if self.homogeneous:
             dists = np.random.uniform(lowerbound, 1, population)
+            R = self.radius * np.cbrt(dists)
         else:
-            median = threshold / self.radius    # we want half of the galaxies to be resolved, half to not be
-            mean = median / np.log(2)       #  the mean of the exponential distribution is = median / ln(2)
-            dists = np.random.exponential(mean**3, population) + lowerbound    # we don't want galaxy clusters within the lowerbounded sphere
-        R = self.radius * np.cbrt(dists)
+            proportion = 1/4    # proportion of total galaxies that you want to be resolved, 
+            # cdf of the exponential distribution is F(x) = 1 - exp(- x / b), where b is the 'scale', or mean, which goes into the numpy exponential function
+            # rearranging this, for some prop 'p', we get b = -x / ln(1 - p), and so
+            mean = - threshold / np.log(1 - proportion)
+            mean = mean / self.radius       # get the mean as a proportion of total radius
+            dists = np.random.exponential(mean, population) + lowerbound
+            R = self.radius * dists
+            
+            # median = 2 * threshold / self.radius    # we want a quarter of the galaxies to be resolved, half to not be
+            # mean = median / np.log(2)       #  the mean of the exponential distribution is = median / ln(2)
+            # dists = np.random.exponential(mean**3, population) + lowerbound    # we don't want galaxy clusters within the lowerbounded sphere
+        
         
         populations = np.random.exponential(8, population)  # generate number of galaxies per cluster
         populations = [1 if pop < 1 else int(pop) for pop in populations]   # make sure each cluster has at least one galaxy

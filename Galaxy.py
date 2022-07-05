@@ -44,7 +44,7 @@ class Galaxy(object):
                               self.starpositions[1] - self.cartesian[1], 
                               self.starpositions[2] - self.cartesian[2]]
             self.starorbits = self.star_orbits(starorbitradii[0], starorbitradii[1], starorbitradii[2])
-            self.starvels, self.ObsStarVels, self.darkmattermass, self.directions = self.rotation_vels()
+            self.starvels, _, self.darkmattermass, self.directions = self.rotation_vels()
             self.galaxymass = sum(self.starmasses) + self.darkmattermass
         else:   # distant galaxy
             self.galaxymass, self.bandlumin, self.rotation = self.distant_galaxy()

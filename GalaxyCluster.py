@@ -140,7 +140,7 @@ class GalaxyCluster(object):
                 if population >= 5:     # dense cluster
                     # the below makes it more likely for ellipticals the larger the cluster pop is, up to a pop of 10 when it then has 
                     # constant probability
-                    elliptical = True if elliptcheck <= (min(0.1 * population, 1) - prop) else False
+                    elliptical = True if elliptcheck <= (min(0.05 * population, 1) - prop) else False
                     spiral = not elliptical     # of course the galaxy can't be both a spiral and elliptical
                 else:
                     elliptical = True if elliptcheck <= 0.1 else False  # about 10% chance of an elliptical galaxy outside of a dense cluster

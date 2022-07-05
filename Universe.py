@@ -173,7 +173,7 @@ class Universe(object):
         peakmag = -18.4; sunmag = 4.74; sunlumin = 3.828 * 10**26   # peak magnitude of a type 1a supernova (M_V), bol abs mag of the sun, bol lumin of the sun
         peaklumin = sunlumin * 10**((peakmag - sunmag) / (-2.5))    # this is the mag/lumin formula rearranged to give L
         intrinsicflux = peaklumin / (4 * np.pi * (5 * 10**6)**2)    # rough energy release of R=7000km white dwarf Type Ia supernova (W/m^2)
-        
+        intrinsicflux *= (10 * 3.086 * 10**16)**2                   # account for the peakmag being at 10pc
         distances = positions[:, 2] * 3.086 * 10**16    # convert from parsec to meters
         peakfluxes = (intrinsicflux / distances**2) * np.random.normal(1, 0.01, frequency)
         skypositions = [positions[:, 0] + np.random.normal(0, 0.01, frequency), 

@@ -7,9 +7,5 @@ I am intending to emulate the "Distance Ladder" universe simulation that was a p
     - Simulate variability in some regions on the HR diagram. 
  - Black Holes:
     - Make brightness depend on angle of the galaxy to the viewer? As well as mass and random activity (possibly depending on galaxy type)
- - Galaxy Clusters:
-    - Rotation/Dispersion curves for galaxies within a cluster
  - Generate a new type of galaxy (very distant) that is not comprised of stars
     - Needs size (arcseconds), luminosity data, radial velocity and position. 
- - Data output/creation:
-	- Add together radial velocities for stars/galaxies/galaxy clusters, etc and put them in the stardata file

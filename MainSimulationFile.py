@@ -208,7 +208,7 @@ class UniverseSim(object):
         
         if pic:
             fig = self.plot_universe(save=True)
-            fig.set_size_inches(12, 6, forward=True)
+            fig.set_size_inches(18, 9, forward=True)
             fig.savefig(self.datadirectory + '\\Universe Image.png', dpi=1500, bbox_inches='tight', pad_inches = 0.01)
             fig.savefig(self.datadirectory + '\\Universe Image.pdf', dpi=1500, bbox_inches='tight', pad_inches = 0.01)
             
@@ -261,14 +261,14 @@ class UniverseSim(object):
             supernovafile = pd.DataFrame(supernovadata)
             supernovafile.to_csv(self.datadirectory + "\\Supernova Data.txt", index=None, sep=' ')
             
-        if doppler[0]:
+        if doppler[0]:  # save the doppler image with a log scale
             fig = self.plot_doppler(save=True)
-            fig.set_size_inches(12, 6, forward=True)
+            fig.set_size_inches(18, 9, forward=True)
             fig.savefig(self.datadirectory + '\\Doppler Image Log Scale.png', dpi=1500, bbox_inches='tight', pad_inches = 0.01)
             fig.savefig(self.datadirectory + '\\Doppler Image Log Scale.pdf', dpi=1500, bbox_inches='tight', pad_inches = 0.01)
             if doppler[1]:
                 fig = self.plot_doppler(log=False, save=True)
-                fig.set_size_inches(12, 6, forward=True)
+                fig.set_size_inches(18, 9, forward=True)
                 fig.savefig(self.datadirectory + '\\Doppler Image Linear Scale.png', dpi=1500, bbox_inches='tight', pad_inches = 0.01)
                 fig.savefig(self.datadirectory + '\\Doppler Image Linear Scale.pdf', dpi=1500, bbox_inches='tight', pad_inches = 0.01)
                 

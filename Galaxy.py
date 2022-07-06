@@ -15,7 +15,8 @@ from Star import Star
 
 
 class Galaxy(object):
-    def __init__(self, species, position, cartesian=False, BHcluster=True, darkmatter=True, rotate=True, complexity="Normal"):
+    def __init__(self, species, position, cartesian=False, BHcluster=True, darkmatter=True, rotate=True, complexity="Normal",
+                 variable=[True, [20, "Tri"], [50, "Saw"]]):
         '''
         Parameters
         ----------
@@ -23,6 +24,20 @@ class Galaxy(object):
         position : 3-tuple/list/np.array
             if cartesian == False, position = [equatorial angle, polar angle, radius (distance away)]
             if cartesian == True, position = [x, y, z]
+        cartesian : bool
+            Whether the provided position is in 3D cartesian coordinates (True) or spherical coordinates (False)
+        BHcluster : bool
+            Whether or not to generate a star cluster around the central black hole
+        darkmatter : bool
+            Whether or not to generate dark matter in the galaxy mass (impacts rotation curves)
+        rotate : bool
+            Whether or not to rotate the galaxy randomly
+        complexity : str
+            One of {"Normal", "Basic", "Distant"} which dictates the population of the galaxy and the type. 
+        variable : list
+            The first element must be a bool, which decides whether or not to generate variability in some stars
+            The second and third elements (and fourth [optional]) must be comprised of [period, lightcurve type],
+            where the period is in hours (float) and the lightcurve type is one of {"Saw", "Tri", "Sine"} (str). 
         '''
         self.BHcluster = BHcluster
         self.darkmatter = darkmatter
@@ -37,6 +52,7 @@ class Galaxy(object):
         else:
             self.spherical = position
             self.cartesian = self.spherical_to_cartesian(position[0], position[1], position[2])
+        self.variable = variable
         if self.complexity != "Distant":
             self.starpositions, self.stars, self.rotation = self.generate_galaxy()
             self.starmasses = [star.get_star_mass() for star in self.stars]
@@ -440,7 +456,7 @@ class Galaxy(object):
                 choice.append("SupGiant")
             else:
                 choice.append("WDwarf")
-        stars = [Star(region, species) for species in choice]
+        stars = [Star(region, species, variable=self.variable) for species in choice]
         return stars
     
     def rotation_vels(self):

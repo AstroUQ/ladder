@@ -9,7 +9,8 @@ from multiprocessing import Pool
 from Galaxy import Galaxy
 
 class GalaxyCluster(object):
-    def __init__(self, position, population, cartesian=False, local=False, darkmatter=True, complexity="Normal"):
+    def __init__(self, position, population, cartesian=False, local=False, darkmatter=True, complexity="Normal",
+                 variable=True):
         '''
         Parameters
         ----------
@@ -30,7 +31,7 @@ class GalaxyCluster(object):
         else:
             self.spherical = position
             self.cartesian = self.spherical_to_cartesian(position[0], position[1], position[2])
-        
+        self.variable = variable
         self.galaxies, self.galaxmasses, self.galaxorbits, self.galaxpositions = self.generate_galaxies(population)
         self.galaxvels, self.ObsGalaxVels, self.directions = self.rotation_vels()
     
@@ -46,7 +47,7 @@ class GalaxyCluster(object):
         -------
         Galaxy : Galaxy object
         '''
-        return Galaxy(species, position, cartesian=True, rotate=local, complexity=self.complexity)
+        return Galaxy(species, position, cartesian=True, rotate=local, complexity=self.complexity, variable=self.variable)
     
     def generate_galaxies(self, population):
         ''' Uniformly distributes and generates galaxies within a sphere, with a central elliptical galaxy if the cluster

@@ -9,7 +9,7 @@ from tqdm import tqdm     # this is a progress bar for a for loop
 from GalaxyCluster import GalaxyCluster
 
 class Universe(object):
-    def __init__(self, radius, hubble, clusters, complexity="Normal", homogeneous=False):
+    def __init__(self, radius, hubble, clusters, complexity="Normal", variablestars=True, homogeneous=False):
         '''
         Parameters
         ----------
@@ -28,6 +28,22 @@ class Universe(object):
         self.hubble = hubble
         self.clusterpop = clusters
         self.complexity = complexity
+        if variablestars:
+            indexes = np.array([0, 1, 2]); np.random.shuffle(indexes)
+            curvetypes = ["Saw", "Tri", "Sine"]; curvetypes = [curvetypes[index] for index in indexes]
+            prob = np.random.uniform(0, 1)
+            types = 2 if prob <= 0.66 else 3
+            shortperiod = np.random.uniform(18, 30); longperiod = np.random.uniform(38, 55) 
+            longestperiod = np.random.uniform(65, 100)
+            periods = [shortperiod, longperiod, longestperiod]
+            signs = np.random.choice([-1, 1], 3)
+            variablestars = [True]
+            for i in range(types):
+                variablestars.append([periods[i], curvetypes[i], signs[i]])
+            self.variablestars = variablestars
+            print(variablestars)
+        else:
+            self.variablestars = [False, [], []]
         self.homogeneous = homogeneous
         self.clusters, self.clustervels = self.generate_clusters()
         self.galaxies, self.distantgalaxies = self.get_all_galaxies()
@@ -76,11 +92,12 @@ class Universe(object):
         for i in tqdm(range(self.clusterpop)):
             pos = (equat[i], polar[i], R[i])
             if i == self.clusterpop - 1:    # make the last cluster in the list the local cluster
-                clusters.append(GalaxyCluster((localequat, localpolar, 2000), 15, local=True, complexity=self.complexity))
+                clusters.append(GalaxyCluster((localequat, localpolar, 2000), 15, local=True, complexity=self.complexity,
+                                              variable=self.variablestars))
             elif R[i] > threshold:  # this must be a distant galaxy
-                clusters.append(GalaxyCluster(pos, populations[i], complexity="Distant"))
+                clusters.append(GalaxyCluster(pos, populations[i], complexity="Distant", variable=self.variablestars))
             else:
-                clusters.append(GalaxyCluster(pos, populations[i], complexity=self.complexity))
+                clusters.append(GalaxyCluster(pos, populations[i], complexity=self.complexity, variable=self.variablestars))
         
         clustervels = (self.hubble * R / (10**6)) * np.random.normal(1, 0.05, len(R))  # the radial velocity of each cluster according to v = HD
         

@@ -113,6 +113,7 @@ class UniverseSim(object):
         if radio == True:
             self.plot_radio(ax)
         if save == True:
+            plt.close()
             return fig
     
     def plot_radio(self, ax, plot=True, scatter=False, data=False):
@@ -189,6 +190,7 @@ class UniverseSim(object):
         ax.set_ylabel("Polar Angle (degrees)")
         
         if save == True:
+            plt.close()
             return fig
         
             
@@ -269,6 +271,28 @@ class UniverseSim(object):
             
             starfile.to_csv(self.datadirectory + "\\Star Data.txt", index=None, sep=' ')    # and finally save the dataframe to the directory
             
+        if variable:
+            variabledirectory = self.datadirectory + "\\Variable Star Data"
+            os.makedirs(variabledirectory)
+            names = [f"S{i:0{width}d}" for i in range(1, len(equat)+1)]
+            k = 0
+            for galaxy in self.galaxies:
+                if galaxy.spherical[2] <= 5000:
+                    for star in galaxy.stars:
+                        if star.variable == True:
+                            starname = names[k]
+                            if galaxy.rotate == False:      # must be the local galaxy, so we want to save a pic of the lightcurve
+                                fig = star.plot_lightcurve(save=True)
+                                fig.savefig(variabledirectory + f'\\{starname}.png', dpi=400, bbox_inches='tight', pad_inches = 0.01)
+                            times, fluxes = star.lightcurve
+                            variabledata = {"Time":times, "NormalisedFlux":fluxes}
+                            variablefile = pd.DataFrame(variabledata)
+                            
+                            variablefile.to_csv(variabledirectory + f"\\{starname}.txt", index=None, sep=' ')
+                        k +=1
+                else:
+                    k += len(galaxy.stars)
+                        
         if distantgalax:
             sphericals = np.array([galaxy.spherical for galaxy in self.distantgalaxies])
             equat, polar, dists = sphericals[:, 0], sphericals[:, 1], sphericals[:, 2]
@@ -396,8 +420,26 @@ def main():
     #           "with SD =", [sdbluef, sdgreenf, sdredf])
     
     
-    sim = UniverseSim(500)
+    sim = UniverseSim(3)
     sim.save_data()
+    
+    # galaxy = Galaxy('SBb', (0, 0, 10))
+    # galaxy.plot_HR()
+    
+    # i, j, k = 0, 0, 0
+    # for star in sim.galaxies[0].stars:
+    #     if star.variable == True:
+    #         if star.variabletype[1] == "Saw" and i==0:
+    #             star.plot_lightcurve()
+    #             i = 1
+    #         elif star.variabletype[1] == "Tri" and j==0:
+    #             star.plot_lightcurve()
+    #             j = 1
+    #         elif star.variabletype[1] == "Noise" and k==0:
+    #             star.plot_lightcurve()
+    #             k = 1
+    #         elif i==0 and j==0 and k==0:
+    #             break
     
     
     

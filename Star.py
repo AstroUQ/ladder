@@ -11,7 +11,9 @@ from matplotlib import colors
 # import colour as col
 
 class Star(object):
-    def __init__(self, location, species="MS"):
+    def __init__(self, location, species="MS", variable=[True, [20, "Tri"], [50, "Saw"]]):
+        '''
+        '''
         if species == "MS":
             self.mass = abs(self.MS_masses(location))
             self.luminosity = abs(self.MS_lumin(self.mass))
@@ -33,6 +35,72 @@ class Star(object):
             self.mass = abs(self.SGB_mass())
             self.radius = self.stefboltz_radius(self.luminosity, self.temperature)
         self.bandlumin = self.generate_BandLumin(self.temperature, self.radius)
+        if variable[0]:
+            noiseprob = np.random.uniform(0, 1)
+            if 3.5*10**5 <= self.luminosity <= 5*10**6 and 5500 <= self.temperature <= 10**4:  # kinda like delta cepheids
+                luminbounds = [3.5*10**5, 5 * 10**6]
+                self.lightcurve = self.generate_variable(variable[1], luminbounds)
+                self.variable = True
+                self.variabletype = ["Short", variable[1][1]]
+            elif 100 <= self.luminosity <= 700 and 10**4 <= self.temperature <= 1.2 * 10**4:    # kinda like delta scutis
+                luminbounds = [100, 700]
+                self.lightcurve = self.generate_variable(variable[2], luminbounds)
+                self.variable = True
+                self.variabletype = ["Long", variable[2][1]]
+            elif len(variable) == 4 and 20 <= self.luminosity <= 4000 and 3000 <= self.temperature <= 4700:
+                luminbounds = [20, 4000]
+                self.lightcurve = self.generate_variable(variable[3], luminbounds)
+                self.variable = True
+                self.variabletype = ["Longest", variable[3][1]]
+            elif noiseprob < 0.01:
+                self.lightcurve = self.generate_variable([np.random.uniform(3, 40), "Noise", -1])
+                self.variable = True
+                self.variabletype = ["False", "Noise"]
+            else: 
+                self.variable = False
+        else:
+            self.variable = False
+        
+    def generate_variable(self, params, luminbounds=None):
+        '''
+        Parameters
+        ----------
+        params : list
+            [period, type] where period is the period of the oscillation, and type is the type of wave
+        '''
+        period, wavetype, trendsign = params
+        if luminbounds != None:
+            lower, upper = luminbounds
+            lowerperiod = np.random.uniform(0.9, 1) * period; upperperiod = np.random.uniform(1, 1.25) * period
+            run = np.log10(upper) - np.log10(lower); rise = trendsign * (upperperiod - lowerperiod)
+            gradient = rise / run
+            intercept = lowerperiod / (gradient * lower)
+            period = (gradient * np.log10(self.luminosity) + intercept) * np.random.normal(1, 0.02)
+        
+        time = np.arange(0, 121)    # 5 days, or 120 hours worth of increments
+        shift = np.random.uniform(0, period)
+        
+        
+        if wavetype == "Saw":   # sawtooth function
+            amp = 0.1
+            wave = lambda n, x: -2 * amp / np.pi * (-1)**n / n * np.sin(-2 * np.pi * n * (x + shift) / period)
+            flux = np.ones(len(time))
+            for n in range(1, 5):   # go from 1 to 4
+                flux += wave(n, time)
+            flux += np.random.normal(0, amp/6, len(flux))
+        elif wavetype == "Tri":     # triangle function
+            amp = 0.15
+            flux = 1 + 2 * amp / np.pi * np.arcsin(np.sin(2 * np.pi * (time + shift) / period))
+            flux += np.random.normal(0, amp/6, len(flux))
+        elif wavetype == "Sine":
+            amp = 0.2
+            flux = 1 + amp * np.sin(2 * np.pi * (time + shift) / period)
+            flux += np.random.normal(0, amp/6, len(flux))
+        elif wavetype == "Noise":
+            amp = 0.05
+            flux = 1 + amp * np.sin(2 * np.pi * (time + shift) / period)
+            flux += np.random.normal(0, 0.1, len(flux))
+        return np.array([time, flux])
             
     def MS_masses(self, species):
         '''Masses for stars on the main sequence.
@@ -297,7 +365,7 @@ class Star(object):
         bandLum = lambda x: 4 * np.pi**2 * (696540000 * radius)**2 * planck(x)
         return np.array([bandLum(blue), bandLum(green), bandLum(red)]) * np.random.uniform(0.99, 1.01, 3)
     
-    def generate_blackbodycurve(self, markers=True, visible=False):
+    def plot_blackbodycurve(self, markers=True, visible=False):
         ''' Produce a graph of this stars' blackbody curve. 
         Parameters
         ----------
@@ -330,6 +398,16 @@ class Star(object):
                                 color=colourmap(normalize(spectrum[i])), alpha=0.3)
         if markers == True:     # plot markers for each of the luminosity band values given to the user
             ax.scatter(np.array([440, 500, 700]), self.bandlumin, color=['b', 'g', 'r'])
+    
+    def plot_lightcurve(self, save=False):
+        times, lumins = self.lightcurve
+        fig, ax = plt.subplots()
+        
+        ax.scatter(times, lumins)
+        ax.set_xlabel("Time (hours)"); ax.set_ylabel("Normalised Flux")
+        if save:
+            plt.close()
+            return fig
         
     
     def get_star_lumin(self):

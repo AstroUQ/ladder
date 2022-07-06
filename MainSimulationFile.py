@@ -399,7 +399,6 @@ def main():
     sim = UniverseSim(100)
     sim.save_data()
     
-
     
     
 if __name__ == "__main__":

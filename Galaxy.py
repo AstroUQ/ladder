@@ -7,6 +7,7 @@ Created on Mon Jun 27 08:38:12 2022
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
+import pandas as pd
 import scipy.optimize as opt             # this is to fit two axes in the HR diagram
 import scipy.ndimage                     # this is to smooth out the BH radio lobes
 from BlackHole import BlackHole
@@ -185,7 +186,7 @@ class Galaxy(object):
         disky = np.sin(theta) * diskdists
         diskz = np.zeros(diskpop) + 0.02 * radius * np.random.randn(diskpop)
         diskstars = self.generate_stars("disk", diskpop)
-        diskcolours = [star.get_star_colour() for star in diskstars]
+        disktemps = [star.temperature for star in diskstars]
         diskscales = [star.get_star_scale() for star in diskstars]
         
         #this defines the bulge star positions
@@ -205,7 +206,7 @@ class Galaxy(object):
         # bulgey = np.sin(theta) * bulgedists
         # bulgez = np.random.normal(0, 1.4/3 * bulgeradius, bulgepop)
         bulgestars = self.generate_stars("bulge", bulgepop)
-        bulgecolours = [star.get_star_colour() for star in bulgestars]
+        bulgetemps = [star.temperature for star in bulgestars]
         bulgescales = [star.get_star_scale() for star in bulgestars]
         
         
@@ -215,22 +216,22 @@ class Galaxy(object):
             bary = barradius * (np.geomspace(0.3, 1.1, barpop) * np.random.choice([-1, 1], barpop) + np.random.normal(0, 0.1, barpop))
             barz = np.random.normal(0, 0.05 * barradius, barpop)
             barstars = self.generate_stars("bulge", barpop)
-            barcolours = [star.get_star_colour() for star in barstars]
+            bartemps = [star.temperature for star in barstars]
             barscales = [star.get_star_scale() for star in barstars]
             bulgex = np.append(bulgex, barx); bulgey = np.append(bulgey, bary); bulgez = np.append(bulgez, barz)
-            bulgecolours = np.append(bulgecolours, barcolours, axis=0)
+            bulgetemps = np.append(bulgetemps, bartemps, axis=0)
             bulgescales = np.append(bulgescales, barscales, axis=0)
             bulgestars = np.append(bulgestars, barstars, axis=0)
         
         if self.BHcluster == True:
-            BHx, BHy, BHz, BHcolours, BHscales, BHstars = self.generate_BHcluster()
+            BHx, BHy, BHz, BHtemps, BHscales, BHstars = self.generate_BHcluster()
             bulgex = np.append(bulgex, BHx); bulgey = np.append(bulgey, BHy); bulgez = np.append(bulgez, BHz)
-            bulgecolours = np.append(bulgecolours, BHcolours, axis=0)
+            bulgetemps = np.append(bulgetemps, BHtemps, axis=0)
             bulgescales = np.append(bulgescales, BHscales, axis=0)
             bulgestars = np.append(bulgestars, BHstars, axis=0)
         
         # initialise some lists
-        spiralx, spiraly, spiralz, spiralcolours, spiralscales, spiralstars = [], [], [], np.empty((0,3)), [], []
+        spiralx, spiraly, spiralz, spiraltemps, spiralscales, spiralstars = [], [], [], [], [], []
         
         if mult != None:          # time to generate spiral structure
             lower, upper = spiralwrap
@@ -251,10 +252,10 @@ class Galaxy(object):
                 y = (radius / mult) * (spiralpow * np.sin(spiralangle + lag) * np.random.normal(1, scatter, pop) * - reflect + np.random.normal(0, scatter2, pop))
                 z = np.random.normal(0, zscatter * radius, pop)
                 stars = self.generate_stars(region, pop)
-                colours = [star.get_star_colour() for star in stars]
+                temps = [star.temperature for star in stars]
                 scales = [star.get_star_scale() for star in stars]
                 spiralx = np.append(spiralx, x); spiraly = np.append(spiraly, y); spiralz = np.append(spiralz, z)
-                spiralcolours = np.append(spiralcolours, colours, axis=0)
+                spiraltemps = np.append(spiraltemps, temps, axis=0)
                 spiralscales = np.append(spiralscales, scales, axis=0)
                 spiralstars = np.append(spiralstars, stars, axis=0)
         else:
@@ -263,18 +264,18 @@ class Galaxy(object):
             y = np.sin(theta) * radius/1.5 * np.random.normal(1, 0.1, spiralpop)
             z = np.zeros(spiralpop) + 0.02 * radius * np.random.randn(spiralpop)
             stars = self.generate_stars("disk", spiralpop)
-            colours = [star.get_star_colour() for star in stars]
+            temps = [star.temperature for star in stars]
             scales = [star.get_star_scale() for star in stars]
             spiralx = np.append(spiralx, x); spiraly = np.append(spiraly, y); spiralz = np.append(spiralz, z)
-            spiralcolours = np.append(spiralcolours, colours, axis=0)
+            spiraltemps = np.append(spiraltemps, temps, axis=0)
             spiralscales = np.append(spiralscales, scales, axis=0)
             spiralstars = np.append(spiralstars, stars, axis=0)
                 
         x = np.append(diskx, np.append(bulgex, spiralx)); y = np.append(disky, np.append(bulgey, spiraly)); z = np.append(diskz, np.append(bulgez, spiralz))
-        colours = np.append(diskcolours, np.append(bulgecolours, spiralcolours, axis=0), axis=0)
+        temps = np.append(disktemps, np.append(bulgetemps, spiraltemps, axis=0), axis=0)
         scales = np.append(diskscales, np.append(bulgescales, spiralscales, axis=0), axis=0)
         stars = np.append(diskstars, np.append(bulgestars, spiralstars, axis=0), axis=0)
-        return x, y, z, colours, scales, stars
+        return x, y, z, temps, scales, stars
     
     def generate_elliptical(self, population, radius):
         '''Some guidance was taken from https://itecnote.com/tecnote/python-sampling-uniformly-distributed-random-points-inside-a-spherical-volume/
@@ -312,13 +313,13 @@ class Galaxy(object):
         centralz = centralR * (np.cos(phi[:centralpop]) + np.random.normal(0, 0.05, centralpop))
         
         centralstars = self.generate_stars("bulge", centralpop)
-        centralcolours = [star.get_star_colour() for star in centralstars]
+        centraltemps = [star.temperature for star in centralstars]
         centralscales = [star.get_star_scale() for star in centralstars]
         
         if self.BHcluster == True:
-            BHx, BHy, BHz, BHcolours, BHscales, BHstars = self.generate_BHcluster()
+            BHx, BHy, BHz, BHtemps, BHscales, BHstars = self.generate_BHcluster()
             centralx = np.append(centralx, BHx); centraly = np.append(centraly, BHy); centralz = np.append(centralz, BHz)
-            centralcolours = np.append(centralcolours, BHcolours, axis=0)
+            centraltemps = np.append(centraltemps, BHtemps, axis=0)
             centralscales = np.append(centralscales, BHscales, axis=0)
             centralstars = np.append(centralstars, BHstars, axis=0)
         
@@ -328,15 +329,15 @@ class Galaxy(object):
         spherez = (sphereR * (np.cos(phi[centralpop:]) + np.random.normal(0, 0.1, spherepop))) * ellipsoid_mult**distanceflat
         
         spherestars = self.generate_stars("disk", spherepop)
-        spherecolours = [star.get_star_colour() for star in spherestars]
+        spheretemps = [star.temperature for star in spherestars]
         spherescales = [star.get_star_scale() for star in spherestars]
         
         x = np.append(centralx, spherex); y = np.append(centraly, spherey); z = np.append(centralz, spherez)
-        colours = np.append(centralcolours, spherecolours, axis=0)
+        temps = np.append(centraltemps, spheretemps, axis=0)
         scales = np.append(centralscales, spherescales, axis=0)
         
         stars = np.append(centralstars, spherestars, axis=0)
-        return x, y, z, colours, scales, stars
+        return x, y, z, temps, scales, stars
     
     def generate_BHcluster(self):
         ''' Generate a cluster of stars close to the central black hole of a galaxy. The method for doing this is
@@ -355,9 +356,9 @@ class Galaxy(object):
         z = R * (np.cos(phi) + np.random.normal(0, 0.05, population))
         
         stars = self.generate_stars("ys", population)
-        colours = [star.get_star_colour() for star in stars]
+        temps = [star.temperature for star in stars]
         scales = [star.get_star_scale() for star in stars]
-        return x, y, z, colours, scales, stars
+        return x, y, z, temps, scales, stars
     
     def generate_galaxy(self):
         '''Generate random stars according to species type of galaxy. 
@@ -370,9 +371,19 @@ class Galaxy(object):
         population, radius = self.population, self.radius
         
         if self.species[0] == 'S':  #spiral galaxy
-            x, y, z, colours, scales, stars = self.generate_spiral(population, radius)
+            x, y, z, temps, scales, stars = self.generate_spiral(population, radius)
         else:        #elliptical galaxy
-            x, y, z, colours, scales, stars = self.generate_elliptical(population, radius)               
+            x, y, z, temps, scales, stars = self.generate_elliptical(population, radius)               
+        
+        colourdata = pd.read_csv("blackbodycolours.txt", delimiter=' ')
+        temperature = np.array([min(40000, temp) if temp > 20000 else max(1000, temp) for temp in temps])
+        temps = np.around(temperature / 100, decimals=0) * 100
+        colours = []
+        for temp in temps:
+            r, g, b = colourdata.loc[colourdata['Temperature'] == temp].iloc[0, 9:12]
+            rgb = np.array([r, g, b]) / 255
+            colours.append(rgb)
+        colours = np.array(colours)
         
         points = np.array([x, y, z])
         phi = np.random.uniform(0, 2*np.pi, 3)

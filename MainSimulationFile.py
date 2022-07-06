@@ -227,7 +227,7 @@ class UniverseSim(object):
             fig = self.plot_universe(save=True)
             fig.set_size_inches(18, 9, forward=True)
             fig.savefig(self.datadirectory + '\\Universe Image.png', dpi=1500, bbox_inches='tight', pad_inches = 0.01)
-            fig.savefig(self.datadirectory + '\\Universe Image.pdf', dpi=1500, bbox_inches='tight', pad_inches = 0.01)
+            fig.savefig(self.datadirectory + '\\Universe Image.pdf', dpi=600, bbox_inches='tight', pad_inches = 0.01)
             
         if stars:   # generate and save star data
             #firstly, get star xyz positions and convert them to equatorial/polar
@@ -313,12 +313,12 @@ class UniverseSim(object):
             fig = self.plot_doppler(save=True)
             fig.set_size_inches(18, 9, forward=True)
             fig.savefig(self.datadirectory + '\\Doppler Image Log Scale.png', dpi=1500, bbox_inches='tight', pad_inches = 0.01)
-            fig.savefig(self.datadirectory + '\\Doppler Image Log Scale.pdf', dpi=1500, bbox_inches='tight', pad_inches = 0.01)
+            fig.savefig(self.datadirectory + '\\Doppler Image Log Scale.pdf', dpi=600, bbox_inches='tight', pad_inches = 0.01)
             if doppler[1]:
                 fig = self.plot_doppler(log=False, save=True)
                 fig.set_size_inches(18, 9, forward=True)
                 fig.savefig(self.datadirectory + '\\Doppler Image Linear Scale.png', dpi=1500, bbox_inches='tight', pad_inches = 0.01)
-                fig.savefig(self.datadirectory + '\\Doppler Image Linear Scale.pdf', dpi=1500, bbox_inches='tight', pad_inches = 0.01)
+                fig.savefig(self.datadirectory + '\\Doppler Image Linear Scale.pdf', dpi=600, bbox_inches='tight', pad_inches = 0.01)
                 
         t1 = time(); total = t1 - t0; print("Data generated and saved in =", total, "s")
     
@@ -396,7 +396,7 @@ def main():
     #           "with SD =", [sdbluef, sdgreenf, sdredf])
     
     
-    sim = UniverseSim(100)
+    sim = UniverseSim(500)
     sim.save_data()
     
     

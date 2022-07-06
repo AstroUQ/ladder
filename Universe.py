@@ -41,7 +41,7 @@ class Universe(object):
         clusters : list
             List of GalaxyCluster objects
         '''
-        threshold = 50000  # the distance threshold at which galaxies are simulated in low resolution form
+        threshold = 30000  # the distance threshold at which galaxies are simulated in low resolution form
         population = self.clusterpop
         clusters = []
 
@@ -55,7 +55,7 @@ class Universe(object):
             dists = np.random.uniform(lowerbound, 1, population)
             R = self.radius * np.cbrt(dists)
         else:
-            proportion = 1/4    # proportion of total galaxies that you want to be resolved, 
+            proportion = 1/10    # proportion of total galaxies that you want to be resolved, 
             # cdf of the exponential distribution is F(x) = 1 - exp(- x / b), where b is the 'scale', or mean, which goes into the numpy exponential function
             # rearranging this, for some prop 'p', we get b = -x / ln(1 - p), and so
             mean = - threshold / np.log(1 - proportion)
@@ -212,12 +212,16 @@ class Universe(object):
         galaxies = [allgalaxies[int(i)] for i in indexes]
         positions = np.array([galaxy.spherical for galaxy in galaxies])
         # intrinsic = 1.5 * 10**44 / (4 * np.pi * (7 * 10**6)**2)     # rough energy release of R=7000km white dwarf Type Ia supernova (W/m^2)
-        peakmag = -18.4; sunmag = 4.74; sunlumin = 3.828 * 10**26   # peak magnitude of a type 1a supernova (M_V), bol abs mag of the sun, bol lumin of the sun
-        peaklumin = sunlumin * 10**((peakmag - sunmag) / (-2.5))    # this is the mag/lumin formula rearranged to give L
-        intrinsicflux = peaklumin / (4 * np.pi * (5 * 10**6)**2)    # rough energy release of R=7000km white dwarf Type Ia supernova (W/m^2)
-        intrinsicflux *= (10 * 3.086 * 10**16)**2                   # account for the peakmag being at 10pc
+        # peakmag = -18.4; sunmag = 4.74; sunlumin = 3.828 * 10**26   # peak magnitude of a type 1a supernova (M_V), bol abs mag of the sun, bol lumin of the sun
+        # peaklumin = sunlumin * 10**((peakmag - sunmag) / (-2.5))    # this is the mag/lumin formula rearranged to give L
+        # intrinsicflux = peaklumin / (4 * np.pi * (5 * 10**6)**2)    # rough energy release of R=7000km white dwarf Type Ia supernova (W/m^2)
+        # intrinsicflux *= (10 * 3.086 * 10**16)**2                   # account for the peakmag being at 10pc
+        # distances = positions[:, 2] * 3.086 * 10**16    # convert from parsec to meters
+        # peakfluxes = (intrinsicflux / distances**2) * np.random.normal(1, 0.01, frequency)
+        
+        peaklumin = 2 * 10**36  # 20 billion times solar luminosity, source: https://www.sciencedirect.com/topics/physics-and-astronomy/type-ia-supernovae#:~:text=A%20typical%20supernova%20reaches%20its,times%20that%20of%20the%20Sun.
         distances = positions[:, 2] * 3.086 * 10**16    # convert from parsec to meters
-        peakfluxes = (intrinsicflux / distances**2) * np.random.normal(1, 0.01, frequency)
+        peakfluxes = (peaklumin / (4 * np.pi * distances**2)) * np.random.normal(1, 0.01, frequency)  # F = L / (4pi*r^2)
         skypositions = [positions[:, 0] + np.random.normal(0, 0.01, frequency), 
                         positions[:, 1] + np.random.normal(0, 0.01, frequency)]   # [equat, polar]
         return skypositions, peakfluxes

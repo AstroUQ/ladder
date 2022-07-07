@@ -205,7 +205,7 @@ class UniverseSim(object):
         distantgalax : bool
             Generate and save distant galaxy data
         variable : bool
-            Generate and save variable star data within a subdirectory
+            Save variable star data within a subdirectory
         supernovae : bool
             Generate and save supernovae data
         doppler : list of bool
@@ -420,26 +420,14 @@ def main():
     #           "with SD =", [sdbluef, sdgreenf, sdredf])
     
     
-    sim = UniverseSim(3)
-    sim.save_data()
+    # sim = UniverseSim(3)
+    # sim.save_data()
     
     # galaxy = Galaxy('SBb', (0, 0, 10))
     # galaxy.plot_HR()
     
-    # i, j, k = 0, 0, 0
-    # for star in sim.galaxies[0].stars:
-    #     if star.variable == True:
-    #         if star.variabletype[1] == "Saw" and i==0:
-    #             star.plot_lightcurve()
-    #             i = 1
-    #         elif star.variabletype[1] == "Tri" and j==0:
-    #             star.plot_lightcurve()
-    #             j = 1
-    #         elif star.variabletype[1] == "Noise" and k==0:
-    #             star.plot_lightcurve()
-    #             k = 1
-    #         elif i==0 and j==0 and k==0:
-    #             break
+    cluster = GalaxyCluster((0, 0, 10), 40)
+    cluster.plot_RotCurve(newtapprox=True)
     
     
     

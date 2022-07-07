@@ -5,12 +5,13 @@ Created on Mon Jun 27 08:38:20 2022
 @author: ryanw
 """
 import numpy as np
+import matplotlib.pyplot as plt
 from multiprocessing import Pool
 from Galaxy import Galaxy
 
 class GalaxyCluster(object):
     def __init__(self, position, population, cartesian=False, local=False, darkmatter=True, complexity="Normal",
-                 variable=True):
+                 variable=[True, [20, "Tri", 1], [50, "Saw", 1]]):
         '''
         Parameters
         ----------
@@ -173,7 +174,7 @@ class GalaxyCluster(object):
             if self.darkmatter == False, then darkvel is an array of zeros
         '''
         if self.darkmatter == True:     # time to initialise dark matter properties 
-            density = 0.00001 # solar masses per cubic parsec
+            density = 0.00002 # solar masses per cubic parsec
             scalerad = 1.3 * self.radius  # parsec
             Rs = scalerad * 3.086 * 10**16  # convert scalerad to meters
             p0 = density * (1.988 * 10**30 / (3.086 * 10**16)**3) # convert density to kg/m^3
@@ -228,6 +229,36 @@ class GalaxyCluster(object):
 
         VelObsArray = velarray * velprops   # multiply the actual velocities by the line of sight proportion of the velocity magnitude
         return velarray, VelObsArray, direction
+    
+    def plot_RotCurve(self, newtapprox=False, observed=False, save=False):
+        ''' Produces a rotation curve of this galaxy. If the galaxy has dark matter and the user opts to display the newtonian
+        approximation (curve based on visible matter), then two curves are plotted. 
+        Parameters
+        ----------
+        newtapprox : bool
+            whether to plot the newtonian approximation of the rotation curve (curve based on visible matter)
+        observed : bool
+            whether to plot the data that an observer would see (accounting for doppler shift)
+        '''
+        fig, ax = plt.subplots()
+        if self.darkmatter == True:
+            ax.scatter(self.galaxorbits, self.galaxvels[1], s=0.5, label="With Dark Matter")  # plot the dark matter curve data
+            if observed == True:
+                ax.scatter(self.galaxorbits, abs(self.ObsGalaxVels[1]), s=0.5, label="Observed")   # plot the data that the observer would see
+            if newtapprox == True:
+                ax.scatter(self.galaxorbits, self.galaxvels[0], s=0.5, label="Newtonian Approximation") # plot the newtonian approx as well
+                if observed == True:
+                    ax.scatter(self.galaxorbits, abs(self.ObsGalaxVels[0]), s=0.5, label="Observed")   # and plot the newtonian approx that the observer would see
+                ax.legend()
+        else: 
+            ax.scatter(self.galaxorbits, self.galaxvels[0], s=0.5)    # plot the newtonian data
+        
+        ax.set_xlabel("Orbital Radius (pc)"); ax.set_ylabel("Orbital Velocity (km/s)")
+        ax.set_ylim(ymin=0); ax.set_xlim(xmin=-0.1)
+        
+        if save:
+            plt.close()
+            return fig
             
     def cartesian_to_spherical(self, x, y, z):
         ''' Converts cartesian coordinates to spherical ones (formulae taken from wikipedia) in units of degrees. 

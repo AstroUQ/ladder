@@ -16,7 +16,7 @@ from Star import Star
 
 class Galaxy(object):
     def __init__(self, species, position, cartesian=False, BHcluster=True, darkmatter=True, rotate=True, complexity="Normal",
-                 variable=[True, [20, "Tri"], [50, "Saw"]]):
+                 variable=[True, [20, "Tri", 1], [50, "Saw", 1]]):
         '''
         Parameters
         ----------
@@ -572,7 +572,7 @@ class Galaxy(object):
         VelObsArray = velarray * velprops   # multiply the actual velocities by the line of sight proportion of the velocity magnitude
         return velarray, VelObsArray, darkmattermass, direction
     
-    def plot_RotCurve(self, newtapprox=False, observed=False):
+    def plot_RotCurve(self, newtapprox=False, observed=False, save=False):
         ''' Produces a rotation curve of this galaxy. If the galaxy has dark matter and the user opts to display the newtonian
         approximation (curve based on visible matter), then two curves are plotted. 
         Parameters
@@ -597,6 +597,10 @@ class Galaxy(object):
         
         ax.set_xlabel("Orbital Radius (pc)"); ax.set_ylabel("Orbital Velocity (km/s)")
         ax.set_ylim(ymin=0); ax.set_xlim(xmin=-0.1)
+        
+        if save:
+            plt.close()
+            return fig
         
     def plot_doppler(self, fig, ax, cbar_ax, blackhole=True):
         ''' Plots the stars locations (similar to plot_2d), with colours indicating the stars radial velocity (line of sight motion)

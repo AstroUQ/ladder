@@ -11,7 +11,7 @@ from matplotlib import colors
 # import colour as col
 
 class Star(object):
-    def __init__(self, location, species="MS", variable=[True, [20, "Tri"], [50, "Saw"]]):
+    def __init__(self, location, species="MS", variable=[True, [20, "Tri", 1], [50, "Saw", 1]]):
         '''
         '''
         if species == "MS":
@@ -81,7 +81,7 @@ class Star(object):
         shift = np.random.uniform(0, period)
         
         
-        if wavetype == "Saw":   # sawtooth function
+        if wavetype == "Saw":   # sawtooth function, done with a superposition of sine curves
             amp = 0.1
             wave = lambda n, x: -2 * amp / np.pi * (-1)**n / n * np.sin(-2 * np.pi * n * (x + shift) / period)
             flux = np.ones(len(time))

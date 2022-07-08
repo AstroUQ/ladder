@@ -16,7 +16,7 @@ from Star import Star
 
 class Galaxy(object):
     def __init__(self, species, position, cartesian=False, BHcluster=True, darkmatter=True, rotate=True, complexity="Normal",
-                 variable=[True, [20, "Tri", 1], [50, "Saw", 1]]):
+                 variable=[True, [20, "Tri", 1], [50, "Saw", 1], [90, "Sine", -1]]):
         '''
         Parameters
         ----------
@@ -680,7 +680,7 @@ class Galaxy(object):
         else:
             ax.scatter(0, 0, s=0)   # plot 'nothing' so that the function works as intended
             
-    def plot_HR(self, isoradii=False, xunit="temp", yunit="BolLum"):
+    def plot_HR(self, isoradii=False, xunit="temp", yunit="BolLum", variable=False):
         '''Plots a Colour-Magnitude (HR) diagram for this galaxy.     
         Parameters
         ----------
@@ -746,7 +746,19 @@ class Galaxy(object):
             if yunit == "bothV":
                 yval2 = vmags; ylabel2 = r"V-Band Absolute Magnitude ($M_V$)"
         
-        ax.scatter(xvals, yvals, color=colours, s=0.2)
+        # now to plot the data, with triangles representing variable stars if variable=True
+        if variable == True:
+            variablex, variabley, variablecolours = [], [], []
+            stablex, stabley, stablecolours = [], [], []
+            for i, star in enumerate(self.stars):
+                if star.variable:   # append star data to variable lists
+                    variablex.append(xvals[i]); variabley.append(yvals[i]); variablecolours.append(colours[i])
+                else:   # append star data to normal star lists
+                    stablex.append(xvals[i]); stabley.append(yvals[i]); stablecolours.append(colours[i])
+            ax.scatter(stablex, stabley, color=stablecolours, s=0.5)
+            ax.scatter(variablex, variabley, color=variablecolours, s=5, marker='^')
+        else:
+            ax.scatter(xvals, yvals, color=colours, s=0.5)
         
         if xunit == "both":
             def TempVsColour(x, a, b, c, d, g):
@@ -775,7 +787,7 @@ class Galaxy(object):
             
         if yunit in ["BolLumMag", "bothV"]:
             ax3 = ax.twinx()
-            ax3.scatter(xvals, yval2, color=colours, s=0.2)
+            ax3.scatter(xvals, yval2, color=colours, alpha=0)
             ax3.set_ylabel(ylabel2); ax3.invert_yaxis()
             
         if xunit in ["temp", "both"]:

@@ -39,8 +39,8 @@ class UniverseSim(object):
     def __init__(self, numclusters, seed=3080):
         '''
         '''
-        np.random.seed(seed)
-        self.seed = seed
+        # np.random.seed(seed)
+        # self.seed = seed
         self.hubble = 1000
         self.universe = Universe(450000, self.hubble, numclusters)
         self.galaxies, self.distantgalaxies = self.universe.get_all_galaxies()
@@ -420,14 +420,14 @@ def main():
     #           "with SD =", [sdbluef, sdgreenf, sdredf])
     
     
-    # sim = UniverseSim(3)
+    sim = UniverseSim(3)
     # sim.save_data()
     
     # galaxy = Galaxy('SBb', (0, 0, 10))
-    # galaxy.plot_HR()
+    sim.galaxies[-1].plot_HR(variable=True)
     
-    cluster = GalaxyCluster((0, 0, 10), 40)
-    cluster.plot_RotCurve(newtapprox=True)
+    # cluster = GalaxyCluster((0, 0, 10), 40)
+    # cluster.plot_RotCurve(newtapprox=True)
     
     
     

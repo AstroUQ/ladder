@@ -193,7 +193,8 @@ class UniverseSim(object):
             return fig
         
             
-    def save_data(self, properties=True, pic=True, blackhole=True, stars=True, variable=True, distantgalax=True, supernovae=True, doppler=[True, False]):
+    def save_data(self, properties=True, pic=True, radio=True, stars=True, variable=True, distantgalax=True, supernovae=True, 
+                  doppler=[True, False], blackhole=True):
         ''' Generates some data, takes other data, and saves it to the system in a new directory within the file directory.
         Parameters
         ----------
@@ -248,7 +249,7 @@ class UniverseSim(object):
             fig.savefig(self.datadirectory + '\\Universe Image.png', dpi=1500, bbox_inches='tight', pad_inches = 0.01)
             fig.savefig(self.datadirectory + '\\Universe Image.pdf', dpi=600, bbox_inches='tight', pad_inches = 0.01)
             
-            if blackhole:       # plot radio data too
+            if radio:       # plot radio data too
                 fig = self.plot_universe(radio=True, save=True)
                 fig.set_size_inches(18, 9, forward=True)
                 fig.savefig(self.datadirectory + '\\Radio Overlay Image.png', dpi=1500, bbox_inches='tight', pad_inches = 0.01)

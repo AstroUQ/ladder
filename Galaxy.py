@@ -680,7 +680,7 @@ class Galaxy(object):
         else:
             ax.scatter(0, 0, s=0)   # plot 'nothing' so that the function works as intended
             
-    def plot_HR(self, isoradii=False, xunit="temp", yunit="BolLum", variable=False):
+    def plot_HR(self, isoradii=False, xunit="temp", yunit="BolLum", variable=False, save=False):
         '''Plots a Colour-Magnitude (HR) diagram for this galaxy.     
         Parameters
         ----------
@@ -823,7 +823,9 @@ class Galaxy(object):
                 if ymin < max(y) < ymax:    #this makes sure that text doesn't show up outside of the plot bounds
                     ax.text(max(x), max(y), text, color=textcolour, rotation=-23, fontsize=8)
             ax.set_xlim(xmin, xmax); ax.set_ylim(ymin, ymax)    #make sure the figure bounds dont change from before
-                
+        if save:
+            plt.close()
+            return fig
     
     def plot_2d(self, fig, ax, spikes=False, radio=False):
         '''Plots the Galaxy onto predefined matplotlib axes in terms of its equatorial and polar angles. 

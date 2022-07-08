@@ -233,15 +233,20 @@ class UniverseSim(object):
             text.write("----------------------------|---------------------------------------\n")
             text.write(f"Universe Radius             | {self.universe.radius} (pc)\n")
             text.write(f"Hubble Const.               | {self.hubble} (km/s/Mpc)\n")
+            text.write(f"Local Galaxy Type           | {self.galaxies[-1].species} \n")
             text.write(f"Dist. to local galax center | {locgalaxdist} (pc)\n")
             text.write(f"Radius of local galaxy      | {round(self.galaxies[-1].radius, 2)} (pc)\n")
+            text.write(f"Local Galax Black Hole Mass | {round(self.galaxies[-1].blackhole.mass, 2)} Solar Masses \n")
             text.write(f"Variable Star Properties    | {self.universe.variablestars}\n")
             text.write(f"Number of clusters          | {self.universe.clusterpop}\n")
             text.write(f"Number of galaxies          | {len(self.galaxies)} local and {len(self.distantgalaxies)} distant\n")
             text.close()
-            fig = self.universe.plot_hubblediagram(save=True)
-            fig.savefig(self.datadirectory + '\\Hubble Diagram.png', dpi=600, bbox_inches='tight', pad_inches = 0.01)
-            fig.savefig(self.datadirectory + '\\Hubble Diagram.pdf', dpi=600, bbox_inches='tight', pad_inches = 0.01)
+            hubblediag = self.universe.plot_hubblediagram(save=True)
+            hubblediag.savefig(self.datadirectory + '\\Hubble Diagram.png', dpi=600, bbox_inches='tight', pad_inches = 0.01)
+            hubblediag.savefig(self.datadirectory + '\\Hubble Diagram.pdf', dpi=600, bbox_inches='tight', pad_inches = 0.01)
+            HR = self.galaxies[-1].plot_HR(isoradii=True, xunit="both", yunit="BolLumMag", variable=True, save=True)
+            HR.savefig(self.datadirectory + '\\Local Galaxy HR Diagram.png', dpi=600, bbox_inches='tight', pad_inches = 0.01)
+            HR.savefig(self.datadirectory + '\\Local Galaxy HR Diagram.pdf', dpi=600, bbox_inches='tight', pad_inches = 0.01)
         
         if pic:
             fig = self.plot_universe(save=True)
@@ -444,7 +449,7 @@ def main():
     #           "with SD =", [sdbluef, sdgreenf, sdredf])
     
     
-    sim = UniverseSim(150)
+    sim = UniverseSim(500)
     sim.save_data()
     # sim.plot_universe()
     # sim.universe.plot_hubblediagram()

@@ -194,7 +194,7 @@ class UniverseSim(object):
             return fig
         
             
-    def save_data(self, pic=True, stars=True, variable=True, distantgalax=True, supernovae=True, doppler=[True, False]):
+    def save_data(self, properties=True, pic=True, stars=True, variable=True, distantgalax=True, supernovae=True, doppler=[True, False]):
         ''' Generates some data, takes other data, and saves it to the system in a new directory within the file directory.
         Parameters
         ----------
@@ -224,6 +224,11 @@ class UniverseSim(object):
             os.makedirs(self.datadirectory)     # now create the duplicate directory with the number on the end
         else:
             os.makedirs(self.datadirectory)     # if directory doesn't exist, create it
+        
+        if properties:
+            fig = self.universe.plot_hubblediagram(save=True)
+            fig.savefig(self.datadirectory + '\\Hubble Diagram.png', dpi=600, bbox_inches='tight', pad_inches = 0.01)
+            fig.savefig(self.datadirectory + '\\Hubble Diagram.pdf', dpi=600, bbox_inches='tight', pad_inches = 0.01)
         
         if pic:
             fig = self.plot_universe(save=True)
@@ -420,11 +425,12 @@ def main():
     #           "with SD =", [sdbluef, sdgreenf, sdredf])
     
     
-    sim = UniverseSim(3)
+    sim = UniverseSim(10)
     # sim.save_data()
+    sim.universe.plot_hubblediagram()
     
     # galaxy = Galaxy('SBb', (0, 0, 10))
-    sim.galaxies[-1].plot_HR(variable=True)
+    # sim.galaxies[-1].plot_HR(variable=True)
     
     # cluster = GalaxyCluster((0, 0, 10), 40)
     # cluster.plot_RotCurve(newtapprox=True)

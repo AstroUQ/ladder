@@ -4,6 +4,7 @@ Created on Mon Jun 27 13:08:36 2022
 
 @author: ryanw
 """
+import matplotlib.pyplot as plt
 import numpy as np
 from tqdm import tqdm     # this is a progress bar for a for loop
 from GalaxyCluster import GalaxyCluster
@@ -28,27 +29,36 @@ class Universe(object):
         self.hubble = hubble
         self.clusterpop = clusters
         self.complexity = complexity
-        if variablestars:
+        self.variablestars = self.determine_variablestars(variablestars)
+        self.homogeneous = homogeneous
+        self.clusters, self.clustervels, self.clusterdists = self.generate_clusters()
+        self.galaxies, self.distantgalaxies = self.get_all_galaxies()
+        self.supernovae = self.explode_supernovae(min(55, len(self.galaxies) + len(self.distantgalaxies)))
+        self.radialvelocities, self.distantradialvelocities = self.get_radial_velocities()
+    
+    def determine_variablestars(self, variable):
+        '''
+        Parameters
+        ----------
+        variable : bool
+            Whether or not this universe should have variable stars
+        '''
+        if variable:
             indexes = np.array([0, 1, 2]); np.random.shuffle(indexes)
             curvetypes = ["Saw", "Tri", "Sine"]; curvetypes = [curvetypes[index] for index in indexes]
             prob = np.random.uniform(0, 1)
             types = 2 if prob <= 0.66 else 3
             shortperiod = np.random.uniform(18, 30); longperiod = np.random.uniform(38, 55) 
-            longestperiod = np.random.uniform(65, 100)
+            longestperiod = np.random.uniform(75, 100)
             periods = [shortperiod, longperiod, longestperiod]
             signs = np.random.choice([-1, 1], 3)
             variablestars = [True]
             for i in range(types):
                 variablestars.append([periods[i], curvetypes[i], signs[i]])
-            self.variablestars = variablestars
             print(variablestars)
+            return variablestars
         else:
-            self.variablestars = [False, [], []]
-        self.homogeneous = homogeneous
-        self.clusters, self.clustervels = self.generate_clusters()
-        self.galaxies, self.distantgalaxies = self.get_all_galaxies()
-        self.supernovae = self.explode_supernovae(min(55, len(self.galaxies) + len(self.distantgalaxies)))
-        self.radialvelocities, self.distantradialvelocities = self.get_radial_velocities()
+            return [False, [], []]
     
     def generate_clusters(self):
         ''' Generate all of the galaxy clusters in the universe.
@@ -101,7 +111,7 @@ class Universe(object):
         
         clustervels = (self.hubble * R / (10**6)) * np.random.normal(1, 0.05, len(R))  # the radial velocity of each cluster according to v = HD
         
-        return clusters, clustervels
+        return clusters, clustervels, R
     
     def get_all_galaxies(self):
         '''
@@ -242,7 +252,29 @@ class Universe(object):
         skypositions = [positions[:, 0] + np.random.normal(0, 0.01, frequency), 
                         positions[:, 1] + np.random.normal(0, 0.01, frequency)]   # [equat, polar]
         return skypositions, peakfluxes
+    
+    def plot_hubblediagram(self, trendline=True, save=False):
+        ''' Plot the hubble diagram with distance in units of kiloparsec
+        Parameters
+        ----------
+        trendline : bool
+            If true, include a trendline indicating the true hubble parameter
+        save : bool
+            Used in the UniverseSim.save_data() function further upstream. If true, returns the figure to save later. 
+        '''
+        fig, ax = plt.subplots()
+        ax.scatter(self.clusterdists / 1000, self.clustervels)
+        ax.set_xlabel("Distance (kpc)"); ax.set_ylabel("Velocity (km/s)")
         
+        if trendline:
+            x = np.array([0, max(self.clusterdists)])
+            y = (self.hubble / 10**6) * x
+            ax.plot(x / 1000, y, 'r-', alpha=0.5)
+        
+        ax.set_xlim(xmin=0); ax.set_ylim(ymin=0)
+        if save:
+            plt.close()
+            return fig
         
         
     def cartesian_to_spherical(self, x, y, z):

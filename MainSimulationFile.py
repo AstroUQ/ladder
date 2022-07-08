@@ -40,7 +40,7 @@ class UniverseSim(object):
         '''
         '''
         # np.random.seed(seed)
-        # self.seed = seed
+        self.seed = seed
         self.hubble = 1000
         self.universe = Universe(450000, self.hubble, numclusters)
         self.galaxies, self.distantgalaxies = self.universe.get_all_galaxies()
@@ -56,6 +56,7 @@ class UniverseSim(object):
         stars = self.starpositions
         x, y, z, colours, scales = stars[0], stars[1], stars[2], stars[3], stars[4]
         equat, polar, radius = self.cartesian_to_spherical(x, y, z)
+        colours = colours[:]    # this fixes an issue when rerunning this program
         
         for i, blackhole in enumerate(self.blackholes):
             BHequat, BHpolar, distance = self.allgalaxies[i].spherical
@@ -74,8 +75,7 @@ class UniverseSim(object):
             pop = len(galaxy.get_stars()[0])
             j[i+1] = int(pop)
         cumpops = [int(sum(j[:i + 1])) if i != 0 else int(j[i]) for i in range(len(j))]
-        scales = [[scales[i+cumpops[k]] / (0.05 * radius[i+cumpops[k]]) if galaxy.complexity != "Distant" 
-                   else scales[i+cumpops[k]] / (0.001 * radius[i+cumpops[k]]) for i in range(len(galaxy.get_stars()[0]))] 
+        scales = [[scales[i+cumpops[k]] / (0.05 * radius[i+cumpops[k]]) for i in range(len(galaxy.get_stars()[0]))] 
                   for k, galaxy in enumerate(self.galaxies)]
         scales = [scale for galaxy in scales for scale in galaxy]
         if spikes == True:
@@ -88,7 +88,7 @@ class UniverseSim(object):
                     brightcolour = np.append(brightcolour, [colours[i]], axis=0)
             ax.errorbar(brightequat, brightpolar, yerr=brightscale, xerr=brightscale, ecolor=brightcolour, fmt='none', elinewidth=0.3)
         scales = [3 if scale > 3 else abs(scale) for scale in scales]
-        
+
         DGspherical = np.array([galaxy.spherical for galaxy in self.distantgalaxies])
         DGequat, DGpolar, DGdists = DGspherical[:, 0], DGspherical[:, 1], DGspherical[:, 2]
         equat, polar = np.append(equat, DGequat), np.append(polar, DGpolar)
@@ -99,7 +99,6 @@ class UniverseSim(object):
             colours.append([1.0000, 0.8286, 0.7187])
         
         if save == True:
-            # ax.scatter(equat, polar, s=scales, c=colours, marker='.')
             ax.scatter(equat, polar, s=scales, c=colours, linewidths=0)
         else:
             ax.scatter(equat, polar, s=scales, c=colours)
@@ -194,7 +193,7 @@ class UniverseSim(object):
             return fig
         
             
-    def save_data(self, properties=True, pic=True, stars=True, variable=True, distantgalax=True, supernovae=True, doppler=[True, False]):
+    def save_data(self, properties=True, pic=True, blackhole=True, stars=True, variable=True, distantgalax=True, supernovae=True, doppler=[True, False]):
         ''' Generates some data, takes other data, and saves it to the system in a new directory within the file directory.
         Parameters
         ----------
@@ -226,6 +225,19 @@ class UniverseSim(object):
             os.makedirs(self.datadirectory)     # if directory doesn't exist, create it
         
         if properties:
+            locgalaxdist = round(self.galaxies[-1].spherical[2], 2)
+            text = open(self.datadirectory + '\\Universe Details.txt', "w")
+            text.write("Universe Parameters: \n")
+            text.write("Parameter                   | Value   \n")
+            text.write("----------------------------|---------------------------------------\n")
+            text.write(f"Universe Radius             | {self.universe.radius} (pc)\n")
+            text.write(f"Hubble Const.               | {self.hubble} (km/s/Mpc)\n")
+            text.write(f"Dist. to local galax center | {locgalaxdist} (pc)\n")
+            text.write(f"Radius of local galaxy      | {round(self.galaxies[-1].radius, 2)} (pc)\n")
+            text.write(f"Variable Star Properties    | {self.universe.variablestars}\n")
+            text.write(f"Number of clusters          | {self.universe.clusterpop}\n")
+            text.write(f"Number of galaxies          | {len(self.galaxies)} local and {len(self.distantgalaxies)} distant\n")
+            text.close()
             fig = self.universe.plot_hubblediagram(save=True)
             fig.savefig(self.datadirectory + '\\Hubble Diagram.png', dpi=600, bbox_inches='tight', pad_inches = 0.01)
             fig.savefig(self.datadirectory + '\\Hubble Diagram.pdf', dpi=600, bbox_inches='tight', pad_inches = 0.01)
@@ -235,6 +247,12 @@ class UniverseSim(object):
             fig.set_size_inches(18, 9, forward=True)
             fig.savefig(self.datadirectory + '\\Universe Image.png', dpi=1500, bbox_inches='tight', pad_inches = 0.01)
             fig.savefig(self.datadirectory + '\\Universe Image.pdf', dpi=600, bbox_inches='tight', pad_inches = 0.01)
+            
+            if blackhole:       # plot radio data too
+                fig = self.plot_universe(radio=True, save=True)
+                fig.set_size_inches(18, 9, forward=True)
+                fig.savefig(self.datadirectory + '\\Radio Overlay Image.png', dpi=1500, bbox_inches='tight', pad_inches = 0.01)
+                fig.savefig(self.datadirectory + '\\Radio Overlay Image.pdf', dpi=600, bbox_inches='tight', pad_inches = 0.01)
             
         if stars:   # generate and save star data
             #firstly, get star xyz positions and convert them to equatorial/polar
@@ -425,9 +443,10 @@ def main():
     #           "with SD =", [sdbluef, sdgreenf, sdredf])
     
     
-    sim = UniverseSim(10)
-    # sim.save_data()
-    sim.universe.plot_hubblediagram()
+    sim = UniverseSim(150)
+    sim.save_data()
+    # sim.plot_universe()
+    # sim.universe.plot_hubblediagram()
     
     # galaxy = Galaxy('SBb', (0, 0, 10))
     # sim.galaxies[-1].plot_HR(variable=True)

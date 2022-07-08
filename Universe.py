@@ -6,6 +6,7 @@ Created on Mon Jun 27 13:08:36 2022
 """
 import matplotlib.pyplot as plt
 import numpy as np
+import scipy.stats as stats
 from tqdm import tqdm     # this is a progress bar for a for loop
 from GalaxyCluster import GalaxyCluster
 
@@ -76,24 +77,42 @@ class Universe(object):
         polar = np.random.uniform(-1, 1, population)
         polar = np.arccos(polar); polar = np.rad2deg(polar)
         
-        lowerbound = 5000 / self.radius     # we want a certain area around the origin to be empty (to make space for the local cluster)
+        lowerbound = 5000      # we want a certain area around the origin to be empty (to make space for the local cluster)
         if self.homogeneous:
-            dists = np.random.uniform(lowerbound, 1, population)
+            dists = np.random.uniform(lowerbound / self.radius, 1, population)
             R = self.radius * np.cbrt(dists)
         else:
-            proportion = 1/10    # proportion of total galaxies that you want to be resolved, 
-            # cdf of the exponential distribution is F(x) = 1 - exp(- x / b), where b is the 'scale', or mean, which goes into the numpy exponential function
-            # rearranging this, for some prop 'p', we get b = -x / ln(1 - p), and so
-            mean = - threshold / np.log(1 - proportion)
-            mean = mean / self.radius       # get the mean as a proportion of total radius
-            dists = np.random.exponential(mean, population) + lowerbound
-            R = self.radius * dists
+            # proportion = 1/10    # proportion of total galaxies that you want to be resolved, 
+            # # cdf of the exponential distribution is F(x) = 1 - exp(- x / b), where b is the 'scale', or mean, which goes into the numpy exponential function
+            # # rearranging this, for some prop 'p', we get b = -x / ln(1 - p), and so
+            # mean = - threshold / np.log(1 - proportion)
+            # mean = mean / self.radius       # get the mean as a proportion of total radius
+            # dists = np.random.exponential(mean, population) + lowerbound / self.radius
+            # R = self.radius * dists
+                
+            ### -- experimental: truncated exponential distribution for galaxy clusters in the universe -- ###
+            # in its current state, the clusters are distributed according to two exponential distributions:
+            #            |close    |_        distant            the left distribution makes up close clusters, and 
+            #            |clusters/| \_      clusters           clusters are more likely close to the threshold
+            # frequency  |      _/ |   \__                      the right distribution makes up distant clusters, and 
+            #            |  ___/   |      \______               clusters get less probable with distance
+            #            |_/_______|_____________\_____
+            #                      |    distance (kpc)
+            #                      ^threshold (usually 30kpc)
+            proportion = 1 / np.sqrt(self.clusterpop)    # proportion of total galaxies that you want to be resolved, 1/sqrt(n) gives a good, scaleable number.
+            closepop = int(proportion * self.clusterpop); farpop = int(self.clusterpop - closepop)  # find populations of each category
+            closescale = 1/3 * threshold    # the mean of the close distribution will actually be at about 2/3 of the threshold
+            # now, define the close distribution using scipy truncated exponential dist. b is a form of the upper bound.
+            # loc is the lower bound of the distribution and scale is the mean value after the lowerbound (i think?)
+            closedistribution = stats.truncexpon(b=(threshold - lowerbound)/closescale, loc=lowerbound, scale=closescale)
+            # now, to get the increasing shape we minus the random variables from the upper bound, and add the lower bound again to account for the shift
+            closedists = threshold - closedistribution.rvs(closepop) + lowerbound       # make 'closepop' number of random variables
+            # most of the steps below are analogous, but for the distant galaxy clusters
+            farscale = self.radius / 2
+            fardistribution = stats.truncexpon(b=(self.radius - threshold)/farscale, loc=threshold, scale=farscale)
+            fardists = fardistribution.rvs(farpop)
+            R = np.append(closedists, fardists)
             
-            # median = 2 * threshold / self.radius    # we want a quarter of the galaxies to be resolved, half to not be
-            # mean = median / np.log(2)       #  the mean of the exponential distribution is = median / ln(2)
-            # dists = np.random.exponential(mean**3, population) + lowerbound    # we don't want galaxy clusters within the lowerbounded sphere
-        
-        
         populations = np.random.exponential(8, population)  # generate number of galaxies per cluster
         populations = [1 if pop < 1 else int(pop) for pop in populations]   # make sure each cluster has at least one galaxy
         
@@ -263,7 +282,7 @@ class Universe(object):
             Used in the UniverseSim.save_data() function further upstream. If true, returns the figure to save later. 
         '''
         fig, ax = plt.subplots()
-        ax.scatter(self.clusterdists / 1000, self.clustervels)
+        ax.scatter(self.clusterdists / 1000, self.clustervels, s=1)
         ax.set_xlabel("Distance (kpc)"); ax.set_ylabel("Velocity (km/s)")
         
         if trendline:

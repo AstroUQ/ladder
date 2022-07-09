@@ -46,7 +46,6 @@ class Star(object):
                 self.variable = True
                 self.variabletype = ["Long", variable[2][1]]
             elif len(variable) == 4 and 100 <= self.luminosity <= 4000 and 2200 <= self.temperature <= 4700:
-                luminbounds = [100, 4000]
                 self.lightcurve = self.generate_variable(variable[3])
                 self.variable = True
                 self.variabletype = ["Longest", variable[3][1]]

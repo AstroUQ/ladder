@@ -1,0 +1,22 @@
+Universe Parameters: 
+Parameter                   | Value   
+----------------------------|---------------------------------------
+Universe Radius             | 450000 (pc)
+Hubble Const.               | 1000 (km/s/Mpc)
+Local Galaxy Type           | SBa 
+Dist. to local galax center | 39.68 (pc)
+Radius of local galaxy      | 101.02 (pc)
+Local Galax Black Hole Mass | 88.09 Solar Masses 
+Number of clusters          | 10
+Number of galaxies          | 74 local and 11 distant
+
+
+Variable Star Properties    | [RoughAvePeriod  LightcurveShape  PeriodLumGradient  PeriodLumYInt]
+----------------------------|--------------------------------------------------------------------
+Variable Stars?             | True
+Variable Class:             | Short
+                            | [26.11692739406814, 'Tri', 0.18133815268912065, 23.822084767582904]
+Variable Class:             | Long
+                            | [41.86146819324915, 'Sine', -0.18996966652414074, 38.96105496801095]
+Variable Class:             | Longest
+                            | [76.31353921637965, 'Saw', 0.053179919480117105, 69.37572696396245]

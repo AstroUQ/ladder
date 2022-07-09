@@ -38,29 +38,45 @@ class Universe(object):
         self.radialvelocities, self.distantradialvelocities = self.get_radial_velocities()
     
     def determine_variablestars(self, variable):
-        '''
+        ''' Determine the type of variable stars in the universe, and their period-luminosity relationships.
+        Generates 2 or 3 types of variable stars, with periodicity "Short" (18-30 hours), "Long" (38-55 hours), or "Longest"
+        (75-100 hours), with "Longest" only appearing in 1/3 datasets. 
         Parameters
         ----------
         variable : bool
             Whether or not this universe should have variable stars
+        Returns
+        -------
+        variablestars : list
+            A list composed of [bool, variableparams * n], where the bool corresponds to if this universe has variable stars, 
+            variable params : list
+                [RoughPeriod, Curvetype, Gradient, Yintercept], where Curvetype is one of {"Saw", "Tri", "Sine"} (Sawtooth wave,
+                Triangle wave, and Sine wave respectively) which determines the shape of the variable lightcurve. RoughPeriod, 
+                Gradient and Yintercept are all float type, where gradient and y-intercept correspond to the parameters of the 
+                period-luminosity relationship trend (period = gradient * log10(luminosity) + yint). Rough period is the roughly
+                accurate mean period of the period-lum trend.
+            and n is the number of variable types in the universe (2/3 chance of n=2, 1/3 chance of n=3)
         '''
         if variable:
+            # first, we want to determine the shape of each variable type lightcurve. Choose randomly from Saw Tri and Sine
             indexes = np.array([0, 1, 2]); np.random.shuffle(indexes)
             curvetypes = ["Saw", "Tri", "Sine"]; curvetypes = [curvetypes[index] for index in indexes]
-            prob = np.random.uniform(0, 1)
-            types = 2 if prob <= 0.66 else 3
-            shortperiod = np.random.uniform(18, 30); longperiod = np.random.uniform(38, 55) 
+            
+            prob = np.random.uniform(0, 1); types = 2 if prob <= 0.66 else 3    # determine whether to do 2 or 3 variable types
+            
+            shortperiod = np.random.uniform(18, 30); longperiod = np.random.uniform(38, 55)     # randomly determine period of the variables within some allowed range
             longestperiod = np.random.uniform(75, 100)
             periods = [shortperiod, longperiod, longestperiod]
-            signs = np.random.choice([-1, 1], 3)
+            signs = np.random.choice([-1, 1], 3)    # randomly choose sign of the period-luminosity trend
             variablestars = [True]
             
-
-            shortlower = 3.5*10**5; shortupper = 5*10**6
-            shortperiodL = np.random.uniform(0.9, 1); shortperiodU = np.random.uniform(1, 1.25)
-            shortgradient = signs[0] * (np.log10(shortupper / shortlower)) / (shortperiod * (shortperiodU - shortperiodL))
-            shortyint = (shortperiodL * shortperiod) - (shortgradient * np.log10(shortlower))
+            # we want to find the equation of a line given two points (high lumin and low lumin)
+            shortlower = 3.5*10**5; shortupper = 5*10**6    # lower and upper luminosity bounds
+            shortperiodL = np.random.uniform(0.9, 1); shortperiodU = np.random.uniform(1, 1.25)     # proportion of lower and upper period bounds
+            shortgradient = signs[0] * (np.log10(shortupper / shortlower)) / (shortperiod * (shortperiodU - shortperiodL))  # m = sign * rise/run
+            shortyint = (shortperiodL * shortperiod) - (shortgradient * np.log10(shortlower))   # y = mx + c => c = y - mx
             
+            # as above, but for the long and longest variable types
             longlower = 100; longupper = 700
             longperiodL = np.random.uniform(0.9, 1); longperiodU = np.random.uniform(1, 1.25)
             longgradient = signs[1] * (np.log10(longupper / longlower)) / (longperiod * (longperiodU - longperiodL))
@@ -73,12 +89,11 @@ class Universe(object):
             
             gradients = [shortgradient, longgradient, longestgradient]
             yints = [shortyint, longyint, longestyint]
-            for i in range(types):
+            for i in range(types):  # append the period-lum parameters to a list to be sent across the universe
                 variablestars.append([periods[i], curvetypes[i], gradients[i], yints[i]])
-            print(variablestars)
             return variablestars
         else:
-            return [False, [], []]
+            return [False, [], []]  # if we dont want variable stars, an 'empty' list still needs to be sent out
     
     def generate_clusters(self):
         ''' Generate all of the galaxy clusters in the universe.
@@ -152,110 +167,140 @@ class Universe(object):
         return clusters, clustervels, R
     
     def get_all_galaxies(self):
-        '''
+        ''' 
+        Returns
+        -------
+        galaxies : list
+            List of all the Galaxy objects in the universe
+        distantgalaxies : list
+            List of all of the Galaxy objects in the universe that have the complexity="Distant" trait.
         '''
         clusters = [cluster.galaxies for cluster in self.clusters]
-        flatgalaxies = [galaxy for cluster in clusters for galaxy in cluster]
-        distantgalaxies = []
+        flatgalaxies = [galaxy for cluster in clusters for galaxy in cluster]   # flatten the list of galaxies so that there are no nested lists
+        distantgalaxies = []    # initialise list to store distant galaxies
         for i, galaxy in enumerate(flatgalaxies):
             if galaxy.complexity == "Distant":
-                distantgalaxies.append(galaxy)
-                flatgalaxies[i] = None
-        galaxies = [galaxy for galaxy in flatgalaxies if galaxy != None]
+                distantgalaxies.append(galaxy)  # move this galaxy into the distant galaxy list
+                flatgalaxies[i] = None      # set the moved galaxy to "None" so that it may be ignored later
+        galaxies = [galaxy for galaxy in flatgalaxies if galaxy != None]    # get all of the non-distant galaxies (ignore None)
         return galaxies, distantgalaxies
+    
     def get_all_starpositions(self):
+        ''' Return a list of all of the stars in the universe in the same format as a "galaxy.starpositions" call, that is
+        [x, y, z, colours, scales]
+        '''
         galaxydata = [galaxy.get_stars() for galaxy in self.galaxies]
-        x = [galaxy[0] for galaxy in galaxydata]; x = np.array([coord for xs in x for coord in xs])
+        x = [galaxy[0] for galaxy in galaxydata]; x = np.array([coord for xs in x for coord in xs])     # flatten the x data and convert to numpy array
         y = [galaxy[1] for galaxy in galaxydata]; y = np.array([coord for xs in y for coord in xs])
         z = [galaxy[2] for galaxy in galaxydata]; z = np.array([coord for xs in z for coord in xs])
         colours = [galaxy[3] for galaxy in galaxydata]; colours = [coord for xs in colours for coord in xs]
         scales = [galaxy[4] for galaxy in galaxydata]; scales = np.array([coord for xs in scales for coord in xs])
         stars = [x, y, z, colours, scales]
         return stars
+    
     def get_blackholes(self):
+        ''' Return a list of all of the BlackHole objects in the universe (with the local blackhole being the last element). 
+        '''
         blackholes = [galaxy.blackhole for galaxy in self.galaxies]
         distantblackholes = [galaxy.blackhole for galaxy in self.distantgalaxies]
-        allblackholes = blackholes + distantblackholes
+        allblackholes = distantblackholes + blackholes
         return allblackholes
     
     def get_radial_velocities(self):
+        ''' Calculates the radial velocities for all of the stars/distant galaxies in the universe, according to:
+             - Hubble Recession
+             - Galaxy Rotation
+             - Cluster Rotation
+             - Random rotations of galaxies in 3D space
+        Returns
+        -------
+        obsvel : numpy array
+            The radial velocities of the stars in the universe
+        distantobsvel : numpy array
+            The radial velocities of the distant galaxies
+        '''
         stars = self.get_all_starpositions()
         x, y, z, _, _ = stars[0], stars[1], stars[2], stars[3], stars[4]
         _, _, radius = self.cartesian_to_spherical(x, y, z)
         
         locgalaxymovement = self.clusters[-1].directions[:, -1]  # the local galaxy is the last galaxy in the last cluster
-        localgalaxydist = self.clusters[-1].galaxies[-1].spherical[2]
+        localgalaxydist = self.clusters[-1].galaxies[-1].spherical[2]   # get the distance from the observer (origin) to the center of the local galaxy
         localgalaxy = self.clusters[-1].galaxies[-1]
-        closestar = min(localgalaxy.starorbits, key=lambda x:abs(x - localgalaxydist))
-        closestarindex = np.where(localgalaxy.starorbits == closestar)
-        approxlocalstarvel = localgalaxy.starvels[1, closestarindex[0]]
-        localstarmovement = approxlocalstarvel * np.array([0, 1, np.random.normal(0, 0.05)])
+        # now, we want to find the velocity of a star (in a similar orbit to that of "our sun") about the center of the local galaxy
+        closestar = min(localgalaxy.starorbits, key=lambda x:abs(x - localgalaxydist))  # find the star with orbital radius closest to our distance from galax center
+        closestarindex = np.where(localgalaxy.starorbits == closestar)  # get the index of that close star
+        approxlocalstarvel = localgalaxy.starvels[1, closestarindex[0]]     # find the velocity of that close star, with index 0 in case there are more than one match
+        # since the local galaxy is hardcoded to be at (180, 90) coords, we can fix the motion vector, with no x movement, negative y movement, and random z motion
+        localstarmovement = approxlocalstarvel * np.array([0, -1, np.random.normal(0, 0.05)])
         
-        galaxydirection = []
+        galaxydirection = []            # initialise lists that will hold the direction vectors for each galaxy and distant galaxy
         distantgalaxydirection = []
-        for cluster in self.clusters:
+        for cluster in self.clusters:       # this for loop finds the direction of galaxy movement within their respective clusters
             for i in range(len(cluster.galaxies)):
                 # add the vector of the local galaxy movement with the current galaxy movement
-                if cluster.galaxies[i].complexity != "Distant":
-                    galaxydirection.append(cluster.directions[:, i]) 
-                else:
+                if cluster.galaxies[i].complexity != "Distant":     # add direction to normal galaxy list if not distant
+                    galaxydirection.append(cluster.directions[:, i])    
+                else:   # else add the direction to the distant galaxy list
                     distantgalaxydirection.append(cluster.directions[:, i]) 
-        galaxydirection = np.array(galaxydirection)
+        galaxydirection = np.array(galaxydirection)     # to help in reading the data later, we want the data to be in an array form rather than a list
         distantgalaxydirection = np.array(distantgalaxydirection)
-        DGcartesians = np.array([galaxy.cartesian for galaxy in self.distantgalaxies])    # distant galaxy cartesians
+        DGcartesians = np.array([galaxy.cartesian for galaxy in self.distantgalaxies])    # distant galaxy cartesians coords
         DGx, DGy, DGz = DGcartesians[:, 0], DGcartesians[:, 1], DGcartesians[:, 2]     # distant galaxy x, distant galaxy y, etc
-        DGradius = [galaxy.spherical[2] for galaxy in self.distantgalaxies]
+        DGradius = [galaxy.spherical[2] for galaxy in self.distantgalaxies]     # get the distance to each distant galaxy
         
-        stardirections = []
+        starvectors = []     # initialise list that will hold star direction vectors for stars within each galaxy
         distantgalaxyvectors = []
-        k = 0; m = 0
-        for h, cluster in enumerate(self.clusters):
-            galaxyvels = cluster.galaxvels[1, :]
-            for i, galaxy in enumerate(cluster.galaxies):
+        k = 0; m = 0    # these are required to keep track of which galaxy we're dealing with, "close" and "distant" galaxy tickers respectively
+        # this for loop calculates the velocity *vector* (magnitude and direction) of each star in the universe, as well as distant galaxies
+        for h, cluster in enumerate(self.clusters):     
+            galaxyvels = cluster.galaxvels[1, :]    # get the magnitude of the velocity of this galaxy in its cluster
+            for i, galaxy in enumerate(cluster.galaxies):   # for the galaxies in this cluster...
                 if galaxy.complexity != "Distant":  # close galaxy, so we're dealing with stars
-                    stardirection = galaxy.directions
-                    starvels = galaxy.starvels[1, :]
-                    galaxyvel = galaxyvels[i]
-                    for j in range(len(stardirection[0, :])):
+                    stardirection = galaxy.directions   # get the directions of all of the stars in the galaxy
+                    starvels = galaxy.starvels[1, :]    # get the magnitude of the velocity of this galaxy's stars
+                    galaxyvel = galaxyvels[i]           # recall the velocity of this galaxy
+                    for j in range(len(stardirection[0, :])):   # for each star in this galaxy...
                         if h == len(self.clusters) - 1 and i == len(cluster.galaxies) - 1:      # must be the local galaxy
-                            stardirection[:, j] = (stardirection[:, j] * starvels[j])
+                            vector = (stardirection[:, j] * starvels[j])   # get the vector by multiplying direction by magnitude
                         else:
-                            stardirection[:, j] = (stardirection[:, j] * starvels[j]) + (galaxydirection[k] * galaxyvel)
-                        stardirections.append(stardirection[:, j])
-                    k += 1
+                            vector = (stardirection[:, j] * starvels[j]) + (galaxydirection[k] * galaxyvel)     # as above, but including the vector inherent with the moving galaxy
+                        starvectors.append(vector)  # add this stars vector to the list of all star vectors
+                    k += 1      # increase the close galaxy ticker by 1
                 else:   # distant galaxy, so we're dealing with galaxy as a whole
-                    vector = distantgalaxydirection[m] * galaxyvels[i]
-                    distantgalaxyvectors.append(vector)
-                    m += 1
-        k = 0
-        m = 0
-        obsvel = np.zeros(len(stardirections))
+                    vector = distantgalaxydirection[m] * galaxyvels[i]  # multiply direction by magnitude
+                    distantgalaxyvectors.append(vector)     # add vector the list of distant galaxy vectors
+                    m += 1  # increment the distant galaxy ticker
+                    
+        k = 0; m = 0    # restart the galaxy tickers from above
+        obsvel = np.zeros(len(starvectors))
         distantobsvel = np.zeros(len(distantgalaxyvectors))
         for h, cluster in enumerate(self.clusters):
-            if h != len(self.clusters) - 1:
-                clustervel = self.clustervels[h]
-                addclustervel = True
-            else:
+            # this for loop gets the observed radial velocities of all stars and distant galaxies when accounting for their
+            # velocity vectors AND the velocity vector inherent of the observer moving about the local galaxy center
+            if h != len(self.clusters) - 1:     # if the current cluster is NOT the local cluster...
+                clustervel = self.clustervels[h]    
+                addclustervel = True    # ...then we want to add this clusters radial velocity onto the vector of any star/distant galaxy
+            else:   # if it is the current cluster, the observer is moving with the cluster so we dont add any cluster vector
                 addclustervel = False
             for i, galaxy in enumerate(cluster.galaxies):
                 if galaxy.complexity != "Distant":  # close galaxy, so we're working with individual stars
-                    if addclustervel == False and i == len(cluster.galaxies) - 1:
+                    if addclustervel == False and i == len(cluster.galaxies) - 1:   # this must be our local galaxy! we dont want to add galaxy movement onto this since we're moving *with* the galaxy
                         addgalaxyvel = False
-                    else:
+                    else:   # else its not our galaxy, so it has motion relative to our galaxy
                         addgalaxyvel = True
                     for j in range(len(galaxy.stars)):
                         if addgalaxyvel:
-                            vector = stardirections[k] + locgalaxymovement + localstarmovement    # velocity vector "v"
+                            vector = starvectors[k] + locgalaxymovement + localstarmovement    # velocity vector "v"
                         else:
-                            vector = stardirections[k] + localstarmovement
-                        coord = np.array([x[k], y[k], z[k]])    # distance vector "d"
+                            vector = starvectors[k] + localstarmovement
+                        coord = np.array([x[k], y[k], z[k]])    # distance vector "d" away from the origin
                         obsvel[k] = np.dot(vector, coord) / radius[k]      # dot product: (v dot d) / ||d||
                         # the dot product above gets the radial component of the velocity (thank you Ciaran!! - linear algebra is hard)
                         if addclustervel:
-                            obsvel[k] += clustervel
-                        k += 1
+                            obsvel[k] += clustervel     # if its not our cluster, add the clusters' velocity due to hubble recession
+                        k += 1      # increment galaxy ticker
                 else:   # distant galaxy, so we're working with galaxies as a whole
-                    vector = distantgalaxyvectors[m] + locgalaxymovement + localstarmovement
+                    vector = distantgalaxyvectors[m] + locgalaxymovement + localstarmovement    # very similar process to above
                     coord = np.array([DGx[m], DGy[m], DGz[m]])
                     distantobsvel[m] = np.dot(vector, coord) / DGradius[m]
                     if addclustervel:
@@ -264,16 +309,22 @@ class Universe(object):
         return obsvel, distantobsvel
     
     def explode_supernovae(self, frequency):
-        '''
+        ''' Generate Type 1a supernovae in random galaxies in the universe. 
         Parameters
         ----------
         frequency : int
             The number of supernovae to generate
+        Returns
+        -------
+        skypositions : list
+            A list of [equat, polar], where equat and polar are numpy arrays of the coordinates of each supernova in the sky
+        peakfluxes : numpy array
+            The peak flux (in W/m^2) of the supernovae, accounting for distance to the observer.
         '''
         allgalaxies = self.distantgalaxies + self.galaxies
-        indexes = np.random.uniform(0, len(allgalaxies) - 1, frequency - 2)
+        indexes = np.random.uniform(0, len(allgalaxies) - 1, frequency - 2)     # choose positions of the supernovae in terms of random galaxy indexes
         closeindexes = len(allgalaxies) - np.random.uniform(1, 14, 2)     # gets two indexes within the last 14 of the galaxy list
-        indexes = np.append(indexes, closeindexes); np.random.shuffle(indexes)
+        indexes = np.append(indexes, closeindexes); np.random.shuffle(indexes)  # shuffle the indexes so its not as obvious that the last two supernovae are in close galaxies
         galaxies = [allgalaxies[int(i)] for i in indexes]
         positions = np.array([galaxy.spherical for galaxy in galaxies])
         # intrinsic = 1.5 * 10**44 / (4 * np.pi * (7 * 10**6)**2)     # rough energy release of R=7000km white dwarf Type Ia supernova (W/m^2)
@@ -286,9 +337,9 @@ class Universe(object):
         
         peaklumin = 2 * 10**36  # 20 billion times solar luminosity, source: https://www.sciencedirect.com/topics/physics-and-astronomy/type-ia-supernovae#:~:text=A%20typical%20supernova%20reaches%20its,times%20that%20of%20the%20Sun.
         distances = positions[:, 2] * 3.086 * 10**16    # convert from parsec to meters
-        peakfluxes = (peaklumin / (4 * np.pi * distances**2)) * np.random.normal(1, 0.01, frequency)  # F = L / (4pi*r^2)
-        skypositions = [positions[:, 0] + np.random.normal(0, 0.01, frequency), 
-                        positions[:, 1] + np.random.normal(0, 0.01, frequency)]   # [equat, polar]
+        peakfluxes = (peaklumin / (4 * np.pi * distances**2)) * np.random.normal(1, 0.01, frequency)  # F = L / (4pi*r^2)  - with some random scatter
+        skypositions = [positions[:, 0] + np.random.normal(0, 0.01, frequency),   # equatorial angle, with a bit of scatter
+                        positions[:, 1] + np.random.normal(0, 0.01, frequency)]   # as above, but with polar angle
         return skypositions, peakfluxes
     
     def plot_hubblediagram(self, trendline=True, save=False):

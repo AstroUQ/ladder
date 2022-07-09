@@ -194,7 +194,7 @@ class UniverseSim(object):
         
             
     def save_data(self, properties=True, pic=True, radio=True, stars=True, variable=True, distantgalax=True, supernovae=True, 
-                  doppler=[True, False], blackhole=True):
+                  doppler=[True, False], blackhole=True, rotcurves=True):
         ''' Generates some data, takes other data, and saves it to the system in a new directory within the file directory.
         Parameters
         ----------
@@ -263,13 +263,13 @@ class UniverseSim(object):
             fig = self.plot_universe(save=True)
             fig.set_size_inches(18, 9, forward=True)
             fig.savefig(self.datadirectory + '\\Universe Image.png', dpi=1500, bbox_inches='tight', pad_inches = 0.01)
-            fig.savefig(self.datadirectory + '\\Universe Image.pdf', dpi=600, bbox_inches='tight', pad_inches = 0.01)
+            fig.savefig(self.datadirectory + '\\Universe Image.pdf', dpi=200, bbox_inches='tight', pad_inches = 0.01)
             
             if radio:       # plot radio data too
                 fig = self.plot_universe(radio=True, save=True)
                 fig.set_size_inches(18, 9, forward=True)
                 fig.savefig(self.datadirectory + '\\Radio Overlay Image.png', dpi=1500, bbox_inches='tight', pad_inches = 0.01)
-                fig.savefig(self.datadirectory + '\\Radio Overlay Image.pdf', dpi=600, bbox_inches='tight', pad_inches = 0.01)
+                fig.savefig(self.datadirectory + '\\Radio Overlay Image.pdf', dpi=200, bbox_inches='tight', pad_inches = 0.01)
             
         if stars:   # generate and save star data
             #firstly, get star xyz positions and convert them to equatorial/polar
@@ -381,13 +381,22 @@ class UniverseSim(object):
             fig = self.plot_doppler(save=True)
             fig.set_size_inches(18, 9, forward=True)
             fig.savefig(self.datadirectory + '\\Doppler Image Log Scale.png', dpi=1500, bbox_inches='tight', pad_inches = 0.01)
-            fig.savefig(self.datadirectory + '\\Doppler Image Log Scale.pdf', dpi=600, bbox_inches='tight', pad_inches = 0.01)
+            fig.savefig(self.datadirectory + '\\Doppler Image Log Scale.pdf', dpi=200, bbox_inches='tight', pad_inches = 0.01)
             if doppler[1]:
                 fig = self.plot_doppler(log=False, save=True)
                 fig.set_size_inches(18, 9, forward=True)
                 fig.savefig(self.datadirectory + '\\Doppler Image Linear Scale.png', dpi=1500, bbox_inches='tight', pad_inches = 0.01)
-                fig.savefig(self.datadirectory + '\\Doppler Image Linear Scale.pdf', dpi=600, bbox_inches='tight', pad_inches = 0.01)
+                fig.savefig(self.datadirectory + '\\Doppler Image Linear Scale.pdf', dpi=200, bbox_inches='tight', pad_inches = 0.01)
                 
+        if rotcurves:   # plot and save the rotation curve of each resolved galaxy
+            rotcurvedirectory = self.datadirectory + "\\Galaxy Rotation Curves"
+            os.makedirs(rotcurvedirectory)  # make a new folder to hold the rotation curves
+            
+            for galaxy in self.galaxies:
+                equat, polar, _ = galaxy.spherical; equat, polar = round(equat, 2), round(polar, 2)
+                fig = galaxy.plot_RotCurve(newtapprox=True, save=True)
+                fig.savefig(rotcurvedirectory + f'\\{equat}-{polar} {galaxy.species}.png', dpi=400, bbox_inches='tight', pad_inches = 0.01)
+            
         t1 = time(); total = t1 - t0; print("Data generated and saved in =", total, "s")
     
     def cartesian_to_spherical(self, x, y, z):

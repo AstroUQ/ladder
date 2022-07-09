@@ -98,8 +98,8 @@ class GalaxyCluster(object):
             args.insert(0, (f'E{num}', self.cartesian, True))     # insert an elliptical galaxy in the center of the cluster
         
         if self.local == True:  # generate a spiral galaxy near the observer, with no rotation
-            localgalaxy = np.random.choice(['SBa', 'SBb', 'SBc', 'S0', 'Sa', 'Sb', 'Sc'])   # choose spiral type
-            localdist = np.random.uniform(10, 65)   # we don't want the observer in the center of the galaxy, but also not outside of it
+            localgalaxy = np.random.choice(['SBa', 'SBb', 'SBc', 'Sa', 'Sb', 'Sc'])   # choose spiral type - we dont want S0 because they have fewer variable stars (due to their position on HR diagrams)
+            localdist = np.random.uniform(15, 60)   # we don't want the observer in the center of the galaxy, but also not outside of it
             localx, localy, localz = self.spherical_to_cartesian(180, 90, localdist)
             args[-1] = (localgalaxy, [localx, localy, localz], False)   # replace the last galaxy in the cluster with this galaxy, with no rotation!
             # galaxpositions[-1, :] = np.array([localx, localy, localz])

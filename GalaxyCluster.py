@@ -11,7 +11,7 @@ from Galaxy import Galaxy
 
 class GalaxyCluster(object):
     def __init__(self, position, population, cartesian=False, local=False, darkmatter=True, complexity="Normal",
-                 variable=[True, [20, "Tri", 1], [50, "Saw", 1]]):
+                 variable=[True, [20, "Tri", 6, -12.4], [50, "Saw", 16, 8.6], [90, "Sine", 16.9, 47.3]]):
         '''
         Parameters
         ----------

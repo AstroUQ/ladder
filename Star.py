@@ -11,7 +11,7 @@ from matplotlib import colors
 # import colour as col
 
 class Star(object):
-    def __init__(self, location, species="MS", variable=[True, [20, "Tri", 1], [50, "Saw", 1]]):
+    def __init__(self, location, species="MS", variable=[True, [20, "Tri", 6, -12.4], [50, "Saw", 16, 8.6], [90, "Sine", 16.9, 47.3]]):
         '''
         '''
         if species == "MS":
@@ -37,23 +37,21 @@ class Star(object):
         self.bandlumin = self.generate_BandLumin(self.temperature, self.radius)
         if variable[0]:
             noiseprob = np.random.uniform(0, 1)
-            if 3.5*10**5 <= self.luminosity <= 5*10**6 and 5500 <= self.temperature <= 10**4:  # kinda like delta cepheids
-                luminbounds = [3.5*10**5, 5 * 10**6]
-                self.lightcurve = self.generate_variable(variable[1], luminbounds)
+            if 3.5*10**5 <= self.luminosity <= 5*10**6 and 5500 <= self.temperature <= 1.2 * 10**4:  # kinda like delta cepheids
+                self.lightcurve = self.generate_variable(variable[1])
                 self.variable = True
                 self.variabletype = ["Short", variable[1][1]]
             elif 100 <= self.luminosity <= 700 and 10**4 <= self.temperature <= 1.2 * 10**4:    # kinda like delta scutis
-                luminbounds = [100, 700]
-                self.lightcurve = self.generate_variable(variable[2], luminbounds)
+                self.lightcurve = self.generate_variable(variable[2])
                 self.variable = True
                 self.variabletype = ["Long", variable[2][1]]
-            elif len(variable) == 4 and 20 <= self.luminosity <= 4000 and 3000 <= self.temperature <= 4700:
-                luminbounds = [20, 4000]
-                self.lightcurve = self.generate_variable(variable[3], luminbounds)
+            elif len(variable) == 4 and 100 <= self.luminosity <= 4000 and 2200 <= self.temperature <= 4700:
+                luminbounds = [100, 4000]
+                self.lightcurve = self.generate_variable(variable[3])
                 self.variable = True
                 self.variabletype = ["Longest", variable[3][1]]
             elif noiseprob < 0.01:
-                self.lightcurve = self.generate_variable([np.random.uniform(3, 40), "Noise", -1])
+                self.lightcurve = self.generate_variable([np.random.uniform(3, 40), "Noise", -1, -1])
                 self.variable = True
                 self.variabletype = ["False", "Noise"]
             else: 
@@ -61,25 +59,19 @@ class Star(object):
         else:
             self.variable = False
         
-    def generate_variable(self, params, luminbounds=None):
+    def generate_variable(self, params):
         '''
         Parameters
         ----------
         params : list
             [period, type] where period is the period of the oscillation, and type is the type of wave
         '''
-        period, wavetype, trendsign = params
-        if luminbounds != None:
-            lower, upper = luminbounds
-            lowerperiod = np.random.uniform(0.9, 1) * period; upperperiod = np.random.uniform(1, 1.25) * period
-            run = np.log10(upper) - np.log10(lower); rise = trendsign * (upperperiod - lowerperiod)
-            gradient = rise / run
-            intercept = lowerperiod / (gradient * lower)
-            period = (gradient * np.log10(self.luminosity) + intercept) * np.random.normal(1, 0.02)
+        period, wavetype, gradient, yint = params
+        
+        period = gradient * np.log10(self.luminosity) + yint
         
         time = np.arange(0, 121)    # 5 days, or 120 hours worth of increments
         shift = np.random.uniform(0, period)
-        
         
         if wavetype == "Saw":   # sawtooth function, done with a superposition of sine curves
             amp = 0.1
@@ -97,9 +89,7 @@ class Star(object):
             flux = 1 + amp * np.sin(2 * np.pi * (time + shift) / period)
             flux += np.random.normal(0, amp/6, len(flux))
         elif wavetype == "Noise":
-            amp = 0.05
-            flux = 1 + amp * np.sin(2 * np.pi * (time + shift) / period)
-            flux += np.random.normal(0, 0.1, len(flux))
+            flux = 1 + np.random.normal(0, 0.1, len(time))
         return np.array([time, flux])
             
     def MS_masses(self, species):

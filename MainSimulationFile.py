@@ -226,7 +226,7 @@ class UniverseSim(object):
             os.makedirs(self.datadirectory)     # if directory doesn't exist, create it
         
         if properties:
-            locgalaxdist = round(self.galaxies[-1].spherical[2], 2)
+            # now to write the universe properties to a file
             text = open(self.datadirectory + '\\Universe Details.txt', "w")
             text.write("Universe Parameters: \n")
             text.write("Parameter                   | Value   \n")
@@ -234,12 +234,23 @@ class UniverseSim(object):
             text.write(f"Universe Radius             | {self.universe.radius} (pc)\n")
             text.write(f"Hubble Const.               | {self.hubble} (km/s/Mpc)\n")
             text.write(f"Local Galaxy Type           | {self.galaxies[-1].species} \n")
-            text.write(f"Dist. to local galax center | {locgalaxdist} (pc)\n")
+            text.write(f"Dist. to local galax center | {round(self.galaxies[-1].spherical[2], 2)} (pc)\n")
             text.write(f"Radius of local galaxy      | {round(self.galaxies[-1].radius, 2)} (pc)\n")
             text.write(f"Local Galax Black Hole Mass | {round(self.galaxies[-1].blackhole.mass, 2)} Solar Masses \n")
-            text.write(f"Variable Star Properties    | {self.universe.variablestars}\n")
             text.write(f"Number of clusters          | {self.universe.clusterpop}\n")
             text.write(f"Number of galaxies          | {len(self.galaxies)} local and {len(self.distantgalaxies)} distant\n")
+            text.write("\n\n")
+            text.write("Variable Star Properties    | [RoughAvePeriod  LightcurveShape  PeriodLumGradient  PeriodLumYInt]\n")
+            text.write("----------------------------|--------------------------------------------------------------------\n")
+            for i, variable in enumerate(self.universe.variablestars):
+                if i == 0:
+                    text.write(f"Variable Stars?             | {variable}\n")
+                else:
+                    length = "Short" if i == 1 else "Long"
+                    length = "Longest" if i == 3 else length
+                    text.write(f"Variable Class:             | {length}\n")
+                    text.write(f"                            | {variable}\n")
+                    
             text.close()
             hubblediag = self.universe.plot_hubblediagram(save=True)
             hubblediag.savefig(self.datadirectory + '\\Hubble Diagram.png', dpi=600, bbox_inches='tight', pad_inches = 0.01)
@@ -306,18 +317,22 @@ class UniverseSim(object):
             names = [f"S{i:0{width}d}" for i in range(1, len(equat)+1)]
             k = 0
             for galaxy in self.galaxies:
-                if galaxy.spherical[2] <= 5000:
+                if galaxy.spherical[2] <= 15000:
                     for star in galaxy.stars:
                         if star.variable == True:
-                            starname = names[k]
-                            if galaxy.rotate == False:      # must be the local galaxy, so we want to save a pic of the lightcurve
-                                fig = star.plot_lightcurve(save=True)
-                                fig.savefig(variabledirectory + f'\\{starname}.png', dpi=400, bbox_inches='tight', pad_inches = 0.01)
-                            times, fluxes = star.lightcurve
-                            variabledata = {"Time":times, "NormalisedFlux":fluxes}
-                            variablefile = pd.DataFrame(variabledata)
-                            
-                            variablefile.to_csv(variabledirectory + f"\\{starname}.txt", index=None, sep=' ')
+                            condition1 = galaxy.spherical[2] <= 5000 and star.variabletype[0] == "Long"
+                            condition2 = galaxy.spherical[2] <= 7500 and star.variabletype[0] == "Longest"
+                            condition3 = star.variabletype[0] in ["Short", "False"]
+                            if condition1 or condition2 or condition3:
+                                starname = names[k]
+                                if galaxy.rotate == False:      # must be the local galaxy, so we want to save a pic of the lightcurve
+                                    fig = star.plot_lightcurve(save=True)
+                                    fig.savefig(variabledirectory + f'\\{starname}.png', dpi=400, bbox_inches='tight', pad_inches = 0.01)
+                                times, fluxes = star.lightcurve
+                                variabledata = {"Time":times, "NormalisedFlux":fluxes}
+                                variablefile = pd.DataFrame(variabledata)
+                                
+                                variablefile.to_csv(variabledirectory + f"\\{starname}.txt", index=None, sep=' ')
                         k +=1
                 else:
                     k += len(galaxy.stars)
@@ -449,7 +464,7 @@ def main():
     #           "with SD =", [sdbluef, sdgreenf, sdredf])
     
     
-    sim = UniverseSim(500)
+    sim = UniverseSim(10)
     sim.save_data()
     # sim.plot_universe()
     # sim.universe.plot_hubblediagram()

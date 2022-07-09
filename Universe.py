@@ -54,8 +54,27 @@ class Universe(object):
             periods = [shortperiod, longperiod, longestperiod]
             signs = np.random.choice([-1, 1], 3)
             variablestars = [True]
+            
+
+            shortlower = 3.5*10**5; shortupper = 5*10**6
+            shortperiodL = np.random.uniform(0.9, 1); shortperiodU = np.random.uniform(1, 1.25)
+            shortgradient = signs[0] * (np.log10(shortupper / shortlower)) / (shortperiod * (shortperiodU - shortperiodL))
+            shortyint = (shortperiodL * shortperiod) - (shortgradient * np.log10(shortlower))
+            
+            longlower = 100; longupper = 700
+            longperiodL = np.random.uniform(0.9, 1); longperiodU = np.random.uniform(1, 1.25)
+            longgradient = signs[1] * (np.log10(longupper / longlower)) / (longperiod * (longperiodU - longperiodL))
+            longyint = (longperiodL * longperiod) - (longgradient * np.log10(longlower))
+            
+            longestlower = 100; longestupper = 700
+            longestperiodL = np.random.uniform(0.9, 1); longestperiodU = np.random.uniform(1, 1.25)
+            longestgradient = signs[2] * (np.log10(longestupper / longestlower)) / (longestperiod * (longestperiodU - longestperiodL))
+            longestyint = (longestperiodL * longestperiod) - (longestgradient * np.log10(longestlower))
+            
+            gradients = [shortgradient, longgradient, longestgradient]
+            yints = [shortyint, longyint, longestyint]
             for i in range(types):
-                variablestars.append([periods[i], curvetypes[i], signs[i]])
+                variablestars.append([periods[i], curvetypes[i], gradients[i], yints[i]])
             print(variablestars)
             return variablestars
         else:

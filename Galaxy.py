@@ -16,7 +16,7 @@ from Star import Star
 
 class Galaxy(object):
     def __init__(self, species, position, cartesian=False, BHcluster=True, darkmatter=True, rotate=True, complexity="Normal",
-                 variable=[True, [20, "Tri", 1], [50, "Saw", 1], [90, "Sine", -1]]):
+                 variable=[True, [20, "Tri", 6, -12.4], [50, "Saw", 16, 8.6], [90, "Sine", 16.9, 47.3]]):
         '''
         Parameters
         ----------

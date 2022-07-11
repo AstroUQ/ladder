@@ -11,8 +11,8 @@ from tqdm import tqdm     # this is a progress bar for a for loop
 from GalaxyCluster import GalaxyCluster
 
 class Universe(object):
-    def __init__(self, radius, hubble, clusters, complexity="Normal", variablestars=True, homogeneous=False):
-        '''
+    def __init__(self, radius, clusters, hubble=None, complexity="Normal", variablestars=True, homogeneous=False):
+        ''' Generate a universe consisting of Star, BlackHole, Galaxy, and GalaxyCluster objects. 
         Parameters
         ----------
         radius : float
@@ -27,8 +27,8 @@ class Universe(object):
             Whether the universe is homogeneous or not (approx constant density with distance)
         '''
         self.radius = radius
-        self.hubble = hubble
         self.clusterpop = clusters
+        self.hubble = self.choosehubble() if hubble != None else hubble
         self.complexity = complexity
         self.variablestars = self.determine_variablestars(variablestars)
         self.homogeneous = homogeneous
@@ -36,6 +36,15 @@ class Universe(object):
         self.galaxies, self.distantgalaxies = self.get_all_galaxies()
         self.supernovae = self.explode_supernovae(min(55, len(self.galaxies) + len(self.distantgalaxies)))
         self.radialvelocities, self.distantradialvelocities = self.get_radial_velocities()
+    
+    def choosehubble(self):
+        ''' Randomly generate a value for hubble's constant, with random sign. 
+        Returns
+        -------
+        float
+            The Hubble constant, in units of km/s/Mpc
+        '''
+        return np.random.choice([-1, 1]) * np.random.uniform(1000, 5000)
     
     def determine_variablestars(self, variable):
         ''' Determine the type of variable stars in the universe, and their period-luminosity relationships.
@@ -167,7 +176,7 @@ class Universe(object):
         return clusters, clustervels, R
     
     def get_all_galaxies(self):
-        ''' 
+        ''' Obtain flattened lists of all of the galaxies and distant galaxies in the Universe.
         Returns
         -------
         galaxies : list
@@ -188,6 +197,10 @@ class Universe(object):
     def get_all_starpositions(self):
         ''' Return a list of all of the stars in the universe in the same format as a "galaxy.starpositions" call, that is
         [x, y, z, colours, scales]
+        Returns
+        -------
+        stars : list
+            A 5xn list of all of the stars in the format described in the description.
         '''
         galaxydata = [galaxy.get_stars() for galaxy in self.galaxies]
         x = [galaxy[0] for galaxy in galaxydata]; x = np.array([coord for xs in x for coord in xs])     # flatten the x data and convert to numpy array
@@ -200,6 +213,11 @@ class Universe(object):
     
     def get_blackholes(self):
         ''' Return a list of all of the BlackHole objects in the universe (with the local blackhole being the last element). 
+        Returns
+        -------
+        allblackholes : list
+            A list of all of the BlackHole objects in the universe, with the distant blackholes populating the first section of the list,
+            and black holes in resolved galaxies populating the second section of the list.
         '''
         blackholes = [galaxy.blackhole for galaxy in self.galaxies]
         distantblackholes = [galaxy.blackhole for galaxy in self.distantgalaxies]
@@ -309,7 +327,7 @@ class Universe(object):
         return obsvel, distantobsvel
     
     def explode_supernovae(self, frequency):
-        ''' Generate Type 1a supernovae in random galaxies in the universe. 
+        ''' Generate Type 1a supernovae in random galaxies in the universe, with their apparent peak flux.
         Parameters
         ----------
         frequency : int
@@ -349,15 +367,19 @@ class Universe(object):
         trendline : bool
             If true, include a trendline indicating the true hubble parameter
         save : bool
-            Used in the UniverseSim.save_data() function further upstream. If true, returns the figure to save later. 
+            Used in the UniverseSim.save_data() function further downstream. If true, returns the figure to save later. 
+        Returns
+        -------
+        fig : matplotlib figure object
+            If save==True, returns the figure to be saved later on. 
         '''
         fig, ax = plt.subplots()
-        ax.scatter(self.clusterdists / 1000, self.clustervels, s=1)
+        ax.scatter(self.clusterdists / 1000, self.clustervels, s=1)     # plots the cluster dists in kpc
         ax.set_xlabel("Distance (kpc)"); ax.set_ylabel("Velocity (km/s)")
         
-        if trendline:
-            x = np.array([0, max(self.clusterdists)])
-            y = (self.hubble / 10**6) * x
+        if trendline:   # plot a trendline 
+            x = np.array([0, self.radius])
+            y = (self.hubble / 10**6) * x   # get the radial velocity in terms of km/s/pc * pc => km/s
             ax.plot(x / 1000, y, 'r-', alpha=0.5)
         
         ax.set_xlim(xmin=0); ax.set_ylim(ymin=0)

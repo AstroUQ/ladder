@@ -51,7 +51,7 @@ Several real aspects of astronomy are modelled (to varying degrees of accuracy) 
 ### The Universe as a whole
 <img align="right" height="200" src="/MiscGithubImages/Hubble Diagram.png">  
 
- - Hubble recession is modelled, with more distant galaxies receeding further away. 
+ - Hubble recession is modelled, with more distant galaxies receeding further away. The hubble constant itself is chosen as a value between 1000 and 5000km/s/Mpc, with a random sign. 
  - Radial velocities of resolved stars take into account hubble recession, galaxy movement within clusters, and star movement within galaxies. 
  - In output visual images of the universe (see the top of this readme!), stars have diffraction spikes according to how bright they appear to the observer. Why? Because this is pretty and I like it. 
  - Type Ia supernova are randomly exploded across ~55 or so galaxies in the universe, with at least two of them being in the local cluster of galaxies so that the user may more easily find the intrinsic brightness. 
@@ -62,8 +62,8 @@ Several real aspects of astronomy are modelled (to varying degrees of accuracy) 
 - [ ] Make this damn README.md prettier!!
 - [ ] Include a 'how to use' section in this readme (thanks saskia!)
 - [ ] Fill out many docstrings and comment all code to a degree readable by other users.
-- [ ] Generate individual datasets inside of a "Datasets" folder. 
-- [ ] Randomly determine hubble constant (and update the readme after doing so). 
+- [x] Generate individual datasets inside of a "Datasets" folder. 
+- [x] Randomly determine hubble constant (and update the readme after doing so). 
 - [ ] Set it so that some galaxies don't have a black hole and/or dark matter, with probability depending on galaxy type. 
 - [ ] Output some luminosity data about black holes. Maybe under x-ray data?
 - [ ] Make black hole proportion of eddington luminosity depend on same manner of the host galaxy. 

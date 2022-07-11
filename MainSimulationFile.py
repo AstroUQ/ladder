@@ -19,99 +19,127 @@ from GalaxyCluster import GalaxyCluster
 from Star import Star
 from Universe import Universe
 
-
-    
 def plot_all_dopplers(galaxies):
+    ''' Plot the radial velocities of a list of Galaxy objects onto an image. Mainly to be used for troubleshooting.
+    '''
     fig, (ax, cbar_ax) = plt.subplots(1, 2, gridspec_kw={'width_ratios': [30,1]})
     for galaxy in galaxies:
         galaxy.plot_doppler(fig, ax, cbar_ax, blackhole=True)
 def plot_all_2d(galaxies, spikes=False, radio=False):
+    ''' Plot the positions, colours and brightness of a list of Galaxy objects onto an image. Mainly to be used for troubleshooting.
+    '''
     fig, ax = plt.subplots()
     for galaxy in galaxies:
         galaxy.plot_2d(fig, ax, spikes=spikes, radio=radio)
 def plot_all_3d(galaxies):
+    ''' Plot 3D galaxies from a list of Galaxy objects. Mainly to be used for troubleshooting.
+    '''
     fig = plt.figure()
     ax = fig.add_subplot(projection='3d')
     for galaxy in galaxies:
         galaxy.plot_3d(ax, camera=False)
 
 class UniverseSim(object):
-    def __init__(self, numclusters, seed=3080):
+    def __init__(self, numclusters, hubble=None, seed=None):
+        ''' Generates a Universe object and imports important data from it. 
+        Parameters
+        ----------
+        numclusters : int
+            The number of GalaxyCluster objects to populate the universe with.
+        hubble : float
+            The value of the Hubble constant in units of km/s/Mpc.
+        seed : int
+            A random seed for which to apply to random number generation in the program.
         '''
-        '''
-        # np.random.seed(seed)
-        self.seed = seed
-        self.hubble = 1000
-        self.universe = Universe(450000, self.hubble, numclusters)
+        self.seed = seed if seed != None else int(np.random.uniform(0, 9999)) # randomly choose a <=4 digit seed if one isn't given
+        np.random.seed(seed)
+        self.universe = Universe(450000, hubble, numclusters)
+        self.hubble = self.universe.hubble
         self.galaxies, self.distantgalaxies = self.universe.get_all_galaxies()
         self.allgalaxies = self.galaxies + self.distantgalaxies
         self.supernovae = self.universe.supernovae
         self.starpositions = self.universe.get_all_starpositions()
-        self.blackholes = self.universe.get_blackholes()    
+        self.blackholes = self.universe.get_blackholes()  
     
     def plot_universe(self, spikes=True, radio=False, save=False):
-        '''
+        ''' Plot all of the stars and distant galaxies in the universe onto a rectangular mapping of the inside of the 
+        observable universe sphere. X-axis units are in "Equatorial Angle (degrees)", with Y-axis units in "Polar Angle (degrees)."
+        Parameters
+        ----------
+        spikes : bool
+            If true, add diffraction spikes to stars according to their apparent brightness
+        radio : bool
+            If true, plot the black hole radio lobes overlaid onto the universe image.
+        save : bool
+            If true, returns the matplotlib figure object so that it may be saved further downstream. 
+        Returns
+        -------
+        fig : matplotlib figure object (if "save" parameter is True)
         '''
         fig, ax = plt.subplots()
         stars = self.starpositions
         x, y, z, colours, scales = stars[0], stars[1], stars[2], stars[3], stars[4]
         equat, polar, radius = self.cartesian_to_spherical(x, y, z)
-        colours = colours[:]    # this fixes an issue when rerunning this program
+        colours = colours[:]    # this fixes an issue when rerunning this program since we want to make a copy of the colours array
         
-        for i, blackhole in enumerate(self.blackholes):
-            BHequat, BHpolar, distance = self.allgalaxies[i].spherical
+        for i, blackhole in enumerate(self.blackholes):     # first, plot the black holes at their positions
+            BHequat, BHpolar, distance = self.allgalaxies[i].spherical  # get the coords of each black hole
             BHcolour = blackhole.get_BH_colour()
-            BHscale = blackhole.get_BH_scale() / (0.05 * distance)
-            if spikes == True and BHscale > 2.5: 
+            BHscale = blackhole.get_BH_scale() / (0.05 * distance)  # determine the scale of the black hole marker from its intrinsic brightness and distance
+            if spikes == True and BHscale > 2.5:    # then we want to plot diffraction spikes on the black hole
                 spikesize = BHscale / 2
                 ax.errorbar(BHequat, BHpolar, yerr=spikesize, xerr=spikesize, ecolor=BHcolour, fmt='none', elinewidth=0.3, alpha=0.5)
-            if save == True:
+            if save == True:    # we want to get rid of the circle outline on the marker if we're saving the image
                 ax.scatter(BHequat, BHpolar, color=BHcolour, s=BHscale, linewidths=0)
-            else:
+            else:   # matplotlib can automatically scale markers when zooming, so we don't need to worry about the circle outlines. 
                 ax.scatter(BHequat, BHpolar, color=BHcolour, s=BHscale)
         
-        j = np.zeros(len(self.galaxies) + 1)
+        # now, we want to plot all of the stars in the universe. Firstly, we need to determine how large they should appear
+        j = np.zeros(len(self.galaxies) + 1)    # initialise an array to store galaxy populations
         for i, galaxy in enumerate(self.galaxies):
             pop = len(galaxy.get_stars()[0])
-            j[i+1] = int(pop)
-        cumpops = [int(sum(j[:i + 1])) if i != 0 else int(j[i]) for i in range(len(j))]
+            j[i+1] = int(pop)       # add this galaxy's population to the aforementioned array
+        cumpops = [int(sum(j[:i + 1])) if i != 0 else int(j[i]) for i in range(len(j))]     # determine the cumulative population of the galaxies in their order
+        # the cumulative population is needed to keep track of which star is being looked at in the next step
         scales = [[scales[i+cumpops[k]] / (0.05 * radius[i+cumpops[k]]) for i in range(len(galaxy.get_stars()[0]))] 
-                  for k, galaxy in enumerate(self.galaxies)]
-        scales = [scale for galaxy in scales for scale in galaxy]
-        if spikes == True:
+                  for k, galaxy in enumerate(self.galaxies)]    # get the scale of each star, and divide it by some function of its distance to get its apparent brightness
+        scales = [scale for galaxy in scales for scale in galaxy]   # the above operation produces nested lists, so this step flattens the list
+        if spikes == True:  # now to plot diffraction spikes on the bright stars
             brightequat, brightpolar, brightscale, brightcolour = [], [], [], np.empty((0, 3))
             for i, scale in enumerate(scales):
-                if scale > 2.5:
+                if scale > 2.5:     # we want spikes on this star!
                     brightequat += [equat[i]]
                     brightpolar += [polar[i]]
                     brightscale = brightscale + [scale / 4]
                     brightcolour = np.append(brightcolour, [colours[i]], axis=0)
+            # now plot makeshift diffraction spikes with no marker (so that the marker can accurately be plotted later)
             ax.errorbar(brightequat, brightpolar, yerr=brightscale, xerr=brightscale, ecolor=brightcolour, fmt='none', elinewidth=0.3)
-        scales = [3 if scale > 3 else abs(scale) for scale in scales]
-
+        scales = [3 if scale > 3 else abs(scale) for scale in scales]   # limit the maximum size of stars so that an abnormally close star doesnt cover the image
+        
+        # now we obtain the distant galaxy positions and data, and append them to the star arrays (plotting all in one go saves some time)
         DGspherical = np.array([galaxy.spherical for galaxy in self.distantgalaxies])
         DGequat, DGpolar, DGdists = DGspherical[:, 0], DGspherical[:, 1], DGspherical[:, 2]
-        equat, polar = np.append(equat, DGequat), np.append(polar, DGpolar)
+        equat, polar = np.append(equat, DGequat), np.append(polar, DGpolar)     # append the distant galaxy data to the end of the star data
         
-        DGscales = 1 / (0.0001 * DGdists)
+        DGscales = 1 / (0.0001 * DGdists)   # we want to artifically make distant galaxies a bit larger than stars, since they *should* be brighter and bigger
         for scale in DGscales:
             scales.append(scale)
-            colours.append([1.0000, 0.8286, 0.7187])
+            colours.append([1.0000, 0.8286, 0.7187])    # this is a nice enough colour to show distant galaxies as. Plotting them based on their actual colour would be too expensive
         
-        if save == True:
+        if save == True:    # as with earlier, plot with no circle outline if saving
             ax.scatter(equat, polar, s=scales, c=colours, linewidths=0)
         else:
             ax.scatter(equat, polar, s=scales, c=colours)
-        ax.set_xlim(0, 360); ax.set_ylim(0, 180)
-        ax.set_facecolor('k')
-        ax.set_aspect(1)
+        ax.set_xlim(0, 360); ax.set_ylim(0, 180)    # equatorial angle goes from 0->360, polar 0->180
+        ax.set_facecolor('k')   # space has a black background, duh
+        ax.set_aspect(1)    # makes it so that the figure is twice as wide as it is tall - no stretching!
         fig.tight_layout()
-        ax.invert_yaxis()
+        ax.invert_yaxis()   # polar angle of 0 is at the top, 180 at the bottom
         ax.set_xlabel("Equatorial Angle (degrees)")
         ax.set_ylabel("Polar Angle (degrees)")
-        if radio == True:
+        if radio == True:   # plot the radio overlay
             self.plot_radio(ax)
-        if save == True:
+        if save == True:    # close the figure (so it doesnt pop up during the run) and return the figure to save later.
             plt.close()
             return fig
     
@@ -133,7 +161,6 @@ class UniverseSim(object):
         density : numpy array (NxN)
             The number count of scatter particles per equat/polar bin. 
         '''
-        
         # equatbins, polarbins, density = [galaxy.plot_radio_contour(0, plot=False, data=True) for galaxy in self.galaxies]
         if plot == True:    # plot the contour
             levels = [2, 3, 4, 5, 6, 10, 15]    # having the contour levels start at 2 removes the noise from the smoothing - important!!
@@ -146,22 +173,36 @@ class UniverseSim(object):
             return equatbins, polarbins, density
         
     def plot_doppler(self, log=True, save=False):
+        ''' Plot the radial velocities of all of the stars and distant galaxies in the universe in terms of a colour scale,
+        where the objects are at their positions in the sky. Similar to the "plot_universe()" function. 
+        Parameters
+        ----------
+        log : bool
+            If true (by default), plots the radial velocities with a logarithmically scaled colourbar. If False (I don't recommend),
+            plots with a linearly scaled colourbar.
+        save : bool
+            If true, returns the figure so that it may be saved later. 
+        Returns
+        -------
+        figure : matplotlib figure object
+            If save==True, closes the figure and returns it so that it may be saved later on. 
         '''
-        '''
-        fig, (ax, cbar_ax) = plt.subplots(1, 2, gridspec_kw={'width_ratios': [30,1]})
-        stars = self.starpositions
+        fig, (ax, cbar_ax) = plt.subplots(1, 2, gridspec_kw={'width_ratios': [30,1]})   # generate a figure and colourbar with width ratio of 30:1
+        stars = self.starpositions  # get all of the star positions 
         x, y, z, _, scales = stars[0], stars[1], stars[2], stars[3], stars[4]
         equat, polar, radius = self.cartesian_to_spherical(x, y, z)
         
-        DGspherical = np.array([galaxy.spherical for galaxy in self.distantgalaxies])
+        DGspherical = np.array([galaxy.spherical for galaxy in self.distantgalaxies])   # get all of the distant galaxy positions
         DGequat, DGpolar, DGdists = DGspherical[:, 0], DGspherical[:, 1], DGspherical[:, 2]
+        # now, append the distant galaxy data to the star data since, for the sake of the program, they're functionally identical
         equat, polar, radius = np.append(equat, DGequat), np.append(polar, DGpolar), np.append(radius, DGdists)
         
+        # get the radial velocities of each object
         obsvel = self.universe.radialvelocities
         DGobsvel = self.universe.distantradialvelocities
         obsvel = np.append(obsvel, DGobsvel)
         
-        scales = 1 / (0.01 * np.sqrt(radius))
+        scales = 1 / (0.01 * np.sqrt(radius))   # determine scale much in the same way as in plot_universe() - further away objects are smaller, but this time doesnt depend on intrinsic brightness
         
         minvel = min(obsvel); maxvel = max(obsvel)
         if maxvel < -minvel:    # this conditional normalises the colourbar such that v=0 is in the middle of the max and min vel
@@ -169,11 +210,11 @@ class UniverseSim(object):
         else:
             minvel = -maxvel
     
-        cm = plt.cm.get_cmap('bwr')     # blue => white => red colourmap
-        if log:
+        cm = plt.cm.get_cmap('bwr')     # blue => white => red colourmap (large negative velocities are blue - blueshifted! Nice!)
+        if log:     # plot the object positions with a logarithmically scaled colourmap (looks nice, so is the default option)
             red = ax.scatter(equat, polar, c=obsvel, cmap=cm , marker='.', s=scales, linewidths=0,
                           norm=colors.SymLogNorm(linthresh=0.03, vmin=minvel, vmax=maxvel))  # note the colourmap for the redshift amount
-        else:
+        else:   # plots the objects with a linearly scaled colourmap - i dont recommend it, but it's here anyway
             red = ax.scatter(equat, polar, c=obsvel, vmin=minvel, vmax=maxvel, cmap=cm , marker='.', s=scales,
                              linewidths=0)  # note the colourmap for the redshift amount
         
@@ -181,7 +222,7 @@ class UniverseSim(object):
         cbar.set_label('Radial Velocity (km/s)', rotation=90)
 
         ax.set_xlim(0, 360); ax.set_ylim(0, 180)
-        ax.set_facecolor('k')
+        ax.set_facecolor('k')   # the background of space is black, duh
         ax.set_aspect(1)    # sets it to be twice as wide as high, so that angular ratios are preserved
         fig.tight_layout()
         ax.invert_yaxis()
@@ -198,8 +239,12 @@ class UniverseSim(object):
         ''' Generates some data, takes other data, and saves it to the system in a new directory within the file directory.
         Parameters
         ----------
+        properties : bool
+            Whether to save the properties of the universe (e.g. variable star parameters, galaxy size, etc)
         pic : bool
             Whether to generate and save a 2d plot of the universe.
+        radio : bool
+            If true, plot another universe image with radio lobes overlaid.
         stars : bool
             Generate and save star data
         distantgalax : bool
@@ -211,11 +256,15 @@ class UniverseSim(object):
         doppler : list of bool
             First bool in list is whether or not to save a doppler graph with log scale. Second bool is whether to save a linear
             scaled one as well.
+        blackhole : bool
+            Whether to save data from black holes in all galaxies
+        rotcurves : bool
+            Whether to plot and save the galaxy rotation curves of all resolved galaxies. 
         '''
         print("Starting data saving..."); t0 = time()
         # first, initialise the directory where all data will be saved
         self.directory = os.path.dirname(os.path.realpath(__file__))    # this is where this .py file is located on the system
-        self.datadirectory = self.directory + f"\\Sim Data {self.seed}"
+        self.datadirectory = self.directory + f"\\Datasets\\Sim Data {self.seed}"
         if os.path.exists(self.datadirectory):  # if this directory exists, we need to append a number to the end of it
             i = 1
             while os.path.exists(self.datadirectory):   # this accounts for multiple copies that may exist
@@ -226,7 +275,7 @@ class UniverseSim(object):
             os.makedirs(self.datadirectory)     # if directory doesn't exist, create it
         
         if properties:
-            # now to write the universe properties to a file
+            # now to write the universe properties to a file. They're all pretty self-explanatory.
             text = open(self.datadirectory + '\\Universe Details.txt', "w")
             text.write("Universe Parameters: \n")
             text.write("Parameter                   | Value   \n")
@@ -242,7 +291,7 @@ class UniverseSim(object):
             text.write("\n\n")
             text.write("Variable Star Properties    | [RoughAvePeriod  LightcurveShape  PeriodLumGradient  PeriodLumYInt]\n")
             text.write("----------------------------|--------------------------------------------------------------------\n")
-            for i, variable in enumerate(self.universe.variablestars):
+            for i, variable in enumerate(self.universe.variablestars):  # now to write the properties of the variable stars to file
                 if i == 0:
                     text.write(f"Variable Stars?             | {variable}\n")
                 else:
@@ -259,7 +308,7 @@ class UniverseSim(object):
             HR.savefig(self.datadirectory + '\\Local Galaxy HR Diagram.png', dpi=600, bbox_inches='tight', pad_inches = 0.01)
             HR.savefig(self.datadirectory + '\\Local Galaxy HR Diagram.pdf', dpi=600, bbox_inches='tight', pad_inches = 0.01)
         
-        if pic:
+        if pic:     # now save a huge pic of the universe. say goodbye to your diskspace
             fig = self.plot_universe(save=True)
             fig.set_size_inches(18, 9, forward=True)
             fig.savefig(self.datadirectory + '\\Universe Image.png', dpi=1500, bbox_inches='tight', pad_inches = 0.01)
@@ -312,18 +361,18 @@ class UniverseSim(object):
             starfile.to_csv(self.datadirectory + "\\Star Data.txt", index=None, sep=' ')    # and finally save the dataframe to the directory
             
         if variable:
-            variabledirectory = self.datadirectory + "\\Variable Star Data"
+            variabledirectory = self.datadirectory + "\\Variable Star Data"     # save data within a subfolder
             os.makedirs(variabledirectory)
-            names = [f"S{i:0{width}d}" for i in range(1, len(equat)+1)]
+            names = [f"S{i:0{width}d}" for i in range(1, len(equat)+1)]     # names consistent with star names done earlier
             k = 0
             for galaxy in self.galaxies:
-                if galaxy.spherical[2] <= 15000:
+                if galaxy.spherical[2] <= 15000:    # we only want to save variable star data if the stars are close-ish
                     for star in galaxy.stars:
                         if star.variable == True:
                             condition1 = galaxy.spherical[2] <= 5000 and star.variabletype[0] == "Long"
                             condition2 = galaxy.spherical[2] <= 7500 and star.variabletype[0] == "Longest"
                             condition3 = star.variabletype[0] in ["Short", "False"]
-                            if condition1 or condition2 or condition3:
+                            if condition1 or condition2 or condition3:  # if one of the above criteria are met, we want to save the data
                                 starname = names[k]
                                 if galaxy.rotate == False:      # must be the local galaxy, so we want to save a pic of the lightcurve
                                     fig = star.plot_lightcurve(save=True)
@@ -331,10 +380,9 @@ class UniverseSim(object):
                                 times, fluxes = star.lightcurve
                                 variabledata = {"Time":times, "NormalisedFlux":fluxes}
                                 variablefile = pd.DataFrame(variabledata)
-                                
                                 variablefile.to_csv(variabledirectory + f"\\{starname}.txt", index=None, sep=' ')
                         k +=1
-                else:
+                else:   # we still need to increment the ticker so that later data is accurate
                     k += len(galaxy.stars)
                         
         if distantgalax:

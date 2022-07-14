@@ -28,7 +28,7 @@ class Universe(object):
         '''
         self.radius = radius
         self.clusterpop = clusters
-        self.hubble = self.choosehubble() if hubble != None else hubble
+        self.hubble = self.choosehubble() if hubble == None else hubble
         self.complexity = complexity
         self.variablestars = self.determine_variablestars(variablestars)
         self.homogeneous = homogeneous

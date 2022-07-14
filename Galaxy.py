@@ -10,6 +10,7 @@ import matplotlib.ticker as ticker
 import pandas as pd
 import scipy.optimize as opt             # this is to fit two axes in the HR diagram
 import scipy.ndimage                     # this is to smooth out the BH radio lobes
+import warnings
 from BlackHole import BlackHole
 from Star import Star
 
@@ -761,6 +762,7 @@ class Galaxy(object):
             ax.scatter(xvals, yvals, color=colours, s=0.5)
         
         if xunit == "both":
+            warnings.filterwarnings("ignore", category=RuntimeWarning)
             def TempVsColour(x, a, b, c, d, g):
                 ''' A polynomial fit for temperature vs colour (B - V)
                 '''

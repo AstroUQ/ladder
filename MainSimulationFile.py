@@ -53,7 +53,7 @@ class UniverseSim(object):
         '''
         self.seed = seed if seed != None else int(np.random.uniform(0, 9999)) # randomly choose a <=4 digit seed if one isn't given
         np.random.seed(seed)
-        self.universe = Universe(450000, hubble, numclusters)
+        self.universe = Universe(450000, numclusters, hubble)
         self.hubble = self.universe.hubble
         self.galaxies, self.distantgalaxies = self.universe.get_all_galaxies()
         self.allgalaxies = self.galaxies + self.distantgalaxies
@@ -234,8 +234,8 @@ class UniverseSim(object):
             return fig
         
             
-    def save_data(self, properties=True, pic=True, radio=True, stars=True, variable=True, distantgalax=True, supernovae=True, 
-                  doppler=[True, False], blackhole=True, rotcurves=True):
+    def save_data(self, properties=True, pic=True, radio=True, stars=True, variable=True, blackbodies=True, distantgalax=True, 
+                  supernovae=True, doppler=[True, False], blackhole=True, rotcurves=True):
         ''' Generates some data, takes other data, and saves it to the system in a new directory within the file directory.
         Parameters
         ----------
@@ -260,21 +260,27 @@ class UniverseSim(object):
             Whether to save data from black holes in all galaxies
         rotcurves : bool
             Whether to plot and save the galaxy rotation curves of all resolved galaxies. 
+        blackbodies : bool
+            If true, plots the blackbody curve for stars in the local galaxy (1 curve for each temperature in 500K increments, so
+            e.g. 1 curve for a star of temp 4500K, and another for a temp of 5000K, but not two for 4500K etc), and stores them in 
+            a subdirectory under the name "{starname}-Temp:{startemp}"
         '''
         print("Starting data saving..."); t0 = time()
         # first, initialise the directory where all data will be saved
         self.directory = os.path.dirname(os.path.realpath(__file__))    # this is where this .py file is located on the system
-        self.datadirectory = self.directory + f"\\Datasets\\Sim Data {self.seed}"
+        subdirectory = f"\\Datasets\\Sim Data (Clusters; {self.universe.clusterpop}, Seed; {self.seed})"
+        self.datadirectory = self.directory + subdirectory
         if os.path.exists(self.datadirectory):  # if this directory exists, we need to append a number to the end of it
             i = 1
             while os.path.exists(self.datadirectory):   # this accounts for multiple copies that may exist
-                self.datadirectory = self.directory + f"\\Sim Data {self.seed} ({i})"   # add the number to the end
+                self.datadirectory = self.datadirectory + f"({i})"   # add the number to the end
                 i += 1
             os.makedirs(self.datadirectory)     # now create the duplicate directory with the number on the end
         else:
             os.makedirs(self.datadirectory)     # if directory doesn't exist, create it
         
         if properties:
+            proptime1 = time(); print("Writing universe properties...")
             # now to write the universe properties to a file. They're all pretty self-explanatory.
             text = open(self.datadirectory + '\\Universe Details.txt', "w")
             text.write("Universe Parameters: \n")
@@ -307,20 +313,27 @@ class UniverseSim(object):
             HR = self.galaxies[-1].plot_HR(isoradii=True, xunit="both", yunit="BolLumMag", variable=True, save=True)
             HR.savefig(self.datadirectory + '\\Local Galaxy HR Diagram.png', dpi=600, bbox_inches='tight', pad_inches = 0.01)
             HR.savefig(self.datadirectory + '\\Local Galaxy HR Diagram.pdf', dpi=600, bbox_inches='tight', pad_inches = 0.01)
+            
+            proptime2 = time(); total = proptime2 - proptime1; print("Universe properties saved in", total, "s")
         
         if pic:     # now save a huge pic of the universe. say goodbye to your diskspace
+            pictime1 = time(); print("Generating universe picture...")
             fig = self.plot_universe(save=True)
             fig.set_size_inches(18, 9, forward=True)
             fig.savefig(self.datadirectory + '\\Universe Image.png', dpi=1500, bbox_inches='tight', pad_inches = 0.01)
             fig.savefig(self.datadirectory + '\\Universe Image.pdf', dpi=200, bbox_inches='tight', pad_inches = 0.01)
+            pictime2 = time(); total = pictime2 - pictime1; print("Universe picture saved in", total, "s")
             
             if radio:       # plot radio data too
+                print("Generating radio overlay...")
                 fig = self.plot_universe(radio=True, save=True)
                 fig.set_size_inches(18, 9, forward=True)
                 fig.savefig(self.datadirectory + '\\Radio Overlay Image.png', dpi=1500, bbox_inches='tight', pad_inches = 0.01)
                 fig.savefig(self.datadirectory + '\\Radio Overlay Image.pdf', dpi=200, bbox_inches='tight', pad_inches = 0.01)
+                pictime3 = time(); total = pictime3 - pictime2; print("Radio overlay picture saved in", total, "s")
             
         if stars:   # generate and save star data
+            startime1 = time(); print("Generating star data...")
             #firstly, get star xyz positions and convert them to equatorial/polar
             starpos = self.starpositions    
             x, y, z, _, _ = starpos[0], starpos[1], starpos[2], starpos[3], starpos[4]
@@ -352,15 +365,26 @@ class UniverseSim(object):
             obsvel = self.universe.radialvelocities     # retrieve the radial velocities from the universe object
             obsvel = np.around(obsvel, decimals=2)
             
+            # now to append data to the star.txt file as to whether a particular star shows a variable light curve
+            variabool = np.zeros(len(names))    # get it? variable but in terms of bools
+            k = 0
+            for galaxy in self.galaxies:
+                for star in galaxy.stars:
+                    variabool[k] = star.variable
+                    k += 1
+            
             # now, write all star data to a pandas dataframe
             stardata = {'Name':names, 'Equatorial':equat, 'Polar':polar,        # units of the equat/polar are in degrees
                         'BlueF':blueflux, 'GreenF':greenflux, 'RedF':redflux,   # units of these fluxes are in W/m^2/nm
-                        'Parallax':parallax, 'RadialVelocity':obsvel}           # units of parallax are in arcsec, obsvel in km/s
+                        'Parallax':parallax, 'RadialVelocity':obsvel,           # units of parallax are in arcsec, obsvel in km/s
+                        'Variable?':variabool}                                  # outputs 1.0 if variable, 0.0 if not      
             starfile = pd.DataFrame(stardata)
             
             starfile.to_csv(self.datadirectory + "\\Star Data.txt", index=None, sep=' ')    # and finally save the dataframe to the directory
+            startime2 = time(); total = startime2 - startime1; print("Star Data.txt saved in", total, "s")
             
         if variable:
+            vartime1 = time(); print("Saving variable data...")
             variabledirectory = self.datadirectory + "\\Variable Star Data"     # save data within a subfolder
             os.makedirs(variabledirectory)
             names = [f"S{i:0{width}d}" for i in range(1, len(equat)+1)]     # names consistent with star names done earlier
@@ -384,8 +408,30 @@ class UniverseSim(object):
                         k +=1
                 else:   # we still need to increment the ticker so that later data is accurate
                     k += len(galaxy.stars)
-                        
+            vartime2 = time(); total = vartime2 - vartime1; print("Variable data saved in", total, "s")
+        
+        if blackbodies:     # plot and save blackbody curves for stars of a given temperature in the local galaxy
+            blacktime1 = time(); print("Generating blackbody curves for local galaxy...")
+            blackbodydirectory = self.datadirectory + "\\Local Galaxy Blackbody Curves"     # save data within a subfolder
+            os.makedirs(blackbodydirectory)
+            names = [f"S{i:0{width}d}" for i in range(1, len(equat)+1)]     # names consistent with star names done earlier
+            k = 0
+            blackbodytemps = np.arange(0, 600)     # we only want one curve for each rough temperature, so these are the temps/100
+            for galaxy in self.galaxies:
+                if galaxy.rotate == False:  # must be the local galaxy, so lets plot some blackbody curves!
+                    for i, star in enumerate(galaxy.stars):
+                        roundtemp = round(star.temperature/500)
+                        if roundtemp in blackbodytemps:
+                            fig = star.plot_blackbodycurve(markers=True, visible=True, save=True)
+                            fig.savefig(blackbodydirectory + f'\\{names[k]}-Temp={round(star.temperature)}.png', dpi=400, bbox_inches='tight', pad_inches = 0.01)
+                            blackbodytemps = np.where(blackbodytemps==roundtemp, 0, blackbodytemps)     # remove this temperature from the pool of temps to plot
+                        k += 1
+                else:   # we still need to increment the ticker so that later data is accurate
+                    k += len(galaxy.stars)
+            blacktime2 = time(); total = blacktime2 - blacktime1; print("Blackbody curves saved in", total, "s")
+        
         if distantgalax:
+            distanttime1 = time(); print("Saving distant galaxy data...")
             sphericals = np.array([galaxy.spherical for galaxy in self.distantgalaxies])
             equat, polar, dists = sphericals[:, 0], sphericals[:, 1], sphericals[:, 2]
             distsMeters = dists * 3.086 * 10**16
@@ -414,8 +460,10 @@ class UniverseSim(object):
                       'Size':sizes, 'RadialVelocity':DGobsvel}
             DGfile = pd.DataFrame(DGdata)
             DGfile.to_csv(self.datadirectory + "\\Distant Galaxy Data.txt", index=None, sep=' ')
+            distanttime2 = time(); total = distanttime2 - distanttime1; print("Distant galaxy data saved in", total, "s")
             
         if supernovae:
+            supertime1 = time(); print("Saving supernova data...")
             pos, peak = self.supernovae
             equats = [format(abs(equat), '3.2f') for equat in pos[0]]
             polars = [format(abs(polar), '3.2f') for polar in pos[1]]
@@ -424,12 +472,15 @@ class UniverseSim(object):
             
             supernovafile = pd.DataFrame(supernovadata)
             supernovafile.to_csv(self.datadirectory + "\\Supernova Data.txt", index=None, sep=' ')
+            supertime2 = time(); total = supertime2 - supertime1; print("Supernova data saved in", total, "s")
             
         if doppler[0]:  # save the doppler image with a log scale
+            dopplertime1 = time(); print("Saving doppler image...")
             fig = self.plot_doppler(save=True)
             fig.set_size_inches(18, 9, forward=True)
             fig.savefig(self.datadirectory + '\\Doppler Image Log Scale.png', dpi=1500, bbox_inches='tight', pad_inches = 0.01)
             fig.savefig(self.datadirectory + '\\Doppler Image Log Scale.pdf', dpi=200, bbox_inches='tight', pad_inches = 0.01)
+            dopplertime2 = time(); total = dopplertime2 - dopplertime1; print("Doppler image saved in", total, "s")
             if doppler[1]:
                 fig = self.plot_doppler(log=False, save=True)
                 fig.set_size_inches(18, 9, forward=True)
@@ -437,6 +488,7 @@ class UniverseSim(object):
                 fig.savefig(self.datadirectory + '\\Doppler Image Linear Scale.pdf', dpi=200, bbox_inches='tight', pad_inches = 0.01)
                 
         if rotcurves:   # plot and save the rotation curve of each resolved galaxy
+            rottime1 = time(); print("Saving galaxy rotation curves...")
             rotcurvedirectory = self.datadirectory + "\\Galaxy Rotation Curves"
             os.makedirs(rotcurvedirectory)  # make a new folder to hold the rotation curves
             
@@ -444,8 +496,8 @@ class UniverseSim(object):
                 equat, polar, _ = galaxy.spherical; equat, polar = round(equat, 2), round(polar, 2)
                 fig = galaxy.plot_RotCurve(newtapprox=True, save=True)
                 fig.savefig(rotcurvedirectory + f'\\{equat}-{polar} {galaxy.species}.png', dpi=400, bbox_inches='tight', pad_inches = 0.01)
-            
-        t1 = time(); total = t1 - t0; print("Data generated and saved in =", total, "s")
+            rottime2 = time(); total = rottime2 - rottime1; print("Galaxy rotation curves saved in", total, "s")
+        t1 = time(); total = t1 - t0; print("All data generated and saved in =", total, "s")
     
     def cartesian_to_spherical(self, x, y, z):
         ''' Converts cartesian coordinates to spherical ones (formulae taken from wikipedia) in units of degrees. 
@@ -520,19 +572,9 @@ def main():
     #     print(f"Galaxy bandlumin for {number} {species} galaxies: Mean =", [meanbluef, meangreenf, meanredf], 
     #           "with SD =", [sdbluef, sdgreenf, sdredf])
     
-    
+    ### -- this is the function that you should run! -- ###
     sim = UniverseSim(10)
     sim.save_data()
-    # sim.plot_universe()
-    # sim.universe.plot_hubblediagram()
-    
-    # galaxy = Galaxy('SBb', (0, 0, 10))
-    # sim.galaxies[-1].plot_HR(variable=True)
-    
-    # cluster = GalaxyCluster((0, 0, 10), 40)
-    # cluster.plot_RotCurve(newtapprox=True)
-    
-    
     
 if __name__ == "__main__":
     main()

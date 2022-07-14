@@ -8,34 +8,45 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib import colors
+import warnings
 # import colour as col
 
 class Star(object):
     def __init__(self, location, species="MS", variable=[True, [20, "Tri", 6, -12.4], [50, "Saw", 16, 8.6], [90, "Sine", 16.9, 47.3]]):
+        ''' Generate a star according to its position in a Galaxy and on the HR diagram. 
+        Parameters
+        ----------
+        location : str
+            One of {'ys', 'os', 'bulge', 'disk'} in decreasing order of average mass and increasing redness. This is the where the 
+            star belongs in terms of the galaxy star population
+        species : str
+            Where the star is on the HR diagram, one of {'MS', 'WDwarf', 'Giant', 'SupGiant'}. Pretty self-explanatory. 
+        variable : list
+            The first element should be a bool, which is True if we want to model variable stars. The second to third (or fourth [optional])
+            elements should be parameters of the variable stars [ave period, lightcurve type, gradient, y-intercept]
         '''
-        '''
-        if species == "MS":
+        if species == "MS":         # main sequence star
             self.mass = abs(self.MS_masses(location))
             self.luminosity = abs(self.MS_lumin(self.mass))
             self.radius = self.MS_radius(self.mass)
             self.temperature = self.MS_temperature(self.luminosity, self.radius)
-        elif species == "WDwarf":
+        elif species == "WDwarf":   # white dwarf star
             self.mass = abs(self.WD_masses())
             self.radius = self.WD_radii(self.mass)
             self.temperature = self.WD_temp(self.mass)
             self.luminosity = abs(self.WD_lumin(self.temperature, self.radius, self.mass))
-        elif species == "Giant":
+        elif species == "Giant":        # giant star
             self.temperature = self.giant_temp()
             self.luminosity = abs(self.giant_lumin(self.temperature))
             self.mass = abs(self.giant_mass())
             self.radius = self.stefboltz_radius(self.luminosity, self.temperature)
-        elif species == "SupGiant":
+        elif species == "SupGiant":         # super giant star
             self.temperature = self.SGB_temp()
             self.luminosity = abs(self.SGB_lumin(self.temperature))
             self.mass = abs(self.SGB_mass())
             self.radius = self.stefboltz_radius(self.luminosity, self.temperature)
         self.bandlumin = self.generate_BandLumin(self.temperature, self.radius)
-        if variable[0]:
+        if variable[0]:     # if we want variable stars, it's time to check if this star fits the criteria to be variable
             noiseprob = np.random.uniform(0, 1)
             if 3.5*10**5 <= self.luminosity <= 5*10**6 and 5500 <= self.temperature <= 1.2 * 10**4:  # kinda like delta cepheids
                 self.lightcurve = self.generate_variable(variable[1])
@@ -49,7 +60,7 @@ class Star(object):
                 self.lightcurve = self.generate_variable(variable[3])
                 self.variable = True
                 self.variabletype = ["Longest", variable[3][1]]
-            elif noiseprob < 0.01:
+            elif noiseprob < 0.01:  # 1% chance of being random noise for its variable, provided that the other conditions arent met first
                 self.lightcurve = self.generate_variable([np.random.uniform(3, 40), "Noise", -1, -1])
                 self.variable = True
                 self.variabletype = ["False", "Noise"]
@@ -59,18 +70,24 @@ class Star(object):
             self.variable = False
         
     def generate_variable(self, params):
-        '''
+        ''' Generate variable data for this star given some variable relationship parameters. 
         Parameters
         ----------
         params : list
-            [period, type] where period is the period of the oscillation, and type is the type of wave
+            [aveperiod, type, gradient, y-int] where period is the rough average period of the oscillation, type is the type of wave
+            for the lightcurve, and gradient and y-int are the parameters for the (logarithmic) period-luminosity relation
+        Returns
+        -------
+        data : numpy array
+            First element is a numpy array of time data, in 1 hour intervals from 0 to 120 hours. 
+            Second element is the relative fluxes of the star compared to its baseline value (as a proportion of flux brightness)
         '''
         period, wavetype, gradient, yint = params
         
         period = gradient * np.log10(self.luminosity) + yint
         
         time = np.arange(0, 121)    # 5 days, or 120 hours worth of increments
-        shift = np.random.uniform(0, period)
+        shift = np.random.uniform(0, period)    # shift the wave so that all light curves dont start at the same point
         
         if wavetype == "Saw":   # sawtooth function, done with a superposition of sine curves
             amp = 0.1
@@ -97,6 +114,10 @@ class Star(object):
         ----------
         species : str
             which part of the galaxy the star is in.
+        Returns
+        -------
+        mass : float
+            The mass of the star in solar masses
         '''
         if species in ("youngspiral", "ys"):
             a, b = 2, 2.5
@@ -109,7 +130,8 @@ class Star(object):
         return np.random.gamma(a, b) + 0.08
     
     def MS_lumin(self, mass):
-        '''Piecewise relationships taken from:
+        ''' Generate luminosity according to mass-luminosity functions for main sequence stars. 
+        Piecewise relationships taken from:
             Wikipedia : https://en.wikipedia.org/wiki/Mass%E2%80%93luminosity_relation
             Evolution of Stars and Stellar Populations (book) : https://cfas.org/data/uploads/astronomy-ebooks/evolution_of_stars_and_stellar_populations.pdf
         Parameters
@@ -135,12 +157,20 @@ class Star(object):
         return lumin
 
     def MS_radius(self, mass):
-        '''Piecewise relationships taken from:
+        ''' Generate star radius from mass-radius relations, getting a rough value between that of a young star and old star.
+        Piecewise relationships taken from:
             https://articles.adsabs.harvard.edu/pdf/1991Ap%26SS.181..313D
             (with some tweaking)
-        
-        ZAMS = zero-age main sequence (new star)
+        ZAMS = zero-age main sequence (brand new star)
         TAMS = terminal age main sequence (about to transition off of MS)
+        Parameters
+        ----------
+        mass : float
+            Solar masses of the star
+        Returns
+        -------
+        radius : float
+            Solar radii of the star
         '''
         if mass < 1.66:
             TAMS = 2 * mass**0.75
@@ -148,19 +178,29 @@ class Star(object):
         elif mass >= 1.66:
             TAMS = 1.61 * mass**0.83
             ZAMS = 1.31 * mass**0.57
-        ave = (TAMS + ZAMS) / 2
-        radius = np.random.normal(ave, 0.12 * mass)
+        ave = (TAMS + ZAMS) / 2         # we want a rough value between that of a brand new and a turn-off star, this gives good scatter
+        radius = np.random.normal(ave, 0.12 * mass)     # we want the average value to be between ZAMS and TAMS, with some scatter
         return radius
         
     def MS_temperature(self, lumin, radius):
-        '''Main sequence temperature using stefan-boltzman equation. 
+        ''' Main sequence temperature using stefan-boltzman equation. 
+        Parameters
+        ----------
+        lumin : float
+            Solar luminosities of the star
+        radius : float
+            Solar radii of the star
+        Returns
+        -------
+        temp : float
+            Temperature (K) of the star
         '''
-        sigma = 5.67037 * 10**-8
-        R = 696340000 * radius
-        L = 3.828 * 10**26 * lumin
+        sigma = 5.67037 * 10**-8    # stefan boltzmann constant
+        R = 696340000 * radius      # get radius in meters
+        L = 3.828 * 10**26 * lumin  # get luminosity in watts
         temp = (L / (sigma * 4 * np.pi * R**2 ))**(1/4)
         temp += np.random.normal(0, 0.1 * temp)
-        temp = min(40000, temp)
+        temp = min(40000, temp)         # we absolutely do not want any main sequence stars with temps above 40kK
         return temp
     
     def WD_masses(self):
@@ -169,21 +209,15 @@ class Star(object):
         Distribution retrieved from Fig 1 from:
             https://www.lume.ufrgs.br/bitstream/handle/10183/90266/000586456.pdf?sequence=1
         Four different normal distributions make up the total distribution, with mass fractions 7%, 69%, 23% and 1% respectively. 
-        
-        Parameters
-        ----------
-        n : int
-            the number of white dwarfs to simulate
-        
         Returns
         -------
-        masses : np.array or float64
+        mass : float64
             The mass of the white dwarf stars in units Solar Masses
         '''
         prob = np.random.uniform(0, 1)
-        if prob <= 0.07:
+        if prob <= 0.07:    # first distribution in figure
             mass = np.random.normal(0.38, 0.05)
-        elif prob <= 0.69+0.07:
+        elif prob <= 0.69+0.07:     # second distribution, etc
             mass = np.random.normal(0.578, 0.05)
         elif prob <= 0.23 + 0.69 + 0.07:
             mass = np.random.normal(0.658, 0.2)
@@ -194,14 +228,31 @@ class Star(object):
         return mass
     
     def WD_radii(self, mass):
-        '''Radius ~ M^(-1/3) from wikipedia :
+        ''' Calculates radius of a white dwarf star according to Radius ~ M^(-1/3) from wikipedia :
             https://en.wikipedia.org/wiki/White_dwarf
+        Parameters
+        ----------
+        mass : float
+            Solar masses of the white dwarf star
+        Returns
+        -------
+        radii : float
+            Solar radii of the white dwarf
         '''
         radii = 6 * 10**-3 * mass**(-1/3) * np.random.normal(1, 0.01)
         return radii
 
     def WD_temp(self, mass):
-        '''I don't remember where this came from -- i think I may have curve-fit wikipedia data on a log scale. 
+        ''' Calculates temperature of a white dwarf star given mass.
+        I don't remember where this came from -- i think I may have curve-fit wikipedia data on a log scale. 
+        Parameters
+        ----------
+        mass : float
+            Solar masses of white dwarf star
+        Returns
+        -------
+        temp : float
+            Temperature (K) of the white dwarf
         '''
         return 10**(0.7 * np.log10(mass) + 4.4) * np.random.normal(1, 0.05)
 
@@ -209,64 +260,89 @@ class Star(object):
         ''' Uses the Stefan-Boltzmann equation with some multiplier to calculate lumin of white dwarf. 
         Parameters
         ----------
-        masses : float or np.array
-            masses of the white dwarf stars in units of solar masses
-            
+        temps : float
+            Temperature of white dwarf (K)
+        radii : float
+            Radius of white dwarf in solar radii
+        mass : float
+            mass of the white dwarf star in units of solar masses
         Returns
         -------
         luminosity : float
             Luminosity of the white dwarf in solar luminosities
         '''
-        sigma = 5.67037 * 10**-8
-        R = 696340000 * radii
+        sigma = 5.67037 * 10**-8    # stefan boltzmann constant
+        R = 696340000 * radii       # convert to meters
         solLum = 3.828 * 10**26
         return 4 * np.pi * R**2 * sigma * temps**4 * np.random.normal(1, 0.1) / solLum
 
     def SGB_temp(self):
-        '''Beta temperature distribution, weighted to be just higher in temperature than the midpoint. 
+        ''' Generates temperature of supergiant branch stars. Beta temperature distribution, weighted for the average temp 
+        to be just higher in temperature than the midpoint. 
         Returns
         -------
         temp : float
             temp in Kelvin. 
         '''
         a, b = 2.5, 2
-        mintemp, maxtemp = 2000, 2.2 * 10**4
+        mintemp, maxtemp = 2000, 2.2 * 10**4        # the desired minimum and maximum temperatures of the distributed
         temp = (np.random.beta(a, b) * maxtemp) + mintemp
         return temp * np.random.normal(1, 0.2)
 
     def SGB_lumin(self, temp):
-        ''' Modelled to be a inverted parabola, given start and end points at the low and high temperature extrema,
-        and to be around 10^4.5 solar luminosities. 
+        ''' Calculate luminosity for stars on the supergiant branch. Modelled to be a inverted parabola, given start and 
+        end points at the low and high temperature extrema, and to be around 10^4.5 solar luminosities. 
+        Parameters
+        ----------
+        temp : float
+            Temperature of the supergiant star (K)
         Returns
         -------
         luminosity : float
             solar luminosities of the supergiant star. 
         '''
-        a, b, c = -0.0076, 206.516, -350972
-        lumin = a * temp**2 + b * temp + c
+        a, b, c = -0.0076, 206.516, -350972     # polynomial constants
+        lumin = a * temp**2 + b * temp + c      # polynomial fit equation
         return lumin * np.random.normal(1, 0.3)
     
     def SGB_mass(self):
-        ''' Normally distributed mass centered at 20 solar masses with SD of 8. 
+        ''' Randomly determine mass of a supergiant star. Normally distributed mass centered at 20 solar masses with SD of 8. 
+        Returns
+        -------
+        mass : float
+            Mass of supergiant star in units of solar masses
         '''
         return np.random.normal(10, 8) + 10
 
     def giant_temp(self):
-        ''' Gamma distribution of star temperatures, weighted to be lower (~4000). 
+        ''' Randomly determine temperature of a giant star. Gamma distribution of star temperatures, weighted to be lower (~4000).
+        Returns
+        -------
+        temp : float
+            Temperature of giant star in Kelvin. 
         '''
-        a, b = 4, 1
+        a, b = 4, 1     # gamma distribution parameters
         temp = 1000 * np.random.gamma(a, b) + 2000
         return temp * np.random.normal(1, 0.1)
 
     def giant_lumin(self, temp):
-        ''' Not entirely sure what's going on here. Returns luminosity in solar luminosities. 
+        ''' Calculate luminosity of giant star based on temperature, with a semi-exponential fit that adds extra luminosity to low mass stars. 
+        Not entirely sure what's going on here, but lots of trial and error was involved. 
+        Returns
+        -------
+        lumin : float
+            Luminosity of a giant star in units of Solar luminosities
         '''
         a, b, c = 10**-7 * 2.857, -0.00343, 10.71
         add = 10**4.3 * np.exp(a*(temp-4000)**2 + b*temp + c) #what the heck is this (it adds extra luminosity to low temp stars)
         return (temp + add) * abs(np.random.normal(1, 0.8)) * 0.02
     
     def giant_mass(self):
-        ''' Normally distributed mass centered at 8 solar masses with SD of 3. 
+        ''' Randomly generate mass of a giant star. Normally distributed mass centered at 8 solar masses with SD of 3. 
+        Returns
+        -------
+        mass : float
+            Mass of the giant star in solar masses
         '''
         return np.random.normal(4, 3) + 4 
     
@@ -296,6 +372,11 @@ class Star(object):
         
         Alternate version (commented out) using colour-science package:
             Approximations were retrieved from https://en.wikipedia.org/wiki/Planckian_locus
+        
+        Returns
+        -------
+        rgb : numpy array
+            [red, green, blue] values in [0, 1] of a star given its temperature. 
         '''
         #i tried to use an algorithm here but i ran into issues with the colour-science (or is it colour?) package
         # temp = self.temperature
@@ -329,8 +410,7 @@ class Star(object):
             the number to be input into the 'scale' kwarg in a matplotlib figure. 
         '''
         scale = 3 * np.log(2 * self.luminosity + 1)
-        # scale = 2 if scale > 2 else scale
-        scale = min(scale, 2)
+        scale = min(scale, 2)   # we don't want stars to be too big!
         return scale
     
     def generate_BandLumin(self, temp, radius):
@@ -340,6 +420,7 @@ class Star(object):
         Parameters
         ----------
         temp : float
+            Temperature of the star (K)
         radius : float
             Radius of the star in units of solar radii. 
         Returns
@@ -348,21 +429,28 @@ class Star(object):
             [B, G, R] band luminosities in units of J/nm/s <=> W/nm <=> 10^-9 W/m
             (the planck function has units of J/m^2/nm/s <=> W/m^2/nm <=> 10^-9 W/m^3 )
         '''
-        c, h, k = 299792458, 6.626 * 10**-34, 1.38 * 10**-23
-        blue, green, red = 440 * 10**-9, 500 * 10**-9, 700 * 10**-9
+        c, h, k = 299792458, 6.626 * 10**-34, 1.38 * 10**-23    # speed of light, planck's constant and boltzmann's constant
+        blue, green, red = 440 * 10**-9, 500 * 10**-9, 700 * 10**-9     # each bandwidth in units of meters
         planck = lambda x: ((2 * h * c**2) / x**5) * (1 / (np.exp(h * c / (x * k * temp)) - 1)) * 10**-9
         bandLum = lambda x: 4 * np.pi**2 * (696540000 * radius)**2 * planck(x)
         return np.array([bandLum(blue), bandLum(green), bandLum(red)]) * np.random.uniform(0.99, 1.01, 3)
     
-    def plot_blackbodycurve(self, markers=True, visible=False):
-        ''' Produce a graph of this stars' blackbody curve. 
+    def plot_blackbodycurve(self, markers=True, visible=False, save=False):
+        ''' Produce a graph of this star's blackbody curve. 
         Parameters
         ----------
         markers : bool
             whether or not to put the [B, G, R] band luminosity markers on the graph
         visible : bool
             whether or not to plot the visible spectrum overlaid onto the curve
+        save : bool
+            If true, returns the figure object to save later.
+        Returns
+        -------
+        fig : matplotlib figure object
+            If save==True, returns the figure to be saved later.
         '''
+        warnings.filterwarnings("ignore", category=RuntimeWarning)
         temp = self.temperature
         radius = self.radius
         c, h, k = 299792458, 6.626 * 10**-34, 1.38 * 10**-23
@@ -387,8 +475,21 @@ class Star(object):
                                 color=colourmap(normalize(spectrum[i])), alpha=0.3)
         if markers == True:     # plot markers for each of the luminosity band values given to the user
             ax.scatter(np.array([440, 500, 700]), self.bandlumin, color=['b', 'g', 'r'])
+        if save:
+            plt.close()
+            return fig
     
     def plot_lightcurve(self, save=False):
+        ''' Plot the light curve of a variable star, with measurements in hourly intervals. 
+        Parameters
+        ----------
+        save : bool
+            If true, returns the figure object to save later.
+        Returns
+        -------
+        fig : matplotlib figure object
+            If save==True, returns the figure to be saved later.
+        '''
         times, lumins = self.lightcurve
         fig, ax = plt.subplots()
         

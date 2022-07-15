@@ -16,9 +16,9 @@ from Star import Star
 
 
 class Galaxy(object):
-    def __init__(self, species, position, cartesian=False, BHcluster=True, darkmatter=True, rotate=True, complexity="Normal",
+    def __init__(self, species, position, cartesian=False, blackhole=True, darkmatter=True, rotate=True, complexity="Comprehensive",
                  variable=[True, [20, "Tri", 6, -12.4], [50, "Saw", 16, 8.6], [90, "Sine", 16.9, 47.3]]):
-        '''
+        ''' A galaxy which hosts hundreds of randomly generated Star objects, with a BlackHole object at its center. 
         Parameters
         ----------
         species : str
@@ -40,12 +40,12 @@ class Galaxy(object):
             The second and third elements (and fourth [optional]) must be comprised of [period, lightcurve type],
             where the period is in hours (float) and the lightcurve type is one of {"Saw", "Tri", "Sine"} (str). 
         '''
-        self.BHcluster = BHcluster
         self.darkmatter = darkmatter
         self.complexity = complexity
         self.species = species
         self.population = self.determine_population(self.species)
         self.radius = self.determine_radius(self.species)
+        self.blackhole = self.choose_blackhole() if blackhole==True else False
         self.rotate = rotate
         if cartesian:
             self.cartesian = position
@@ -57,7 +57,7 @@ class Galaxy(object):
         if self.complexity != "Distant":
             self.starpositions, self.stars, self.rotation = self.generate_galaxy()
             self.starmasses = [star.get_star_mass() for star in self.stars]
-            self.blackhole = BlackHole(sum(self.starmasses), self.species, self.radius, 1)
+            self.blackhole = self.generate_BlackHole()
             starorbitradii = [self.starpositions[0] - self.cartesian[0], 
                               self.starpositions[1] - self.cartesian[1], 
                               self.starpositions[2] - self.cartesian[2]]
@@ -66,10 +66,56 @@ class Galaxy(object):
             self.galaxymass = sum(self.starmasses) + self.darkmattermass
         else:   # distant galaxy
             self.galaxymass, self.bandlumin, self.rotation = self.distant_galaxy()
-            self.blackhole = BlackHole(self.galaxymass/2, self.species, self.radius, 1)
+            self.blackhole = self.generate_BlackHole()
+    
+    def choose_blackhole(self):
+        ''' Chooses whether to have a black hole in this galaxy (only if the complexity is "Comprehensive")
+        Returns
+        bh : bool
+            True if there is a black hole in the galaxy.
+        '''
+        if self.complexity == "Comprehensive":
+            if self.species[0] == "E":
+                num = float(self.species[1]); index = "E"
+            else:
+                num = 0; index = self.species
+            bhchance = {"cD":1, "S0":0.9, "Sa":0.8, "Sb":0.75, "Sc":0.7, "SBa":0.9, "SBb":0.85, "SBc":0.8,
+                        "E":1 - num / 20}
+            prob = np.random.uniform(0, 1)
+            bh = True if prob <= bhchance[index] else False
+            return bh
+        else:
+            return True
+    
+    def generate_BlackHole(self):
+        ''' Generates (or not!) a black hole based on the type of galaxy and complexity of the universe.
+        Returns
+        -------
+        bh : BlackHole object
+            The blackhole at the center of the galaxy
+        '''
+        if self.blackhole == True:
+            if self.complexity == "Distant":
+                eddlumin = np.random.uniform(0.2, 1) if self.species[0] == "S" else np.random.uniform(0.5, 1)
+                bh = BlackHole(self.galaxymass/2, self.species, self.radius, eddlumin)
+            else:
+                eddlumin = self.BHclusterpop/20
+                eddlumin = min(eddlumin, 1)     # makes it so that, for ellipticals in particular, blackholes dont have more than edd lumin
+                bh = BlackHole(sum(self.starmasses), self.species, self.radius, eddlumin)
+        else:
+            bh = False
+        return bh
 
     def distant_galaxy(self):
-        ''' Lookup data taken from "Galaxy Averages.txt"
+        ''' Generate masses and spectra for distant galaxies. Lookup data taken from "Galaxy Averages.txt"
+        Returns
+        -------
+        mass : float
+            The mass of the galaxy in solar masses
+        bandlumin : numpy array (1x3)
+            The [B, G, R] spectra of the galaxy in units of watts per nm
+        rotation : numpy array
+            The rotation of the galaxy relative to the origin
         '''
         masslookup = {"S0":26751, "Sa":17531, "Sb":15599, "Sc":13303, "SBa":25834, "SBb":22521, "SBc":16538,
                       "cD":800885, "E0":578472, "E1":418379, "E2":268095, "E3":177070, "E4":105890,
@@ -91,14 +137,12 @@ class Galaxy(object):
     def galaxyrotation(self, angle, axis):
         '''Rotate a point in cartesian coordinates about the origin by some angle along the specified axis. 
         The rotation matrices were taken from https://stackoverflow.com/questions/34050929/3d-point-rotation-algorithm
-        
         Parameters
         ----------
         angle : float
             An angle in radians.
-        axis : string
-            The axis to perform the rotation on. Must be in ['x', 'y', 'z'].
-        
+        axis : str
+            The axis to perform the rotation on. Must be in ['x', 'y', 'z']
         Returns
         -------
         numpy array
@@ -113,18 +157,22 @@ class Galaxy(object):
             return np.array([[np.cos(angle), -np.sin(angle), 0], [np.sin(angle), np.cos(angle), 0], [0, 0, 1]])
     
     def determine_population(self, species):
-        '''
+        ''' Determine the number of stars to put in a galaxy depending on the galaxy type
         Parameters
         ----------
         species : str
             One of {cD, E0-7, S0, Sa, Sb, Sc, SBa, SBb, SBc} as per the galaxy type. 
+        Returns
+        -------
+        population : int
+            The number of stars to generate in the galaxy
         '''
-        if self.species[0] == "E":
+        if species[0] == "E":
             num = float(species[1])
             index = "E"
         else:
             num = 0
-            index = self.species
+            index = species
         poplookup = {"S0":[1100, 50], "Sa":[1000, 100], "Sb":[900, 100], "Sc":[800, 80],
                       "SBa":[1100, 100], "SBb":[1000, 100], "SBc":[900, 80],
                       "cD":[2000, 200], "E":[1600 - 120 * num, 200 / (num + 1)]}
@@ -137,7 +185,15 @@ class Galaxy(object):
         return int(population)
     
     def determine_radius(self, species):
-        '''
+        ''' Determine the radius of a galaxy depending on the galaxy type
+        Parameters
+        ----------
+        species : str
+            One of {cD, E0-7, S0, Sa, Sb, Sc, SBa, SBb, SBc} as per the galaxy type. 
+        Returns
+        -------
+        radius : float
+            The radius of the galaxy in pc
         '''
         if self.species[0] == "E":
             num = float(species[1])
@@ -151,7 +207,7 @@ class Galaxy(object):
         mean, SD = radlookup[index]
         radius = np.random.normal(mean, SD)
         if self.complexity == "Basic":
-            radius *= 0.6
+            radius *= 0.6       # we want to maintain a roughly constant density across types, so less stars means smaller radius
         return radius
     
     def generate_spiral(self, population, radius):
@@ -240,7 +296,7 @@ class Galaxy(object):
             bulgescales = np.append(bulgescales, barscales, axis=0)
             bulgestars = np.append(bulgestars, barstars, axis=0)
         
-        if self.BHcluster == True:
+        if self.blackhole == True:
             BHx, BHy, BHz, BHtemps, BHscales, BHstars = self.generate_BHcluster()
             bulgex = np.append(bulgex, BHx); bulgey = np.append(bulgey, BHy); bulgez = np.append(bulgez, BHz)
             bulgetemps = np.append(bulgetemps, BHtemps, axis=0)
@@ -333,7 +389,7 @@ class Galaxy(object):
         centraltemps = [star.temperature for star in centralstars]
         centralscales = [star.get_star_scale() for star in centralstars]
         
-        if self.BHcluster == True:
+        if self.blackhole == True:
             BHx, BHy, BHz, BHtemps, BHscales, BHstars = self.generate_BHcluster()
             centralx = np.append(centralx, BHx); centraly = np.append(centraly, BHy); centralz = np.append(centralz, BHz)
             centraltemps = np.append(centraltemps, BHtemps, axis=0)
@@ -359,8 +415,21 @@ class Galaxy(object):
     def generate_BHcluster(self):
         ''' Generate a cluster of stars close to the central black hole of a galaxy. The method for doing this is
         functionally identical to generating stars in an E0 galaxy (uniformly distributed stars in the volume of a sphere)
+        Returns
+        -------
+        x, y, z : numpy arrays
+            The cartesian coordinates of the stars relative to the origin (needs to be moved later with the galaxy)
+        temps : list
+            The temperature of each star in the BH cluster
+        scales, stars : lists
+            the size that all the stars should appear in an image, and a list of the Star objects
         '''
-        population = 20
+        if self.species[0] == "S":      # spiral galaxy! We want fewer stars in the BH cluster
+            population = int(np.random.exponential(5)); population = min(population, 20)
+        else:       # elliptical galaxy! we want more stars in the BH cluster
+            mean = 12 - float(self.species[1]) if self.species[0] == "E" else 15
+            population = int(np.random.exponential(mean) + 5); population = min(population, 30)
+        self.BHclusterpop = population
         theta = np.random.uniform(0, 2*np.pi, population)
         phi = np.random.uniform(-1, 1, population)
         phi = np.arccos(phi)
@@ -379,26 +448,29 @@ class Galaxy(object):
     
     def generate_galaxy(self):
         '''Generate random stars according to species type of galaxy. 
-        
         Returns
         -------
-        numpy array (x4)
-            Cartesian coordinates [x, y, z] of each of the stars in this galaxy, as well as an array of colours for each star. 
+        numpy array (x5)
+            Cartesian coordinates [x, y, z] of each of the stars in this galaxy, as well as an array of colours/scales for each star. 
+        stars : list
+            Each Star object in the galaxy
+        phi : numpy array
+            The 3D rotation angles of the galaxy with respect to the origin
         '''
         population, radius = self.population, self.radius
         
-        if self.species[0] == 'S':  #spiral galaxy
+        if self.species[0] == 'S':  # spiral galaxy
             x, y, z, temps, scales, stars = self.generate_spiral(population, radius)
-        else:        #elliptical galaxy
+        else:        # elliptical galaxy
             x, y, z, temps, scales, stars = self.generate_elliptical(population, radius)               
         
         colourdata = pd.read_csv("blackbodycolours.txt", delimiter=' ')
-        temperature = np.array([min(40000, temp) if temp > 20000 else max(1000, temp) for temp in temps])
+        temperature = np.array([min(40000, temp) if temp > 20000 else max(1000, temp) for temp in temps])   # we want the temps to be in a specific range for colour choice
         temps = np.around(temperature / 100, decimals=0) * 100
         colours = []
         for temp in temps:
-            r, g, b = colourdata.loc[colourdata['Temperature'] == temp].iloc[0, 9:12]
-            rgb = np.array([r, g, b]) / 255
+            r, g, b = colourdata.loc[colourdata['Temperature'] == temp].iloc[0, 9:12]   # locate the RGB colour for this temperature star
+            rgb = np.array([r, g, b]) / 255     # make it a value between 0 and 1
             colours.append(rgb)
         colours = np.array(colours)
         
@@ -406,12 +478,12 @@ class Galaxy(object):
         phi = np.random.uniform(0, 2*np.pi, 3)
         
         if self.rotate == True:
-            #rotate the galaxy randomly
+            # rotate the galaxy randomly
             points = np.dot(self.galaxyrotation(phi[0], 'x'), points)
             points = np.dot(self.galaxyrotation(phi[1], 'y'), points)
             points = np.dot(self.galaxyrotation(phi[2], 'z'), points)
         x0, y0, z0 = self.cartesian
-        x, y, z = points[0] + x0, points[1] + y0, points[2] + z0  #move the galaxy away from the origin to its desired position
+        x, y, z = points[0] + x0, points[1] + y0, points[2] + z0  # move the galaxy away from the origin to its desired position
         return [x, y, z, colours, scales], stars, phi
         
     def get_stars(self):
@@ -421,9 +493,14 @@ class Galaxy(object):
     
     def star_orbits(self, x, y, z):
         ''' Finds the radius of the orbit of each star. 
+        Parameters
+        ----------
+        x, y, z : numpy array (x3):
+            Cartesian coordinates of each star in the galaxy
         Returns
         -------
         radii : np.array
+            The radius of each orbit from the center of the galaxy
         '''
         radii = np.sqrt(x**2 + y**2 + z**2)
         return radii
@@ -436,15 +513,14 @@ class Galaxy(object):
             The region of the galaxy (e.g. young spiral, bulge, etc)
         n : int
             The number of stars to generate.
-        
         Returns
         -------
         stars : list of n Star objects
         '''
-        proportions = {"ys":[0.82, 0.1, 0.07, 0.01],    # [Main sequence, giants, supergiants, white dwarfs]
-                       "os":[0.79, 0.15, 0.03, 0.03],
-                       "disk":[0.9, 0.05, 0.02, 0.03], 
-                       "bulge":[0.8, 0.1, 0.04, 0.06]}
+        proportions = {"ys":[0.82, 0.1, 0.07, 0.01],    # [Main sequence, giants, supergiants, white dwarfs] - young spiral
+                       "os":[0.79, 0.15, 0.03, 0.03],   # old spiral
+                       "disk":[0.9, 0.05, 0.02, 0.03],      # disk population
+                       "bulge":[0.8, 0.1, 0.04, 0.06]}      # bulge population
         probs = proportions[region]     # obtain population probability for this region
         choice = []
         val = np.random.uniform(0, 1, n)
@@ -476,6 +552,15 @@ class Galaxy(object):
         darkmattermass : float
             The mass of dark matter in 1.5x the galaxy radius (maximum width of a star from the galactic center). Units are solar masses
         '''
+        if self.darkmatter == True and self.complexity == "Comprehensive":
+            if self.species[0] == "E":
+                num = float(self.species[1]); index = "E"
+            else:
+                num = 0; index = self.species
+            dmchance = {"cD":1, "S0":0.95, "Sa":0.9, "Sb":0.88, "Sc":0.85, "SBa":0.95, "SBb":0.93, "SBc":0.9,
+                        "E":1 - num / 15}
+            prob = np.random.uniform(0, 1)
+            self.darkmatter = True if prob <= dmchance[index] else False
         if self.darkmatter == True:     # time to initialise dark matter properties 
             density = 0.01 # solar masses per cubic parsec
             if self.species[0] in ["E", "c"]:
@@ -486,7 +571,7 @@ class Galaxy(object):
             darkMass = lambda r: p0 / ((r / Rs) * (1 + r / Rs)**2) * (4 / 3 * np.pi * r**3)   # NFW dark matter profile (density * volume)
             
         G = 6.67 * 10**-11
-        BHmass = self.blackhole.get_BH_mass() * 1.988 * 10**30
+        BHmass = self.blackhole.get_BH_mass() * 1.988 * 10**30 if self.blackhole != False else 0
         
         masses, orbits = self.starmasses, self.starorbits
         # now, create an array that stores the mass and orbital radius of each star in the form of [[m1, r1], [m2,r2], ...]
@@ -502,13 +587,6 @@ class Galaxy(object):
                 darkvel[i] = (np.sqrt(G * M / R) / 1000)    # newtonian approximation, now including dark matter
             else:
                 darkvel[i] = vel[i]
-        # R = MassRadii[:, 1]
-        # # now to sum up all of the mass inside the radius R
-        # M = np.array([sum([MassRadii[n, 0] if MassRadii[n, 1] < r else 0 for n in range(len(MassRadii))]) + BHmass for r in R])
-        # vel = (np.sqrt(G * M / R) / 1000)    # calculate newtonian approximation of orbital velocity
-        # if self.darkmatter == True:
-        #     M += darkMass(R)    # add the average mass of dark matter inside the radius R
-        #     darkvel = (np.sqrt(G * M / R) / 1000)    # newtonian approximation, now including dark matter
         
         velarray = np.array([vel, darkvel]) * np.random.normal(1, 0.01, len(vel))
    
@@ -582,6 +660,12 @@ class Galaxy(object):
             whether to plot the newtonian approximation of the rotation curve (curve based on visible matter)
         observed : bool
             whether to plot the data that an observer would see (accounting for doppler shift)
+        save : bool
+            If true, returns the figure to be saved later
+        Returns
+        -------
+        fig : matplotlib figure object
+            If save==True, the figure is returned to be saved later on
         '''
         fig, ax = plt.subplots()
         if self.darkmatter == True:
@@ -693,9 +777,13 @@ class Galaxy(object):
             One of {BolLum, VLum, AbsMag, VMag, BolLumMag, bothV}, which chooses what to plot on the y-axis. 
             Bol-Mag corresponds to bolometric luminosity on the left y, and absolute magnitude on the right y
             bothV corresponds to V Band luminosity on the left y, V absolute mag on the right y
+        variable : bool
+            Whether to plot variable stars with a different marker on the diagram
+        save : bool
+            If true, returns the figure object to be saved later. 
         Returns
         -------
-        matplotlib figure
+        fig : matplotlib figure object
             The HR diagram. 
         '''
         fig, ax = plt.subplots()

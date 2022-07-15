@@ -40,7 +40,8 @@ def plot_all_3d(galaxies):
         galaxy.plot_3d(ax, camera=False)
 
 class UniverseSim(object):
-    def __init__(self, numclusters, hubble=None, seed=None):
+    def __init__(self, numclusters, hubble=None, seed=None, blackholes=True, darkmatter=True, mode="Comprehensive",
+                 homogeneous=False):
         ''' Generates a Universe object and imports important data from it. 
         Parameters
         ----------
@@ -50,10 +51,17 @@ class UniverseSim(object):
             The value of the Hubble constant in units of km/s/Mpc.
         seed : int
             A random seed for which to apply to random number generation in the program.
+        mode : str
+            One of {"Comprehensive", "Normal", "Basic"} which chooses how complicated the data analysis will be. 
+            Comprehensive - some galaxies will and won't have darkmatter/blackholes, and have many stars.
+            Normal - all galaxies either will or won't have darkmatter/blackholes, and have many stars.
+            Basic - all galaxies either will or won't have darkmatter/blackholes, and have few stars.
         '''
         self.seed = seed if seed != None else int(np.random.uniform(0, 9999)) # randomly choose a <=4 digit seed if one isn't given
         np.random.seed(seed)
-        self.universe = Universe(450000, numclusters, hubble)
+        self.universe = Universe(450000, numclusters, hubble, blackholes=blackholes, darkmatter=darkmatter, complexity=mode,
+                                 homogeneous=homogeneous)
+        self.hasblackhole = blackholes; self.hasdarkmatter = darkmatter; self.homogeneous = homogeneous; self.mode = mode
         self.hubble = self.universe.hubble
         self.galaxies, self.distantgalaxies = self.universe.get_all_galaxies()
         self.allgalaxies = self.galaxies + self.distantgalaxies
@@ -83,6 +91,8 @@ class UniverseSim(object):
         colours = colours[:]    # this fixes an issue when rerunning this program since we want to make a copy of the colours array
         
         for i, blackhole in enumerate(self.blackholes):     # first, plot the black holes at their positions
+            if blackhole == False:
+                continue
             BHequat, BHpolar, distance = self.allgalaxies[i].spherical  # get the coords of each black hole
             BHcolour = blackhole.get_BH_colour()
             BHscale = blackhole.get_BH_scale() / (0.05 * distance)  # determine the scale of the black hole marker from its intrinsic brightness and distance
@@ -165,7 +175,11 @@ class UniverseSim(object):
         if plot == True:    # plot the contour
             levels = [2, 3, 4, 5, 6, 10, 15]    # having the contour levels start at 2 removes the noise from the smoothing - important!!
             for galaxy in self.galaxies:
+                if galaxy.blackhole == False or galaxy.blackhole.BHradio == False:
+                    continue
                 equatbins, polarbins, density = galaxy.plot_radio_contour(0, plot=False, data=True)
+                # _, _, dist = galaxy.spherical; distmult = (dist * 3.086 * 10**16)**2
+                # density = density / distmult; levels = np.array(levels)
                 ax.contour(equatbins, polarbins, density, levels, corner_mask=True)     # plot the radio contours
             ax.set_ylim(0, 180); ax.set_xlim(0, 360)
             ax.invert_yaxis();
@@ -286,12 +300,19 @@ class UniverseSim(object):
             text.write("Universe Parameters: \n")
             text.write("Parameter                   | Value   \n")
             text.write("----------------------------|---------------------------------------\n")
+            text.write(f"Simulation Mode:            | {self.mode} \n")
+            text.write(f"Has Black Holes?            | {self.hasblackhole} \n")
+            text.write(f"Has Dark Matter?            | {self.hasdarkmatter} \n")
+            text.write(f"Universe Homogeneous?       | {self.homogeneous} \n")
             text.write(f"Universe Radius             | {self.universe.radius} (pc)\n")
-            text.write(f"Hubble Const.               | {self.hubble} (km/s/Mpc)\n")
+            text.write(f"Hubble Const.               | {round(self.hubble, 3)} (km/s/Mpc)\n")
             text.write(f"Local Galaxy Type           | {self.galaxies[-1].species} \n")
             text.write(f"Dist. to local galax center | {round(self.galaxies[-1].spherical[2], 2)} (pc)\n")
             text.write(f"Radius of local galaxy      | {round(self.galaxies[-1].radius, 2)} (pc)\n")
-            text.write(f"Local Galax Black Hole Mass | {round(self.galaxies[-1].blackhole.mass, 2)} Solar Masses \n")
+            if self.galaxies[-1].blackhole != False:
+                text.write(f"Local Galax Black Hole Mass | {round(self.galaxies[-1].blackhole.mass, 2)} Solar Masses \n")
+            else:
+                text.write("Local Galax Black Hole Mass | N/A \n")
             text.write(f"Number of clusters          | {self.universe.clusterpop}\n")
             text.write(f"Number of galaxies          | {len(self.galaxies)} local and {len(self.distantgalaxies)} distant\n")
             text.write("\n\n")
@@ -408,6 +429,20 @@ class UniverseSim(object):
                         k +=1
                 else:   # we still need to increment the ticker so that later data is accurate
                     k += len(galaxy.stars)
+            
+            # now to take and plot the period-luminosity data of the local galaxy!
+            periods, lumins = [], []
+            for star in self.galaxies[-1].stars:
+                if star.variable == True:
+                    periods.append(star.period)
+                    lumins.append(star.luminosity)
+            fig, ax = plt.subplots()
+            ax.scatter(periods, lumins, s=0.5)
+            ax.set_yscale('log'); ax.set_xlim(xmin=0)
+            ax.set_xlabel("Period (hours)"); ax.set_ylabel(r"Log Luminosity ($L / L_\odot$)")
+            plt.close()
+            fig.savefig(self.datadirectory + '\\Period-Luminosity Data.png', dpi=400, bbox_inches='tight', pad_inches = 0.01)
+            
             vartime2 = time(); total = vartime2 - vartime1; print("Variable data saved in", total, "s")
         
         if blackbodies:     # plot and save blackbody curves for stars of a given temperature in the local galaxy
@@ -416,7 +451,7 @@ class UniverseSim(object):
             os.makedirs(blackbodydirectory)
             names = [f"S{i:0{width}d}" for i in range(1, len(equat)+1)]     # names consistent with star names done earlier
             k = 0
-            blackbodytemps = np.arange(0, 600)     # we only want one curve for each rough temperature, so these are the temps/100
+            blackbodytemps = np.arange(0, 50)     # we only want two curves for each 1000K temps, so these are the temps/500
             for galaxy in self.galaxies:
                 if galaxy.rotate == False:  # must be the local galaxy, so lets plot some blackbody curves!
                     for i, star in enumerate(galaxy.stars):
@@ -443,7 +478,7 @@ class UniverseSim(object):
             greenflux = [format(flux, '.3e') for flux in greenflux]; redflux = [format(flux, '.3e') for flux in redflux]
             
             radii = np.array([galaxy.radius for galaxy in self.distantgalaxies])
-            sizes = 2 * np.arctan((radii / 2) / dists)
+            sizes = 2 * np.arctan((radii / 2) / dists)      # gets the apparent size of the galaxy (thanks trig!)
             sizes = np.rad2deg(sizes) * 3600    # this gives the size of the galaxy in units of arcseconds
             sizes = np.around(sizes, decimals=4)
             
@@ -468,7 +503,8 @@ class UniverseSim(object):
             equats = [format(abs(equat), '3.2f') for equat in pos[0]]
             polars = [format(abs(polar), '3.2f') for polar in pos[1]]
             peak = [format(flux, '.3e') for flux in peak]
-            supernovadata = {"Equatorial":equats, "Polar":polars, "PeakFlux(W)":peak}
+            names = [f"SNe{i:0{width}d}" for i in range(1, len(equats)+1)]
+            supernovadata = {"Name":names, "Equatorial":equats, "Polar":polars, "PeakFlux(W)":peak}
             
             supernovafile = pd.DataFrame(supernovadata)
             supernovafile.to_csv(self.datadirectory + "\\Supernova Data.txt", index=None, sep=' ')
@@ -486,7 +522,29 @@ class UniverseSim(object):
                 fig.set_size_inches(18, 9, forward=True)
                 fig.savefig(self.datadirectory + '\\Doppler Image Linear Scale.png', dpi=1500, bbox_inches='tight', pad_inches = 0.01)
                 fig.savefig(self.datadirectory + '\\Doppler Image Linear Scale.pdf', dpi=200, bbox_inches='tight', pad_inches = 0.01)
-                
+        
+        if blackhole:   # save some data about black holes (radio sources)
+            bhtime1 = time(); print("Saving black hole data...")
+            equats, polars, BHlumins = [], [], []
+            for galaxy in self.allgalaxies:
+                if galaxy.blackhole != False:
+                    equat, polar, dist = galaxy.spherical
+                    dist *= 3.086 * 10**16     # get the distance to the BH in meters
+                    lumin = (galaxy.blackhole.luminosity * 3.828 * 10**26) / dist**2    # get the lumin in W/m^2
+                    if lumin >= 10**-17:        # we set a hard limit on the distance we can detect black holes
+                        BHlumins.append(lumin); equats.append(equat); polars.append(polar)
+            
+            equats = [format(abs(equat), '3.2f') for equat in equats]
+            polars = [format(abs(polar), '3.2f') for polar in polars]
+            BHlumins = [format(flux, '.3e') for flux in BHlumins]
+            
+            names = [f"RS{i:0{width}d}" for i in range(1, len(BHlumins)+1)]
+            BHdata = {'Name':names, 'Equatorial':equats, 'Polar':polars,
+                      'Luminosity':BHlumins}
+            BHfile = pd.DataFrame(BHdata)
+            BHfile.to_csv(self.datadirectory + "\\Radio Source Data.txt", index=None, sep=' ')
+            bhtime2 = time(); total = bhtime2 - bhtime1; print("Black hole data saved in", total, "s")
+        
         if rotcurves:   # plot and save the rotation curve of each resolved galaxy
             rottime1 = time(); print("Saving galaxy rotation curves...")
             rotcurvedirectory = self.datadirectory + "\\Galaxy Rotation Curves"
@@ -494,8 +552,11 @@ class UniverseSim(object):
             
             for galaxy in self.galaxies:
                 equat, polar, _ = galaxy.spherical; equat, polar = round(equat, 2), round(polar, 2)
+                bh = "1" if galaxy.blackhole != False else "0"
+                dm = "1" if galaxy.darkmatter == True else "0"
                 fig = galaxy.plot_RotCurve(newtapprox=True, save=True)
-                fig.savefig(rotcurvedirectory + f'\\{equat}-{polar} {galaxy.species}.png', dpi=400, bbox_inches='tight', pad_inches = 0.01)
+                fig.savefig(rotcurvedirectory + f'\\E{equat}-P{polar} {galaxy.species}, BH{bh}, DM{dm}.png', 
+                            dpi=400, bbox_inches='tight', pad_inches = 0.01)
             rottime2 = time(); total = rottime2 - rottime1; print("Galaxy rotation curves saved in", total, "s")
         t1 = time(); total = t1 - t0; print("All data generated and saved in =", total, "s")
     

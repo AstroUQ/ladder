@@ -9,11 +9,15 @@ import numpy as np
 
 class BlackHole(object):
     def __init__(self, galaxymass, galaxytype, galaxyradius, luminosity):
-        '''
+        ''' Generate a intermediate mass black hole in the center of a galaxy. 
         Parameters
         ----------
         galaxymass : float
             baryonic mass of the galaxy in solar masses
+        galaxytype : str
+            The classification of the black hole host galaxy
+        galaxyradius : float
+            The radius (pc) of the host galaxy
         luminosity : float
             the fraction of the eddington luminosity that the black hole should be
         '''
@@ -22,13 +26,21 @@ class BlackHole(object):
         self.luminosity = luminosity * self.eddington_luminosity(self.mass)
         self.galaxyradius = galaxyradius
         
-        if galaxytype[0] == "S":
-            self.BHradio = self.BH_emission(FR=1)
+        if self.luminosity > 10**6:
+            self.BHradio = self.BH_emission(FR=1) if self.galaxytype == "cD" else self.BH_emission(FR=2)
         else:
-            self.BHradio = self.BH_emission(FR=2)
+            self.BHradio = False
     
     def initialise_mass(self, galaxymass):
-        '''
+        ''' Determines the mass of the central black hole, given the host galaxy's mass. 
+        Parameters
+        ----------
+        galaxymass : float
+            Mass of the host galaxy in solar masses
+        Returns
+        -------
+        mass : float
+            Mass of the central black hole in solar masses
         '''
         m = (galaxymass * 3 * 10**-2) * np.random.normal(1, 0.1)
         if self.galaxytype[0] == "E":
@@ -43,6 +55,10 @@ class BlackHole(object):
         ----------
         mass : float
             Mass of the black hole (solar masses)
+        Returns
+        -------
+        eddlumin : float
+            The eddington luminosity (in solar luminosities) of a black hole of this mass
         '''
         return 3 * 10**4 * (mass)
     
@@ -94,7 +110,7 @@ class BlackHole(object):
             centerz = centerradius * (np.cos(phi) * np.random.normal(1, 0.3, centerpop))
             
             jetpop = 1000
-            jetradius = 0.5 * self.galaxyradius
+            jetradius = 2 * self.galaxyradius
             jetz = jetradius * (np.geomspace(0.01, 1.6, jetpop) * np.random.normal(1, 0.01, jetpop))    
             jetx = np.random.normal(0, 0.2 * jetz, jetpop)
             jety = np.random.normal(0, 0.2 * jetz, jetpop)

@@ -47,9 +47,9 @@ Several real aspects of astronomy are modelled (to varying degrees of accuracy) 
 <img align="right" height="200" src="/MiscGithubImages/radiolobetypes.jpg">  
 
  - Massive black holes (usually on the order of 50-500 solar masses) are generated at the center of all/most galaxies with the mass dependent on the galaxy mass as a whole. 
- - Black holes all have a luminosity on the order of the eddington luminosity for a black hole of that mass. 
- - Mock 'Radio Lobes' from black hole accretion shoot out from the 'poles' of the galaxy (which assumes that the accretion disk is parallel with the plane of the galaxy). Spiral galaxies display Fanaroff-Riley Type I lobes, while elliptical galaxies shown FRII lobes. At the moment, there is no use for this other than qualitative means. 
- - Black holes have a cluster of ~20 massive stars around them by default, with random velocity directions. In the unlikely case you can actually see the black hole in an output image, it shows up as a dot with an aqua-ish colour (according to the blackbody colours link in the credits). 
+ - Black holes all have a luminosity on the order of the eddington luminosity for a black hole of that mass. The actual proportion of $L_\text{edd}$ depends on how many stars are in a dense cluster around the black hole.
+ - Mock 'Radio Lobes' from black hole accretion shoot out from the 'poles' of the galaxy (which assumes that the accretion disk is parallel with the plane of the galaxy). cD galaxies display Fanaroff-Riley Type I lobes, while other galaxies show FRII lobes. Lobes generate if the central BH has a luminosity of more than $10^6 L_\odot$. the moment, there is no use for this other than qualitative means. 
+ - Black holes have a cluster of massive stars around them (according to an exponential distribution, where ellipticals will have more stars), with random velocity directions. In the unlikely case you can actually see the black hole in an output image, it shows up as a dot with an aqua-ish colour (according to the blackbody colours link in the credits). 
 ### Galaxy Clusters
 <p align="middle"><img src="/MiscGithubImages/Cluster1.jpg" height="200" /><img src="/MiscGithubImages/galaxradialvels.jpg" height="200" /></p>  
 
@@ -73,11 +73,11 @@ Several real aspects of astronomy are modelled (to varying degrees of accuracy) 
 - [ ] Fill out many docstrings and comment all code to a degree readable by other users.
 - [x] Generate individual datasets inside of a "Datasets" folder. 
 - [x] Randomly determine hubble constant (and update the readme after doing so). 
-- [ ] Set it so that some galaxies don't have a black hole and/or dark matter, with probability depending on galaxy type. 
-- [ ] Output some luminosity data about black holes. Maybe under x-ray data?
-- [ ] Make black hole proportion of eddington luminosity depend on same manner of the host galaxy. 
+- [x] Set it so that some galaxies don't have a black hole and/or dark matter, with probability depending on galaxy type. 
+- [x] Output some luminosity data about black holes. Maybe under ~~x-ray data~~ radio sources!
+- [x] Make black hole proportion of eddington luminosity depend on same manner of the host galaxy. 
 - [ ] Make radio lobe brightness depend on black hole luminosity.
-- [ ] Make brightness of black holes depend on angle of the galaxy to the viewer? As well as mass and random activity (possibly depending on galaxy type)
+- [ ] Tweak parameters of period-luminosity relation.
 
 ## Credits/Acknowledgements
  - Saskia for providing a mental amount of help with regards to Python programming. I've learnt a lot! Also many many sanity checks and FEEDBACK. Mamma mia. 

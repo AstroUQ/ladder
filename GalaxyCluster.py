@@ -10,7 +10,7 @@ from multiprocessing import Pool
 from Galaxy import Galaxy
 
 class GalaxyCluster(object):
-    def __init__(self, position, population, cartesian=False, local=False, darkmatter=True, complexity="Normal",
+    def __init__(self, position, population, cartesian=False, local=False, blackholes=True, darkmatter=True, complexity="Comprehensive",
                  variable=[True, [20, "Tri", 6, -12.4], [50, "Saw", 16, 8.6], [90, "Sine", 16.9, 47.3]]):
         '''
         Parameters
@@ -23,6 +23,7 @@ class GalaxyCluster(object):
         '''
         self.local = local
         self.radius = 200 * population**(5/6)
+        self.blackholes = blackholes
         self.darkmatter = darkmatter
         self.complexity = complexity
         
@@ -48,7 +49,8 @@ class GalaxyCluster(object):
         -------
         Galaxy : Galaxy object
         '''
-        return Galaxy(species, position, cartesian=True, rotate=local, complexity=self.complexity, variable=self.variable)
+        return Galaxy(species, position, cartesian=True, rotate=local, blackhole=self.blackholes, darkmatter=self.darkmatter,
+                      complexity=self.complexity, variable=self.variable)
     
     def generate_galaxies(self, population):
         ''' Uniformly distributes and generates galaxies within a sphere, with a central elliptical galaxy if the cluster

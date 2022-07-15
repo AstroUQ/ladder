@@ -106,6 +106,7 @@ class Star(object):
             flux += np.random.normal(0, amp/6, len(flux))
         elif wavetype == "Noise":
             flux = 1 + np.random.normal(0, 0.1, len(time))
+        self.period = abs(period)
         return np.array([time, flux])
             
     def MS_masses(self, species):

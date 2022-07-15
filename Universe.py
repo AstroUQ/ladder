@@ -11,7 +11,8 @@ from tqdm import tqdm     # this is a progress bar for a for loop
 from GalaxyCluster import GalaxyCluster
 
 class Universe(object):
-    def __init__(self, radius, clusters, hubble=None, complexity="Normal", variablestars=True, homogeneous=False):
+    def __init__(self, radius, clusters, hubble=None, blackholes=True, darkmatter=True, complexity="Comprehensive", 
+                 variablestars=True, homogeneous=False):
         ''' Generate a universe consisting of Star, BlackHole, Galaxy, and GalaxyCluster objects. 
         Parameters
         ----------
@@ -22,13 +23,18 @@ class Universe(object):
         clusters : int
             The number of galaxy clusters to generate
         complexity : str
-            Whether or not the cluster is composed of normal or 'distant' galaxies
+            One of {"Comprehensive", "Normal", "Basic"} which chooses how complicated the data analysis will be. 
+            Comprehensive - some galaxies will and won't have darkmatter/blackholes, and have many stars.
+            Normal - all galaxies either will or won't have darkmatter/blackholes, and have many stars.
+            Basic - all galaxies either will or won't have darkmatter/blackholes, and have few stars.
         homogeneous : bool
             Whether the universe is homogeneous or not (approx constant density with distance)
         '''
         self.radius = radius
         self.clusterpop = clusters
         self.hubble = self.choosehubble() if hubble == None else hubble
+        self.blackholes = blackholes 
+        self.darkmatter = darkmatter
         self.complexity = complexity
         self.variablestars = self.determine_variablestars(variablestars)
         self.homogeneous = homogeneous
@@ -81,19 +87,19 @@ class Universe(object):
             
             # we want to find the equation of a line given two points (high lumin and low lumin)
             shortlower = 3.5*10**5; shortupper = 5*10**6    # lower and upper luminosity bounds
-            shortperiodL = np.random.uniform(0.9, 1); shortperiodU = np.random.uniform(1, 1.25)     # proportion of lower and upper period bounds
-            shortgradient = signs[0] * (np.log10(shortupper / shortlower)) / (shortperiod * (shortperiodU - shortperiodL))  # m = sign * rise/run
+            shortperiodL = np.random.uniform(0.85, 0.95); shortperiodU = np.random.uniform(1.05, 1.25)     # proportion of lower and upper period bounds
+            shortgradient = signs[0] * (shortperiod * shortperiodU - shortperiodL) / (np.log10(shortupper / shortlower))    # m = sign * rise/run
             shortyint = (shortperiodL * shortperiod) - (shortgradient * np.log10(shortlower))   # y = mx + c => c = y - mx
             
             # as above, but for the long and longest variable types
             longlower = 100; longupper = 700
-            longperiodL = np.random.uniform(0.9, 1); longperiodU = np.random.uniform(1, 1.25)
-            longgradient = signs[1] * (np.log10(longupper / longlower)) / (longperiod * (longperiodU - longperiodL))
+            longperiodL = np.random.uniform(0.85, 0.95); longperiodU = np.random.uniform(1.05, 1.25)
+            longgradient = signs[1] * (longperiod * (longperiodU - longperiodL)) / np.log10(longupper / longlower)
             longyint = (longperiodL * longperiod) - (longgradient * np.log10(longlower))
             
             longestlower = 100; longestupper = 700
-            longestperiodL = np.random.uniform(0.9, 1); longestperiodU = np.random.uniform(1, 1.25)
-            longestgradient = signs[2] * (np.log10(longestupper / longestlower)) / (longestperiod * (longestperiodU - longestperiodL))
+            longestperiodL = np.random.uniform(0.85, 0.95); longestperiodU = np.random.uniform(1.05, 1.25)
+            longestgradient = signs[2] * (longestperiod * (longestperiodU - longestperiodL)) / np.log10(longestupper / longestlower)
             longestyint = (longestperiodL * longestperiod) - (longestgradient * np.log10(longestlower))
             
             gradients = [shortgradient, longgradient, longestgradient]
@@ -164,12 +170,13 @@ class Universe(object):
         for i in tqdm(range(self.clusterpop)):
             pos = (equat[i], polar[i], R[i])
             if i == self.clusterpop - 1:    # make the last cluster in the list the local cluster
-                clusters.append(GalaxyCluster((localequat, localpolar, 2000), 15, local=True, complexity=self.complexity,
-                                              variable=self.variablestars))
+                clusters.append(GalaxyCluster((localequat, localpolar, 2000), 15, local=True, blackholes=self.blackholes, 
+                                              darkmatter=self.darkmatter, complexity=self.complexity, variable=self.variablestars))
             elif R[i] > threshold:  # this must be a distant galaxy
                 clusters.append(GalaxyCluster(pos, populations[i], complexity="Distant", variable=self.variablestars))
             else:
-                clusters.append(GalaxyCluster(pos, populations[i], complexity=self.complexity, variable=self.variablestars))
+                clusters.append(GalaxyCluster(pos, populations[i], blackholes=self.blackholes, darkmatter=self.darkmatter, 
+                                              complexity=self.complexity, variable=self.variablestars))
         
         clustervels = (self.hubble * R / (10**6)) * np.random.normal(1, 0.05, len(R))  # the radial velocity of each cluster according to v = HD
         

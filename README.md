@@ -38,7 +38,10 @@ Several real aspects of astronomy are modelled (to varying degrees of accuracy) 
 
  - Classification of galaxy types. cD, E0-7, S0 and Sa-c, SBa-c galaxy types are simulated to a reasonable degree of accuracy (but mostly to be a bit pretty and to break up monotony in galaxies). 
  - Different star populations are found throughout galaxies. In spirals, the bulge/bar has lower mass, redder stars. The leading edges of spirals have high mass blue stars, with lower mass redder stars trailing the leading edges. There are also a population of even lower mass stars (on average) not associated with spirals. Elliptical galaxies are characterised by many more, lower mass red stars.
- <img align="right" height="200" src="/MiscGithubImages/S0RotCurve.png">  
+ <p align="middle">
+ <img height="200" src="/MiscGithubImages/E158.71-P78.02 E5, BH1, DM0.png" title="heheheheh"><img height="200" src="/MiscGithubImages/E153.19-P82.24 S0, BH1, DM1.png"><img height="200" src="/MiscGithubImages/E180.0-P90.0 SBc, BH0, DM1.png">
+ </p>  
+ <p align="middle"> <em>(L) Black hole with no dark matter    (C) Black hole with dark matter    (R) No black hole with dark matter</em></p>
  
  - Rotation curves are simulated accurately according to newtonian physics, with black holes and dark matter (via the Navarro-Frenk-White profile) influencing rotation velocities. Spiral galaxies have coherent rotation, with all stars (except the central black hole cluster) orbiting in the orbital plane in the same direction. Elliptical galaxies have random velocity directions, but velocity magnitudes according to the same rotation curve profiles. This random velocity is really apparent in the doppler image below in the Galaxy Clusters section.
  
@@ -76,7 +79,7 @@ Several real aspects of astronomy are modelled (to varying degrees of accuracy) 
 - [x] Set it so that some galaxies don't have a black hole and/or dark matter, with probability depending on galaxy type. 
 - [x] Output some luminosity data about black holes. Maybe under ~~x-ray data~~ radio sources!
 - [x] Make black hole proportion of eddington luminosity depend on same manner of the host galaxy. 
-- [ ] Make radio lobe brightness depend on black hole luminosity.
+- [x] Make radio lobe brightness depend on black hole luminosity.
 - [x] Tweak parameters of period-luminosity relation.
 
 ## Credits/Acknowledgements

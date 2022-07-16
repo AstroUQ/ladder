@@ -88,7 +88,7 @@ class Universe(object):
             # we want to find the equation of a line given two points (high lumin and low lumin)
             shortlower = 3.5*10**5; shortupper = 5*10**6    # lower and upper luminosity bounds
             shortperiodL = np.random.uniform(0.85, 0.95); shortperiodU = np.random.uniform(1.05, 1.25)     # proportion of lower and upper period bounds
-            shortgradient = signs[0] * (shortperiod * shortperiodU - shortperiodL) / (np.log10(shortupper / shortlower))    # m = sign * rise/run
+            shortgradient = signs[0] * (shortperiod * (shortperiodU - shortperiodL)) / (np.log10(shortupper / shortlower))    # m = sign * rise/run
             shortyint = (shortperiodL * shortperiod) - (shortgradient * np.log10(shortlower))   # y = mx + c => c = y - mx
             
             # as above, but for the long and longest variable types
@@ -98,7 +98,7 @@ class Universe(object):
             longyint = (longperiodL * longperiod) - (longgradient * np.log10(longlower))
             
             longestlower = 100; longestupper = 700
-            longestperiodL = np.random.uniform(0.85, 0.95); longestperiodU = np.random.uniform(1.05, 1.25)
+            longestperiodL = np.random.uniform(0.9, 0.98); longestperiodU = np.random.uniform(1.05, 1.25)
             longestgradient = signs[2] * (longestperiod * (longestperiodU - longestperiodL)) / np.log10(longestupper / longestlower)
             longestyint = (longestperiodL * longestperiod) - (longestgradient * np.log10(longestlower))
             
@@ -228,7 +228,7 @@ class Universe(object):
         '''
         blackholes = [galaxy.blackhole for galaxy in self.galaxies]
         distantblackholes = [galaxy.blackhole for galaxy in self.distantgalaxies]
-        allblackholes = distantblackholes + blackholes
+        allblackholes = blackholes + distantblackholes
         return allblackholes
     
     def get_radial_velocities(self):

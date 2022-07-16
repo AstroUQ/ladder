@@ -77,7 +77,7 @@ Several real aspects of astronomy are modelled (to varying degrees of accuracy) 
 - [x] Output some luminosity data about black holes. Maybe under ~~x-ray data~~ radio sources!
 - [x] Make black hole proportion of eddington luminosity depend on same manner of the host galaxy. 
 - [ ] Make radio lobe brightness depend on black hole luminosity.
-- [ ] Tweak parameters of period-luminosity relation.
+- [x] Tweak parameters of period-luminosity relation.
 
 ## Credits/Acknowledgements
  - Saskia for providing a mental amount of help with regards to Python programming. I've learnt a lot! Also many many sanity checks and FEEDBACK. Mamma mia. 

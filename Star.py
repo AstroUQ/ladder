@@ -84,7 +84,7 @@ class Star(object):
         '''
         period, wavetype, gradient, yint = params
         
-        period = gradient * np.log10(self.luminosity) + yint
+        period = (gradient * np.log10(self.luminosity) + yint) * np.random.normal(1, 0.02)
         
         time = np.arange(0, 121)    # 5 days, or 120 hours worth of increments
         shift = np.random.uniform(0, period)    # shift the wave so that all light curves dont start at the same point

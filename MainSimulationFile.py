@@ -248,7 +248,7 @@ class UniverseSim(object):
             return fig
         
             
-    def save_data(self, properties=True, pic=True, radio=True, stars=True, variable=True, blackbodies=True, distantgalax=True, 
+    def save_data(self, properties=True, pic=True, radio=True, stars=True, variablestars=True, blackbodies=True, distantgalax=True, 
                   supernovae=True, doppler=[True, False], blackhole=True, rotcurves=True):
         ''' Generates some data, takes other data, and saves it to the system in a new directory within the file directory.
         Parameters
@@ -263,7 +263,7 @@ class UniverseSim(object):
             Generate and save star data
         distantgalax : bool
             Generate and save distant galaxy data
-        variable : bool
+        variablestars : bool
             Save variable star data within a subdirectory
         supernovae : bool
             Generate and save supernovae data
@@ -287,7 +287,7 @@ class UniverseSim(object):
         if os.path.exists(self.datadirectory):  # if this directory exists, we need to append a number to the end of it
             i = 1
             while os.path.exists(self.datadirectory):   # this accounts for multiple copies that may exist
-                self.datadirectory = self.datadirectory + f"({i})"   # add the number to the end
+                self.datadirectory = self.datadirectory + f" ({i})"   # add the number to the end
                 i += 1
             os.makedirs(self.datadirectory)     # now create the duplicate directory with the number on the end
         else:
@@ -404,7 +404,7 @@ class UniverseSim(object):
             starfile.to_csv(self.datadirectory + "\\Star Data.txt", index=None, sep=' ')    # and finally save the dataframe to the directory
             startime2 = time(); total = startime2 - startime1; print("Star Data.txt saved in", total, "s")
             
-        if variable:
+        if variablestars:
             vartime1 = time(); print("Saving variable data...")
             variabledirectory = self.datadirectory + "\\Variable Star Data"     # save data within a subfolder
             os.makedirs(variabledirectory)

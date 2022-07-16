@@ -23,6 +23,7 @@ class BlackHole(object):
         '''
         self.galaxytype = galaxytype
         self.mass = self.initialise_mass(galaxymass)
+        self.eddprop = luminosity
         self.luminosity = luminosity * self.eddington_luminosity(self.mass)
         self.galaxyradius = galaxyradius
         
@@ -109,7 +110,7 @@ class BlackHole(object):
             centery = centerradius * (np.sin(theta) * np.sin(phi) * np.random.normal(1, 0.1, centerpop))
             centerz = centerradius * (np.cos(phi) * np.random.normal(1, 0.3, centerpop))
             
-            jetpop = 1000
+            jetpop = 1000 * self.eddprop
             jetradius = 2 * self.galaxyradius
             jetz = jetradius * (np.geomspace(0.01, 1.6, jetpop) * np.random.normal(1, 0.01, jetpop))    
             jetx = np.random.normal(0, 0.2 * jetz, jetpop)
@@ -120,7 +121,7 @@ class BlackHole(object):
                 if val > 0.5:         # half of the points are reflected (symmetrical)
                     jetz[i] *= -1; jetx[i] *= -1; jety[i] *= -1
                     
-            lobepop = 4000
+            lobepop = 4000 * self.eddprop
             loberadius = jetradius * 2
             mult = 5    # arbitrary divisor to compact the lobes towards the jet a little bit
             lobeangle = np.geomspace(0.5 * np.pi, 1.5 * np.pi, lobepop)
@@ -143,7 +144,7 @@ class BlackHole(object):
             centery = centerradius * (np.sin(theta) * np.sin(phi) * np.random.normal(1, 0.1, centerpop))
             centerz = centerradius * (np.cos(phi) * np.random.normal(1, 0.3, centerpop))
             
-            jetpop = 1000
+            jetpop = 1000 * self.eddprop
             jetradius = 2.5 * self.galaxyradius
             jetz = jetradius * (np.linspace(0.01, 1, jetpop) * np.random.normal(1, 0.01, jetpop))
             jetx = np.random.normal(0, 0.01 * jetz, jetpop)
@@ -154,7 +155,7 @@ class BlackHole(object):
                 if val > 0.9:       # only about 10% of the points are reflected
                     jetz[i] *= -1; jetx[i] *= -1; jety[i] *= -1
             
-            lobepop = 4000
+            lobepop = 4000 * self.eddprop
             loberadius = jetradius * 2/3
             mult = 5    # arbitrary divisor to compact the lobes towards the jet a little bit
             lobeangle = np.geomspace(0.5 * np.pi, 1 * np.pi, lobepop)

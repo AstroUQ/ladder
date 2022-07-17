@@ -11,19 +11,33 @@ from Galaxy import Galaxy
 
 class GalaxyCluster(object):
     def __init__(self, position, population, cartesian=False, local=False, blackholes=True, darkmatter=True, complexity="Comprehensive",
-                 variable=[True, [20, "Tri", 6, -12.4], [50, "Saw", 16, 8.6], [90, "Sine", 16.9, 47.3]]):
-        '''
+                 variable=[True, [24.6, "Tri", -6.5, 59], [40.7, "Saw", -14, 64], [75.6, "Sine", 17.9, 35.1]]):
+        ''' Generates a few/several Galaxy objects about a central position.
         Parameters
         ----------
         position : 3-tuple/list/np.array
             if cartesian == False, position = [equatorial angle, polar angle, radius (distance away)]
             if cartesian == True, position = [x, y, z]
+        population : int
+            The number of galaxies to generate in the cluster
+        cartesian : bool
+            True if the position argument is given in terms of cartesian (x, y, z) coordinates
         local : bool
             Whether this is the local galaxy cluster (i.e. the one that the observer at the origin is in)
+        blackholes : bool
+            If true, generates black holes in the galaxies
+        darkmatter : bool
+            If true, generates dark matter in the galaxies and in the cluster
+        complexity : str
+            One of {"Comprehensive", "Normal", "Basic", "Distant"} which dictates the population of the galaxies and the type. 
+        variable : list
+            The first element must be a bool, which decides whether or not to generate variability in some stars
+            The second and third elements (and fourth [optional]) must be comprised of [period, lightcurve type],
+            where the period is in hours (float) and the lightcurve type is one of {"Saw", "Tri", "Sine"} (str). 
         '''
         self.local = local
         self.clusterpop = population
-        self.radius = 200 * population**(5/6)
+        self.radius = 200 * population**(5/6)   # we need bigger clusters to have proportionally bigger radii to fit all of the galaxies in!
         self.blackholes = blackholes
         self.darkmatter = darkmatter
         self.complexity = complexity
@@ -46,6 +60,8 @@ class GalaxyCluster(object):
             The type of galaxy to generate
         position : 3-tuple
             The xyz position of the galaxy (cartesian coords)
+        local : bool
+            If true, generates a galaxy with no rotation (the local galaxy to the observer!)
         Returns
         -------
         Galaxy : Galaxy object
@@ -55,7 +71,7 @@ class GalaxyCluster(object):
     
     def generate_galaxies(self, population):
         ''' Uniformly distributes and generates galaxies within a sphere, with a central elliptical galaxy if the cluster
-        population is high enough (>=5).
+        population is high enough (>=5) and a cD galaxy if population is >=10.
         Parameters
         ----------
         population : int
@@ -68,6 +84,8 @@ class GalaxyCluster(object):
             The mass of each galaxy in the cluster (including dark matter), in units of solar masses.
         orbitradii : numpy array
             The orbital radius of each galaxy from the center of the cluster, in units of parsec
+        galaxpositions : numpy array
+            Cartesian coordinates of each galaxy in the cluster (in relation to cluster center)
         '''
         theta = np.random.uniform(0, 2*np.pi, population)
         phi = np.random.uniform(-1, 1, population)
@@ -167,17 +185,20 @@ class GalaxyCluster(object):
         ''' Simulates orbit velocities of stars given their distance from the galactic center.
         If the galaxy has dark matter (self.darkmatter == True), then extra mass will be added according to the 
         Navarro-Frenk-White (NFW) dark matter halo mass profile. 
-        TO DO: implement different dark matter halo properties for each galaxy type
         Returns
         -------
-        np.array:
+        velarray : np.array
             2 element numpy array, with each element corresponding to:
                 1. vel = the newtonian rotation velocities
                 2. darkvel = rotation velocities including dark matter
-            if self.darkmatter == False, then darkvel is an array of zeros
+            if self.darkmatter == False, then darkvel=vel
+        VelObsArray : np.array
+            Same format as velarray, but is the line-of-sight (radial) velocities as seen by the observer at the origin
+        direction : numpy array
+            The directions (as proportions of velocity magnitude in each cartesian coordinate axis) of galaxy motion
         '''
         if self.darkmatter == True:     # time to initialise dark matter properties 
-            density = 0.00002 # solar masses per cubic parsec
+            density = 0.00005 # solar masses per cubic parsec
             scalerad = 1.3 * self.radius  # parsec
             Rs = scalerad * 3.086 * 10**16  # convert scalerad to meters
             p0 = density * (1.988 * 10**30 / (3.086 * 10**16)**3) # convert density to kg/m^3
@@ -242,6 +263,10 @@ class GalaxyCluster(object):
             whether to plot the newtonian approximation of the rotation curve (curve based on visible matter)
         observed : bool
             whether to plot the data that an observer would see (accounting for doppler shift)
+        Returns
+        -------
+        fig : matplotlib figure object
+            If save==True, returns the figure that the plot is on
         '''
         fig, ax = plt.subplots()
         if self.darkmatter == True:
@@ -276,10 +301,9 @@ class GalaxyCluster(object):
         ----------
         x, y, z : numpy array
             x, y, and z cartesian coordinates
-        
         Returns
         -------
-        equat, polar, radius : numpy array
+        (equat, polar, radius) : numpy array
             equatorial and polar angles (in degrees), and radius from origin
         '''
         radius = np.sqrt(x**2 + y**2 + z**2)

@@ -17,8 +17,9 @@ from Star import Star
 
 class Galaxy(object):
     def __init__(self, species, position, cartesian=False, blackhole=True, darkmatter=True, rotate=True, complexity="Comprehensive",
-                 variable=[True, [20, "Tri", 6, -12.4], [50, "Saw", 16, 8.6], [90, "Sine", 16.9, 47.3]]):
-        ''' A galaxy which hosts hundreds of randomly generated Star objects, with a BlackHole object at its center. 
+                 variable=[True, [24.6, "Tri", -6.5, 59], [40.7, "Saw", -14, 64], [75.6, "Sine", 17.9, 35.1]]):
+        ''' A galaxy which hosts hundreds to thousands of randomly generated Star objects, potentially with a BlackHole object 
+        at its center. 
         Parameters
         ----------
         species : str
@@ -34,7 +35,7 @@ class Galaxy(object):
         rotate : bool
             Whether or not to rotate the galaxy randomly
         complexity : str
-            One of {"Normal", "Basic", "Distant"} which dictates the population of the galaxy and the type. 
+            One of {"Comprehensive", "Normal", "Basic", "Distant"} which dictates the population of the galaxy and the type. 
         variable : list
             The first element must be a bool, which decides whether or not to generate variability in some stars
             The second and third elements (and fourth [optional]) must be comprised of [period, lightcurve type],
@@ -546,19 +547,22 @@ class Galaxy(object):
             2 element numpy array, with each element corresponding to:
                 1. vel = the newtonian rotation velocities
                 2. darkvel = rotation velocities including dark matter
-            if self.darkmatter == False, then darkvel is an array of zeros
+            if self.darkmatter == False, then darkvel=vel
         VelObsArray : np.array
             Same format as velarray, but is the line-of-sight (radial) velocities as seen by the observer at the origin
         darkmattermass : float
             The mass of dark matter in 1.5x the galaxy radius (maximum width of a star from the galactic center). Units are solar masses
+        direction : numpy array
+            The directions (as proportions of velocity magnitude in each cartesian coordinate axis) of star motion
         '''
         if self.darkmatter == True and self.complexity == "Comprehensive":
-            if self.species[0] == "E":
+            # this section of code determines whether to add dark matter to this galaxy
+            if self.species[0] == "E":      # elliptical galaxy!
                 num = float(self.species[1]); index = "E"
-            else:
+            else:   # spiral or cD galaxy
                 num = 0; index = self.species
             dmchance = {"cD":1, "S0":0.95, "Sa":0.9, "Sb":0.88, "Sc":0.85, "SBa":0.95, "SBb":0.93, "SBc":0.9,
-                        "E":1 - num / 15}
+                        "E":1 - num / 15}   # different galaxies should have different probabilities of having dark matter. Each of these values is a prob
             prob = np.random.uniform(0, 1)
             self.darkmatter = True if prob <= dmchance[index] else False
         if self.darkmatter == True:     # time to initialise dark matter properties 
@@ -571,11 +575,11 @@ class Galaxy(object):
             darkMass = lambda r: p0 / ((r / Rs) * (1 + r / Rs)**2) * (4 / 3 * np.pi * r**3)   # NFW dark matter profile (density * volume)
             
         G = 6.67 * 10**-11
-        BHmass = self.blackhole.get_BH_mass() * 1.988 * 10**30 if self.blackhole != False else 0
+        BHmass = self.blackhole.get_BH_mass() * 1.988 * 10**30 if self.blackhole != False else 0    # get the BH mass in kg if there is a black hole!
         
         masses, orbits = self.starmasses, self.starorbits
         # now, create an array that stores the mass and orbital radius of each star in the form of [[m1, r1], [m2,r2], ...]
-        MassRadii = np.array([[masses[i] * 1.988 * 10**30, orbits[i] * 3.086 * 10**16] for i in range(len(masses))])
+        MassRadii = np.array([[masses[i] * 1.988 * 10**30, orbits[i] * 3.086 * 10**16] for i in range(len(masses))])    # units of kg and meters
         vel = np.zeros(len(MassRadii)); darkvel = np.zeros(len(MassRadii))  # initialise arrays to store velocities in
         for i in range(len(MassRadii)):
             R = MassRadii[i, 1] 
@@ -591,7 +595,7 @@ class Galaxy(object):
         velarray = np.array([vel, darkvel]) * np.random.normal(1, 0.01, len(vel))
    
         darkmattermass = darkMass(1.5 * max(MassRadii[:, 1])) if self.darkmatter == True else 0
-        darkmattermass /= 1.988 * 10**30
+        darkmattermass /= 1.988 * 10**30    # get the darkmatter mass in units of solar masses
         
         # now to calculate the direction of the velocity to display the radial component to the observer
         x, y, z, _, _ = self.starpositions
@@ -704,7 +708,7 @@ class Galaxy(object):
         cbar_ax : matplotlib axes
             the secondary axes to plot the colourbar onto. I recommend this be >20 times thinner than the main axes
         blackhole : bool
-            Whether or not the plot
+            Whether or not to plot the black hole in the center of the galaxy
         '''
         x, y, z, colours, scales = self.starpositions
         equat, polar, radius = self.cartesian_to_spherical(x, y, z)
@@ -919,7 +923,6 @@ class Galaxy(object):
     
     def plot_2d(self, fig, ax, spikes=False, radio=False):
         '''Plots the Galaxy onto predefined matplotlib axes in terms of its equatorial and polar angles. 
-        
         Parameters
         ----------
         fig : matplotlib.figure
@@ -927,7 +930,6 @@ class Galaxy(object):
             A predefined matplotlib axes that has been defined by "fig, ax = plt.subplots()"
         spikes : bool
             Whether to show diffraction spikes for bright stars.
-        
         Returns
         -------
         No returns, but adds the current Galaxy instance to the matplotlib axes. 
@@ -968,7 +970,6 @@ class Galaxy(object):
     
     def plot_3d(self, ax, camera=False):
         '''Plots the Galaxy onto predefined 3D matplotlib axes. 
-        
         Parameters
         ----------
         ax : matplotlib.axes 
@@ -976,7 +977,6 @@ class Galaxy(object):
             where fig is defined by "fig = plt.figure()"
         camera : bool
             whether or not to show a little green pyramid at the origin (0, 0, 0) showing the direction of the camera in the 2d plot
-        
         Returns
         -------
         No returns, but adds the current Galaxy instance to the matplotlib axes. 
@@ -1087,10 +1087,9 @@ class Galaxy(object):
         ----------
         x, y, z : numpy array
             x, y, and z cartesian coordinates
-        
         Returns
         -------
-        equat, polar, radius : numpy array
+        (equat, polar, radius) : numpy arrays
             equatorial and polar angles (in degrees), and radius from origin
         '''
         radius = np.sqrt(x**2 + y**2 + z**2)
@@ -1109,12 +1108,11 @@ class Galaxy(object):
         '''
         Parameters
         ----------
-        equat, polar, distance : numpy array
+        equat, polar, distance : numpy arrays
             equatorial and polar angles, as well as radial distance from the origin
-        
         Returns
         -------
-        x, y, z : numpy array
+        (x, y, z) : numpy arrays
             Cartesian coordinates relative to the origin. 
         '''
         equat, polar = np.radians(equat), np.radians(polar)

@@ -93,7 +93,7 @@ class Universe(object):
             
             # as above, but for the long and longest variable types
             longlower = 100; longupper = 700
-            longperiodL = np.random.uniform(0.85, 0.95); longperiodU = np.random.uniform(1.05, 1.25)
+            longperiodL = np.random.uniform(0.92, 0.98); longperiodU = np.random.uniform(1.1, 1.25)
             longgradient = signs[1] * (longperiod * (longperiodU - longperiodL)) / np.log10(longupper / longlower)
             longyint = (longperiodL * longperiod) - (longgradient * np.log10(longlower))
             
@@ -116,6 +116,10 @@ class Universe(object):
         -------
         clusters : list
             List of GalaxyCluster objects
+        clustervels : numpy array
+            radial velocity of each galaxy cluster due to hubble recession
+        R : numpy array
+            Distance of galaxy clusters from the observer (at the origin) in pc
         '''
         threshold = 30000  # the distance threshold at which galaxies are simulated in low resolution form
         population = self.clusterpop
@@ -219,12 +223,12 @@ class Universe(object):
         return stars
     
     def get_blackholes(self):
-        ''' Return a list of all of the BlackHole objects in the universe (with the local blackhole being the last element). 
+        ''' Return a list of all of the BlackHole objects in the universe. 
         Returns
         -------
         allblackholes : list
-            A list of all of the BlackHole objects in the universe, with the distant blackholes populating the first section of the list,
-            and black holes in resolved galaxies populating the second section of the list.
+            A list of all of the BlackHole objects in the universe, with the black holes in resolved galaxies populating the first 
+            section of the list, and distant blackholes populating the second section of the list.
         '''
         blackholes = [galaxy.blackhole for galaxy in self.galaxies]
         distantblackholes = [galaxy.blackhole for galaxy in self.distantgalaxies]
@@ -352,13 +356,6 @@ class Universe(object):
         indexes = np.append(indexes, closeindexes); np.random.shuffle(indexes)  # shuffle the indexes so its not as obvious that the last two supernovae are in close galaxies
         galaxies = [allgalaxies[int(i)] for i in indexes]
         positions = np.array([galaxy.spherical for galaxy in galaxies])
-        # intrinsic = 1.5 * 10**44 / (4 * np.pi * (7 * 10**6)**2)     # rough energy release of R=7000km white dwarf Type Ia supernova (W/m^2)
-        # peakmag = -18.4; sunmag = 4.74; sunlumin = 3.828 * 10**26   # peak magnitude of a type 1a supernova (M_V), bol abs mag of the sun, bol lumin of the sun
-        # peaklumin = sunlumin * 10**((peakmag - sunmag) / (-2.5))    # this is the mag/lumin formula rearranged to give L
-        # intrinsicflux = peaklumin / (4 * np.pi * (5 * 10**6)**2)    # rough energy release of R=7000km white dwarf Type Ia supernova (W/m^2)
-        # intrinsicflux *= (10 * 3.086 * 10**16)**2                   # account for the peakmag being at 10pc
-        # distances = positions[:, 2] * 3.086 * 10**16    # convert from parsec to meters
-        # peakfluxes = (intrinsicflux / distances**2) * np.random.normal(1, 0.01, frequency)
         
         peaklumin = 2 * 10**36  # 20 billion times solar luminosity, source: https://www.sciencedirect.com/topics/physics-and-astronomy/type-ia-supernovae#:~:text=A%20typical%20supernova%20reaches%20its,times%20that%20of%20the%20Sun.
         distances = positions[:, 2] * 3.086 * 10**16    # convert from parsec to meters

@@ -46,15 +46,12 @@ Several real aspects of astronomy are modelled (to varying degrees of accuracy) 
  - Rotation curves are simulated accurately according to newtonian physics, with black holes and dark matter (via the Navarro-Frenk-White profile) influencing rotation velocities. Spiral galaxies have coherent rotation, with all stars (except the central black hole cluster) orbiting in the orbital plane in the same direction. Elliptical galaxies have random velocity directions, but velocity magnitudes according to the same rotation curve profiles. This random velocity is really apparent in the doppler image below in the Galaxy Clusters section.
  
 ![](/MiscGithubImages/localradialvel.jpg)
-### Black Holes
-<p align="right">
-<img height="200" src="/MiscGithubImages/FRI lobe.png"><img height="200" src="/MiscGithubImages/FRII lobe.png">
-<em> (L) FRI Lobe in a cD galaxy.     (R) FRII lobe.</em>
-</p>  
+### Black Holes 
+<img align="right" height="300" src="/MiscGithubImages/FRII lobe.png"><img align="right" height="300" src="/MiscGithubImages/FRI lobe.png">
 
  - Massive black holes (usually on the order of 50-500 solar masses) are generated at the center of all/most galaxies with the mass dependent on the galaxy mass as a whole. 
  - Black holes all have a luminosity on the order of the eddington luminosity for a black hole of that mass. The actual proportion of $L_\text{edd}$ depends on how many stars are in a dense cluster around the black hole.
- - Mock 'Radio Lobes' from black hole accretion shoot out from the 'poles' of the galaxy (which assumes that the accretion disk is parallel with the plane of the galaxy). cD galaxies display Fanaroff-Riley Type I lobes, while other galaxies show FRII lobes. Lobes generate if the central BH has a luminosity of more than $10^6 L_\odot$. At the moment, there is no use for this other than qualitative means. 
+ - Mock 'Radio Lobes' from black hole accretion shoot out from the 'poles' of the galaxy (which assumes that the accretion disk is parallel with the plane of the galaxy). cD galaxies display Fanaroff-Riley Type I lobes (L), while other galaxies show FRII lobes (R). Lobes generate if the central BH has a luminosity of more than $10^6 L_\odot$. At the moment, there is no use for this other than qualitative means. 
  - Black holes have a cluster of massive stars around them (according to an exponential distribution, where ellipticals will have more stars), with random velocity directions. In the unlikely case you can actually see the black hole in an output image, it shows up as a dot with an aqua-ish colour (according to the blackbody colours link in the credits). 
 ### Galaxy Clusters
 <p align="middle"><img src="/MiscGithubImages/Cluster1.jpg" height="200" /><img src="/MiscGithubImages/galaxradialvels.jpg" height="200" /></p>  
@@ -77,7 +74,7 @@ Several real aspects of astronomy are modelled (to varying degrees of accuracy) 
 ## To-Do:
 - [ ] Make this damn README.md prettier!!
 - [x] Include a 'how to use' section in this readme (thanks saskia!)
-- [ ] Fill out many docstrings and comment all code to a degree readable by other users.
+- [x] Fill out many docstrings and comment all code to a degree readable by other users.
 
 
 ## Credits/Acknowledgements

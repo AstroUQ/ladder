@@ -129,8 +129,13 @@ class GalaxyCluster(object):
             galaxpositions[-1, 2] = localz
             orbitradii[-1] = np.sqrt(localx**2 + localy**2 + localz**2)
         # now, use multiprocessing to generate the galaxies in the cluster according to the arguments above and their positions
-        with Pool() as pool:
-            galaxies = pool.starmap(self.generate_galaxy, args)
+        if self.complexity != "Distant":
+            with Pool() as pool:
+                galaxies = pool.starmap(self.generate_galaxy, args)
+        else:   # distant galaxies actually generate faster without multiprocessing
+            galaxies = []
+            for arg in args:
+                galaxies.append(self.generate_galaxy(arg[0], arg[1], arg[2]))
         
         galaxmasses = np.zeros(len(galaxies))
         for i, galaxy in enumerate(galaxies):

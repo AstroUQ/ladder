@@ -386,7 +386,11 @@ class Universe(object):
             y = (self.hubble / 10**6) * x   # get the radial velocity in terms of km/s/pc * pc => km/s
             ax.plot(x / 1000, y, 'r-', alpha=0.5)
         
-        ax.set_xlim(xmin=0); ax.set_ylim(ymin=0)
+        ax.set_xlim(xmin=0); 
+        if self.hubble > 0:
+            ax.set_ylim(ymin=0)
+        else:
+            ax.set_ylim(ymax=0)
         if save:
             plt.close()
             return fig

@@ -47,14 +47,18 @@ Several real aspects of astronomy are modelled (to varying degrees of accuracy) 
  
 ![](/MiscGithubImages/localradialvel.jpg)
 ### Black Holes
-<img align="right" height="200" src="/MiscGithubImages/radiolobetypes.jpg">  
+<p align="right">
+<img height="200" src="/MiscGithubImages/FRI lobe.png"><img height="200" src="/MiscGithubImages/FRII lobe.png">
+<em> (L) FRI Lobe in a cD galaxy.     (R) FRII lobe.</em>
+</p>  
 
  - Massive black holes (usually on the order of 50-500 solar masses) are generated at the center of all/most galaxies with the mass dependent on the galaxy mass as a whole. 
  - Black holes all have a luminosity on the order of the eddington luminosity for a black hole of that mass. The actual proportion of $L_\text{edd}$ depends on how many stars are in a dense cluster around the black hole.
- - Mock 'Radio Lobes' from black hole accretion shoot out from the 'poles' of the galaxy (which assumes that the accretion disk is parallel with the plane of the galaxy). cD galaxies display Fanaroff-Riley Type I lobes, while other galaxies show FRII lobes. Lobes generate if the central BH has a luminosity of more than $10^6 L_\odot$. the moment, there is no use for this other than qualitative means. 
+ - Mock 'Radio Lobes' from black hole accretion shoot out from the 'poles' of the galaxy (which assumes that the accretion disk is parallel with the plane of the galaxy). cD galaxies display Fanaroff-Riley Type I lobes, while other galaxies show FRII lobes. Lobes generate if the central BH has a luminosity of more than $10^6 L_\odot$. At the moment, there is no use for this other than qualitative means. 
  - Black holes have a cluster of massive stars around them (according to an exponential distribution, where ellipticals will have more stars), with random velocity directions. In the unlikely case you can actually see the black hole in an output image, it shows up as a dot with an aqua-ish colour (according to the blackbody colours link in the credits). 
 ### Galaxy Clusters
 <p align="middle"><img src="/MiscGithubImages/Cluster1.jpg" height="200" /><img src="/MiscGithubImages/galaxradialvels.jpg" height="200" /></p>  
+<p align="middle"><em>(L) A slightly more populous-than-average galaxy cluster.     (R) The radial velocities of galaxies within a cluster (red moving away).</em></p>  
 
  - Galaxy clusters generate at least one galaxy according to an exponential distribution with a mean of 8 galaxies. Clusters with 5 or more galaxies will have an elliptical galaxy at their center, and clusters with 10 or more galaxies will have a cD galaxy in their center.
    - Elliptical galaxies are much more common close to the center of clusters. Conversely, spirals are more likely on the outer edges of clusters. 
@@ -74,13 +78,7 @@ Several real aspects of astronomy are modelled (to varying degrees of accuracy) 
 - [ ] Make this damn README.md prettier!!
 - [x] Include a 'how to use' section in this readme (thanks saskia!)
 - [ ] Fill out many docstrings and comment all code to a degree readable by other users.
-- [x] Generate individual datasets inside of a "Datasets" folder. 
-- [x] Randomly determine hubble constant (and update the readme after doing so). 
-- [x] Set it so that some galaxies don't have a black hole and/or dark matter, with probability depending on galaxy type. 
-- [x] Output some luminosity data about black holes. Maybe under ~~x-ray data~~ radio sources!
-- [x] Make black hole proportion of eddington luminosity depend on same manner of the host galaxy. 
-- [x] Make radio lobe brightness depend on black hole luminosity.
-- [x] Tweak parameters of period-luminosity relation.
+
 
 ## Credits/Acknowledgements
  - Saskia for providing a mental amount of help with regards to Python programming. I've learnt a lot! Also many many sanity checks and FEEDBACK. Mamma mia. 

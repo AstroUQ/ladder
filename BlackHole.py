@@ -82,7 +82,7 @@ class BlackHole(object):
             the number to be input into the 'scale' kwarg in a matplotlib figure. 
         '''
         scale = 3 * np.log(2 * self.luminosity + 1)
-        scale = 2 if scale > 2 else scale
+        scale = 3 if scale > 3 else scale
         return scale
     
     def BH_emission(self, FR=2):
@@ -98,6 +98,12 @@ class BlackHole(object):
         ----------
         FR : int
             {1, 2} depending on which Fanaroff-Riley emission type to simulate. 
+        Returns
+        -------
+        x, y, z : numpy arrays
+            The positions of each of the scattered points in cartesian coordinates
+        radius : float
+            The approx. radius of the lobe in parsec
         '''
         if FR == 1:
             centerpop = 500

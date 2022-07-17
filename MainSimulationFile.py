@@ -153,38 +153,22 @@ class UniverseSim(object):
             plt.close()
             return fig
     
-    def plot_radio(self, ax, plot=True, scatter=False, data=False):
+    def plot_radio(self, ax):
         ''' Plot the radio contours of the SMBH emission onto a 2D sky plot. 
         Parameters
         ----------
         ax : matplotlib axes object
-        plot : bool
-            Whether to actually plot the contour
-        scatter : bool
-            Whether to overlay the raw scatter data for calibration purposes
-        data : bool
-            Whether to return the area density data for the contours
-        Returns (if data=True)
-        -------
-        equatbins, polarbins : numpy arrays (1xN)
-            The equatorial and polar coordinates of the contour density bins. 
-        density : numpy array (NxN)
-            The number count of scatter particles per equat/polar bin. 
         '''
-        # equatbins, polarbins, density = [galaxy.plot_radio_contour(0, plot=False, data=True) for galaxy in self.galaxies]
-        if plot == True:    # plot the contour
-            levels = [2, 3, 4, 5, 6, 10, 15]    # having the contour levels start at 2 removes the noise from the smoothing - important!!
-            for galaxy in self.galaxies:
-                if galaxy.blackhole == False or galaxy.blackhole.BHradio == False:
-                    continue
-                equatbins, polarbins, density = galaxy.plot_radio_contour(0, plot=False, data=True)
-                # _, _, dist = galaxy.spherical; distmult = (dist * 3.086 * 10**16)**2
-                # density = density / distmult; levels = np.array(levels)
-                ax.contour(equatbins, polarbins, density, levels, corner_mask=True)     # plot the radio contours
-            ax.set_ylim(0, 180); ax.set_xlim(0, 360)
-            ax.invert_yaxis();
-        if data == True:
-            return equatbins, polarbins, density
+        levels = [2, 3, 4, 5, 6, 10, 15]    # having the contour levels start at 2 removes the noise from the smoothing - important!!
+        for galaxy in self.galaxies:
+            if galaxy.blackhole == False or galaxy.blackhole.BHradio == False:
+                continue
+            equatbins, polarbins, density = galaxy.plot_radio_contour(0, plot=False, data=True)
+            _, _, dist = galaxy.spherical   # get the distance to the galaxy in question
+            lw = 10 / np.sqrt(dist)     # this makes more distant radio lobes proportionally smaller! nice!
+            ax.contour(equatbins, polarbins, density, levels, corner_mask=True, linewidths=lw)     # plot the radio contours
+        ax.set_ylim(0, 180); ax.set_xlim(0, 360)
+        ax.invert_yaxis();
         
     def plot_doppler(self, log=True, save=False):
         ''' Plot the radial velocities of all of the stars and distant galaxies in the universe in terms of a colour scale,
@@ -251,6 +235,7 @@ class UniverseSim(object):
     def save_data(self, properties=True, pic=True, radio=True, stars=True, variablestars=True, blackbodies=True, distantgalax=True, 
                   supernovae=True, doppler=[True, False], blackhole=True, rotcurves=True):
         ''' Generates some data, takes other data, and saves it to the system in a new directory within the file directory.
+        .pdf images are commented out currently - uncomment them at your own risk! (.pdfs can be in excess of 90mb each!)
         Parameters
         ----------
         properties : bool
@@ -331,10 +316,10 @@ class UniverseSim(object):
             text.close()
             hubblediag = self.universe.plot_hubblediagram(save=True)
             hubblediag.savefig(self.datadirectory + '\\Hubble Diagram.png', dpi=600, bbox_inches='tight', pad_inches = 0.01)
-            hubblediag.savefig(self.datadirectory + '\\Hubble Diagram.pdf', dpi=600, bbox_inches='tight', pad_inches = 0.01)
+            # hubblediag.savefig(self.datadirectory + '\\Hubble Diagram.pdf', dpi=600, bbox_inches='tight', pad_inches = 0.01)
             HR = self.galaxies[-1].plot_HR(isoradii=True, xunit="both", yunit="BolLumMag", variable=True, save=True)
             HR.savefig(self.datadirectory + '\\Local Galaxy HR Diagram.png', dpi=600, bbox_inches='tight', pad_inches = 0.01)
-            HR.savefig(self.datadirectory + '\\Local Galaxy HR Diagram.pdf', dpi=600, bbox_inches='tight', pad_inches = 0.01)
+            # HR.savefig(self.datadirectory + '\\Local Galaxy HR Diagram.pdf', dpi=600, bbox_inches='tight', pad_inches = 0.01)
             
             proptime2 = time(); total = proptime2 - proptime1; print("Universe properties saved in", total, "s")
         
@@ -343,7 +328,7 @@ class UniverseSim(object):
             fig = self.plot_universe(save=True)
             fig.set_size_inches(18, 9, forward=True)
             fig.savefig(self.datadirectory + '\\Universe Image.png', dpi=1500, bbox_inches='tight', pad_inches = 0.01)
-            fig.savefig(self.datadirectory + '\\Universe Image.pdf', dpi=200, bbox_inches='tight', pad_inches = 0.01)
+            # fig.savefig(self.datadirectory + '\\Universe Image.pdf', dpi=200, bbox_inches='tight', pad_inches = 0.01)
             pictime2 = time(); total = pictime2 - pictime1; print("Universe picture saved in", total, "s")
             
             if radio:       # plot radio data too
@@ -351,7 +336,7 @@ class UniverseSim(object):
                 fig = self.plot_universe(radio=True, save=True)
                 fig.set_size_inches(18, 9, forward=True)
                 fig.savefig(self.datadirectory + '\\Radio Overlay Image.png', dpi=1500, bbox_inches='tight', pad_inches = 0.01)
-                fig.savefig(self.datadirectory + '\\Radio Overlay Image.pdf', dpi=200, bbox_inches='tight', pad_inches = 0.01)
+                # fig.savefig(self.datadirectory + '\\Radio Overlay Image.pdf', dpi=200, bbox_inches='tight', pad_inches = 0.01)
                 pictime3 = time(); total = pictime3 - pictime2; print("Radio overlay picture saved in", total, "s")
             
         if stars:   # generate and save star data
@@ -516,13 +501,13 @@ class UniverseSim(object):
             fig = self.plot_doppler(save=True)
             fig.set_size_inches(18, 9, forward=True)
             fig.savefig(self.datadirectory + '\\Doppler Image Log Scale.png', dpi=1500, bbox_inches='tight', pad_inches = 0.01)
-            fig.savefig(self.datadirectory + '\\Doppler Image Log Scale.pdf', dpi=200, bbox_inches='tight', pad_inches = 0.01)
+            # fig.savefig(self.datadirectory + '\\Doppler Image Log Scale.pdf', dpi=200, bbox_inches='tight', pad_inches = 0.01)
             dopplertime2 = time(); total = dopplertime2 - dopplertime1; print("Doppler image saved in", total, "s")
             if doppler[1]:
                 fig = self.plot_doppler(log=False, save=True)
                 fig.set_size_inches(18, 9, forward=True)
                 fig.savefig(self.datadirectory + '\\Doppler Image Linear Scale.png', dpi=1500, bbox_inches='tight', pad_inches = 0.01)
-                fig.savefig(self.datadirectory + '\\Doppler Image Linear Scale.pdf', dpi=200, bbox_inches='tight', pad_inches = 0.01)
+                # fig.savefig(self.datadirectory + '\\Doppler Image Linear Scale.pdf', dpi=200, bbox_inches='tight', pad_inches = 0.01)
         
         if blackhole:   # save some data about black holes (radio sources)
             bhtime1 = time(); print("Saving black hole data...")

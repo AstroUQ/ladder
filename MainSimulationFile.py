@@ -273,7 +273,8 @@ class UniverseSim(object):
         blackhole : bool
             Whether to save data from black holes in all galaxies
         rotcurves : bool
-            Whether to plot and save the galaxy rotation curves of all resolved galaxies. 
+            Whether to plot and save the galaxy rotation curves of all resolved galaxies. Also plots and saves galaxy cluster
+            rotation curves, provided that they're resolved galaxies and the cluster has a population >= 10 galaxies.
         blackbodies : bool
             If true, plots the blackbody curve for stars in the local galaxy (1 curve for each temperature in 500K increments, so
             e.g. 1 curve for a star of temp 4500K, and another for a temp of 5000K, but not two for 4500K etc), and stores them in 
@@ -558,6 +559,18 @@ class UniverseSim(object):
                 fig.savefig(rotcurvedirectory + f'\\E{equat}-P{polar} {galaxy.species}, BH{bh}, DM{dm}.png', 
                             dpi=400, bbox_inches='tight', pad_inches = 0.01)
             rottime2 = time(); total = rottime2 - rottime1; print("Galaxy rotation curves saved in", total, "s")
+            
+            print("Saving cluster rotation curves...")
+            clustercurvedirectory = self.datadirectory + "\\Cluster Rotation Curves"
+            os.makedirs(clustercurvedirectory)
+            for cluster in self.universe.clusters:
+                pop = cluster.clusterpop
+                if pop >= 10 and cluster.complexity != "Distant":
+                    equat, polar, _ = cluster.spherical; equat, polar = round(equat, 2), round(polar, 2)
+                    fig = cluster.plot_RotCurve(newtapprox=True, save=True)
+                    fig.savefig(clustercurvedirectory + f'\\E{equat}-P{polar}, Pop;{pop}.png', 
+                                dpi=400, bbox_inches='tight', pad_inches = 0.01)
+            rottime3 = time(); total = rottime3 - rottime2; print("Cluster rotation curves saved in", total, "s")
         t1 = time(); total = t1 - t0; print("All data generated and saved in =", total, "s")
     
     def cartesian_to_spherical(self, x, y, z):

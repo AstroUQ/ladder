@@ -22,6 +22,7 @@ class GalaxyCluster(object):
             Whether this is the local galaxy cluster (i.e. the one that the observer at the origin is in)
         '''
         self.local = local
+        self.clusterpop = population
         self.radius = 200 * population**(5/6)
         self.blackholes = blackholes
         self.darkmatter = darkmatter

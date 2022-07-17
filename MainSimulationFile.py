@@ -542,7 +542,7 @@ class UniverseSim(object):
                 dm = "1" if galaxy.darkmatter == True else "0"
                 fig = galaxy.plot_RotCurve(newtapprox=True, save=True)
                 fig.savefig(rotcurvedirectory + f'\\E{equat}-P{polar} {galaxy.species}, BH{bh}, DM{dm}.png', 
-                            dpi=400, bbox_inches='tight', pad_inches = 0.01)
+                            dpi=200, bbox_inches='tight', pad_inches = 0.01)
             rottime2 = time(); total = rottime2 - rottime1; print("Galaxy rotation curves saved in", total, "s")
             
             print("Saving cluster rotation curves...")
@@ -557,6 +557,7 @@ class UniverseSim(object):
                                 dpi=400, bbox_inches='tight', pad_inches = 0.01)
             rottime3 = time(); total = rottime3 - rottime2; print("Cluster rotation curves saved in", total, "s")
         t1 = time(); total = t1 - t0; print("All data generated and saved in =", total, "s")
+        plt.close()     # need this to close the figure (since the "fig" variable persists)
     
     def cartesian_to_spherical(self, x, y, z):
         ''' Converts cartesian coordinates to spherical ones (formulae taken from wikipedia) in units of degrees. 

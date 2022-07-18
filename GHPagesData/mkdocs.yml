@@ -1,4 +1,6 @@
 site_name: Simulated Universe
+site_url: https://ryanwhite1.github.io/Simulated-Universe/
+site_author: Ryan White
 theme:
   name: "material"
   logo: MiscGithubImages/SBc.jpg
@@ -15,7 +17,7 @@ extra:
     social:
         - icon: fontawesome/brands/github
           link: https://github.com/ryanwhite1
-    copyright: Copyright &copy; 2022 Ryan White
+copyright: Copyright &copy; 2022 Ryan White
 
 repo_url: https://github.com/ryanwhite1/Simulated-Universe
 repo_name: ryanwhite1/Simulated-Universe

@@ -1,3 +1,6 @@
+---
+title: Datasets
+---
 # Datasets!
 
 Here are some datasets to download and analyse (in .zip format).

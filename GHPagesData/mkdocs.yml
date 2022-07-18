@@ -1,0 +1,45 @@
+site_name: Simulated Universe
+theme:
+  name: "material"
+  logo: MiscGithubImages/SBc.jpg
+  palette:
+    primary: black
+    accent: black
+  features:
+    - navigation.tabs
+    - navigation.top
+    - navigation.instant
+    - navigation.tracking
+    - toc.integrate
+extra:
+    social:
+        - icon: fontawesome/brands/github
+          link: https://github.com/ryanwhite1
+    copyright: Copyright &copy; 2022 Ryan White
+
+repo_url: https://github.com/ryanwhite1/Simulated-Universe
+repo_name: ryanwhite1/Simulated-Universe
+nav: 
+    - 'Home': index.md
+    - 'Datasets': datasets.md
+    - 'Analysing Data':
+        - h: Analysing Data/h.md
+    - 'About':
+        - About: About.md
+        - GitHub Readme: GitHub README.md
+        - License: License.md
+    
+plugins:
+    - search
+    - mkdocstrings:
+        default_handler: python
+        handlers:
+            python:
+                selection:
+                    docstring_style: "numpy"
+                rendering:
+                    show_source: false
+        custom_templates: templates
+
+markdown_extensions:
+    - meta

@@ -27,6 +27,7 @@ nav:
     - 'Analysing Data':
         - Uncertainties in Data: Analysing Data/Uncertainties.md
         - h: Analysing Data/h.md
+        - Notebook!: Analysing Data/Actual Analysis/Data Import.ipynb
     - 'About':
         - About: About.md
         - GitHub Readme: GitHub README.md
@@ -34,6 +35,7 @@ nav:
     
 plugins:
     - search
+    - mkdocs-jupyter
     - mkdocstrings:
         default_handler: python
         handlers:

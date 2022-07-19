@@ -43,7 +43,7 @@ Each `.txt` file within this directory has measurement uncertainty corresponding
  BlueF | +/- 1 | %
  GreenF | +/- 1 | %
  RedF | +/- 1 | %
- Parallax | +/- 0.001 | degrees
+ Parallax | +/- 0.001 | arcseconds
  RadialVelocity | +/- 0.03 | km/s
  Variable? | N/A | N/A
  

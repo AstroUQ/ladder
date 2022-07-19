@@ -633,7 +633,7 @@ def main():
     #           "with SD =", [sdbluef, sdgreenf, sdredf])
     
     ### -- this is the function that you should run! -- ###
-    sim = UniverseSim(1000, darkmatter=False, mode="Normal")
+    sim = UniverseSim(1000, mode="Normal")
     sim.save_data()
     
 if __name__ == "__main__":

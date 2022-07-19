@@ -6,6 +6,8 @@ title: Datasets
 Here are some datasets to download and analyse (in .zip format). 
 
  - [Seed: 8561](Datasets/Sim Data (Clusters=1000, Seed=8561).zip) (Difficult)
+ - [Seed: 9243](Datasets/Sim Data (Clusters=1000, Seed=9243).zip) (Normal)
+ - [Seed: 588](Datasets/Sim Data (Clusters=1000, Seed=588).zip) (Normal)
  - [Seed: 1698](Datasets/Sim Data (Clusters=1000, Seed=1698).zip) (Easy)
  
 ## How to Access and Use the Data
@@ -16,3 +18,4 @@ Upon unzipping the file, you will see these files, or files similar to this (som
 Next, I'd recommend taking a look at `Radio Overlay Image.png` (if it's in your dataset!). This is the same as `Universe Image.png`, just with some overlaid data pertaining to what you'd see in the radio spectrum. Even with just these two images, you can start qualitatively inferring properties about your universe!
 
 ## If you'd like to generate your own data...
+Pray. Pray to god.

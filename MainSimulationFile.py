@@ -331,7 +331,7 @@ class UniverseSim(object):
             # fig.savefig(self.datadirectory + '\\Universe Image.pdf', dpi=200, bbox_inches='tight', pad_inches = 0.01)
             pictime2 = time(); total = pictime2 - pictime1; print("Universe picture saved in", total, "s")
             
-            if radio:       # plot radio data too
+            if radio and self.hasblackhole:       # plot radio data too
                 print("Generating radio overlay...")
                 fig = self.plot_universe(radio=True, save=True)
                 fig.set_size_inches(18, 9, forward=True)
@@ -633,7 +633,7 @@ def main():
     #           "with SD =", [sdbluef, sdgreenf, sdredf])
     
     ### -- this is the function that you should run! -- ###
-    sim = UniverseSim(1000)
+    sim = UniverseSim(1000, darkmatter=False, mode="Normal")
     sim.save_data()
     
 if __name__ == "__main__":

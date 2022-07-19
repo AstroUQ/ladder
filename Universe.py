@@ -177,7 +177,8 @@ class Universe(object):
                 clusters.append(GalaxyCluster((localequat, localpolar, 2000), 15, local=True, blackholes=self.blackholes, 
                                               darkmatter=self.darkmatter, complexity=self.complexity, variable=self.variablestars))
             elif R[i] > threshold:  # this must be a distant galaxy
-                clusters.append(GalaxyCluster(pos, populations[i], complexity="Distant", variable=self.variablestars))
+                clusters.append(GalaxyCluster(pos, populations[i], blackholes=self.blackholes, darkmatter=self.darkmatter, 
+                                              complexity="Distant", variable=self.variablestars))
             else:
                 clusters.append(GalaxyCluster(pos, populations[i], blackholes=self.blackholes, darkmatter=self.darkmatter, 
                                               complexity=self.complexity, variable=self.variablestars))

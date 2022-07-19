@@ -23,8 +23,9 @@ repo_url: https://github.com/ryanwhite1/Simulated-Universe
 repo_name: ryanwhite1/Simulated-Universe
 nav: 
     - 'Home': index.md
-    - 'Datasets': datasets.md
+    - 'Datasets': Datasets.md
     - 'Analysing Data':
+        - Uncertainties in Data: Analysing Data/Uncertainties.md
         - h: Analysing Data/h.md
     - 'About':
         - About: About.md
@@ -45,3 +46,11 @@ plugins:
 
 markdown_extensions:
     - meta
+    - pymdownx.arithmatex:
+        generic: true
+    - mdx_math  #https://stackoverflow.com/questions/27882261/mkdocs-and-mathjax <- source!
+
+extra_javascript:
+  - javascripts/mathjax.js
+  - https://polyfill.io/v3/polyfill.min.js?features=es6
+  - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js

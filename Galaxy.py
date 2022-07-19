@@ -182,7 +182,7 @@ class Galaxy(object):
         if self.complexity == "Distant":
             population /= 18
         elif self.complexity == "Basic":
-            population *= 0.15
+            population *= 0.3
         return int(population)
     
     def determine_radius(self, species):
@@ -204,12 +204,12 @@ class Galaxy(object):
             index = self.species
         radlookup = {"S0":[90, 8], "Sa":[80, 8], "Sb":[75, 6], "Sc":[70, 5],
                       "SBa":[90, 10], "SBb":[85, 7], "SBc":[75, 5],
-                      "cD":[200, 60], "E":[200 - 20 * num, 40 / (num + 1)]}
+                      "cD":[200, 50], "E":[200 - 20 * num, 40 / (num + 1)]}
         mean, SD = radlookup[index]
         radius = np.random.normal(mean, SD)
         if self.complexity == "Basic":
             radius *= 0.6       # we want to maintain a roughly constant density across types, so less stars means smaller radius
-        return radius
+        return abs(radius)
     
     def generate_spiral(self, population, radius):
         '''Barred spiral galaxies generated using Fermat's spiral, and standard spiral galaxies generated using Archimedean spiral. 

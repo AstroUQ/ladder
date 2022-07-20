@@ -20,14 +20,16 @@ extra:
 copyright: Copyright &copy; 2022 Ryan White
 
 repo_url: https://github.com/ryanwhite1/Simulated-Universe
-repo_name: ryanwhite1/Simulated-Universe
+#repo_name: ryanwhite1/Simulated-Universe
 nav: 
     - 'Home': index.md
     - 'Datasets': Datasets.md
     - 'Analysing Data':
+        - Introduction: Analysing Data/introduction.md
         - Uncertainties in Data: Analysing Data/Uncertainties.md
-        - h: Analysing Data/h.md
-        - Notebook!: Analysing Data/Actual Analysis/Data Import.ipynb
+        - 'Walkthrough (Spoilers!)':
+            - Introduction: Analysing Data/Walkthrough/introduction.md
+            - Local Universe: Analysing Data/Walkthrough/Local Universe.ipynb
     - 'About':
         - About: About.md
         - GitHub Readme: GitHub README.md
@@ -51,6 +53,14 @@ markdown_extensions:
     - pymdownx.arithmatex:
         generic: true
     - mdx_math  #https://stackoverflow.com/questions/27882261/mkdocs-and-mathjax <- source!
+    - pymdownx.critic
+    - pymdownx.caret
+    - pymdownx.keys
+    - pymdownx.mark
+    - pymdownx.tilde
+    - def_list
+    - pymdownx.tasklist:
+        custom_checkbox: true
 
 extra_javascript:
   - javascripts/mathjax.js

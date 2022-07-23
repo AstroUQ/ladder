@@ -11,7 +11,7 @@ This website serves as an introduction to, a tutorial of how to analyse, and som
 What is an astronomical distance ladder? Using several techniques and physical properties of stars, galaxies, etc, a distance scale of the universe can be formulated.
 
 <p align="middle"><img src="assets/solar system.png" style="width:15%"/><img src="assets/local stars.png" style="width:15%"/><img src="assets/parent galaxy.png" style="width:15%"/><img src="assets/local galaxies.png" style="width:15%"/><img src="assets/distant clusters.png" style="width:15%"/><img src="assets/observable universe.png" style="width:15%"/></p>
-</p align="middle"><em>Universe components in order of increasing scale. Left to right: Solar system, local stars, local galaxy, local galactic cluster, distant galaxy clusters, observable universe.</em></p>
+</p align="middle"><em>Universe components in order of increasing scale. Left to right: Solar system, local stars, local galaxy, local galactic cluster, distant galaxy clusters, observable universe. Artwork source: @spacetato</em></p>
 
 Formulating a distance scale is really important if you want to know anything about everything! So much so that it has formed the basis of much of modern astronomy and cosmology. What better way to learn about it than to try it out yourself?
 

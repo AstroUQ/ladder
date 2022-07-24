@@ -27,6 +27,7 @@ nav:
     - 'Analysing Data':
         - Introduction: Analysing Data/introduction.md
         - Uncertainties in Data: Analysing Data/Uncertainties.md
+        - 'Useful Formulae': Analysing Data/UsefulFormulae.md
         - 'Walkthrough (Spoilers!)':
             - Introduction: Analysing Data/Walkthrough/introduction.md
             - Local Universe: Analysing Data/Walkthrough/Local Universe.ipynb
@@ -59,6 +60,9 @@ markdown_extensions:
     - pymdownx.keys
     - pymdownx.mark
     - pymdownx.tilde
+    - admonition
+    - pymdownx.details
+    - pymdownx.superfences
     - def_list
     - pymdownx.tasklist:
         custom_checkbox: true

@@ -20,7 +20,7 @@ extra:
 copyright: Copyright &copy; 2022 Ryan White
 
 repo_url: https://github.com/ryanwhite1/Simulated-Universe
-#repo_name: ryanwhite1/Simulated-Universe
+edit_uri: ""
 nav: 
     - 'Home': index.md
     - 'Datasets': Datasets.md

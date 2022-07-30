@@ -31,6 +31,7 @@ nav:
         - 'Walkthrough (Spoilers!)':
             - Introduction: Analysing Data/Walkthrough/introduction.md
             - Local Universe: Analysing Data/Walkthrough/Local Universe.ipynb
+            - Identifying Galaxies: Analysing Data/Walkthrough/GalaxyFinding.ipynb
     - 'About':
         - About: About.md
         - GitHub Readme: GitHub README.md

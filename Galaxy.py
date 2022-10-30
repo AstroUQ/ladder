@@ -476,13 +476,16 @@ class Galaxy(object):
         colours = np.array(colours)
         
         points = np.array([x, y, z])
-        phi = np.random.uniform(0, 2*np.pi, 3)
+        
         
         if self.rotate == True:
             # rotate the galaxy randomly
+            phi = np.random.uniform(0, 2*np.pi, 3)
             points = np.dot(self.galaxyrotation(phi[0], 'x'), points)
             points = np.dot(self.galaxyrotation(phi[1], 'y'), points)
             points = np.dot(self.galaxyrotation(phi[2], 'z'), points)
+        else:
+            phi = np.array([0, 0, 0])
         x0, y0, z0 = self.cartesian
         x, y, z = points[0] + x0, points[1] + y0, points[2] + z0  # move the galaxy away from the origin to its desired position
         return [x, y, z, colours, scales], stars, phi

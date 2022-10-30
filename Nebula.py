@@ -163,13 +163,16 @@ class Nebula(object):
             elif i == 1:       # we're dealing with the bulge
                 bulgepop = pop
                 theta = np.random.uniform(0, 2*np.pi, bulgepop)
+                
                 # phi = np.random.uniform(0, 2*np.pi, bulgepop)
+                # bulgeradius = 0.4 * self.radius
+                # bulgeR = bulgeradius * np.random.uniform(0, 1, bulgepop)**(3/5)    #bulgedists was meant to be RVs between 0 and 1, but the mult makes up for it
+                # x = bulgeR * (np.cos(theta) * np.sin(phi) + np.random.normal(0, 0.1, bulgepop))
+                # y = bulgeR * (np.sin(theta) * np.sin(phi) + np.random.normal(0, 0.1, bulgepop))
+                # distanceflat = (1 / self.radius) * np.sqrt(np.square(x) + np.square(y))     #this makes the z lower for stars further from the center
+                # z = (0.83 * bulgeR * (np.cos(phi) + np.random.normal(0, 0.1, bulgepop))) * 0.9**distanceflat
+                
                 bulgeradius = 0.4 * self.radius
-                # bulgeR = bulgeradius * np.random.uniform(0, 1, bulgepop)**(1/3)    #bulgedists was meant to be RVs between 0 and 1, but the mult makes up for it
-                # bulgex = bulgeR * (np.cos(theta) * np.sin(phi) + np.random.normal(0, 0.1, bulgepop))
-                # bulgey = bulgeR * (np.sin(theta) * np.sin(phi) + np.random.normal(0, 0.1, bulgepop))
-                # distanceflat = (1 / self.radius) * np.sqrt(np.square(bulgex) + np.square(bulgey))     #this makes the z lower for stars further from the center
-                # bulgez = (0.83 * bulgeR * (np.cos(phi) + np.random.normal(0, 0.1, bulgepop))) * 0.9**distanceflat
                 bulgeR = bulgeradius * np.random.uniform(0, 1, bulgepop)**(3/5)
                 x = np.cos(theta) * bulgeR * np.random.normal(1, 0.2, bulgepop)
                 z = np.sin(theta) * bulgeR * np.random.normal(1, 0.2, bulgepop)
@@ -344,16 +347,27 @@ def main():
     # ringNeb = Nebula('ring', [45, 90, 10])
     # ringNeb.plot_nebula(style='hexbin')
     from Galaxy import Galaxy
-    position = [45, 90, 1000]
-    species = 'Sa'
-    galax = Galaxy(species, position)
+    # position = [45, 90, 1000]
+    # species = 'Sa'
+    # galax = Galaxy(species, position)
+    # fig, ax = plt.subplots()
+    
+    # spiralNeb = Nebula(species, position, galax.radius, rotation=galax.rotation)
+    # spiralNeb.plot_nebula(style='colormesh', ax=ax)
+    # galax.plot_2d(fig, ax)
+    # ax.set_xlim(40, 50)
+    # ax.set_ylim(95, 85)
+    
+    species = 'SBa'
+    position = [180, 60, 40]
+    galax = Galaxy(species, position, rotate=False)
     fig, ax = plt.subplots()
     
     spiralNeb = Nebula(species, position, galax.radius, rotation=galax.rotation)
     spiralNeb.plot_nebula(style='colormesh', ax=ax)
     galax.plot_2d(fig, ax)
-    ax.set_xlim(40, 50)
-    ax.set_ylim(95, 85)
+    # ax.set_xlim(40, 50)
+    # ax.set_ylim(95, 85)
     
     
 if __name__ == "__main__":

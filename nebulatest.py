@@ -123,7 +123,12 @@ for i, colour in enumerate([HubbleRed, HubbleGreen, HubbleBlue]):
     polarbins = scipy.ndimage.zoom(polarbins, 2)
     # density = scipy.ndimage.gaussian_filter(density, sigma=1)  # this smooths the area density even moreso (not necessary, but keeping for posterity)
     
-    ax.pcolormesh(equatbins, polarbins, density, cmap=colour)     # plot the radio contours
+    # ax.pcolormesh(equatbins, polarbins, density, cmap=colour)
+
+    ax.imshow(density, cmap=colour, interpolation='none')
+    
+    # ax.hexbin(equat, polar, gridsize=(50, 50), bins=100, linewidths=0.01, cmap=colour)
+
 # ax.set_ylim(0, 180); ax.set_xlim(0, 360)
 ax.invert_yaxis();
 ax.set_facecolor('k')

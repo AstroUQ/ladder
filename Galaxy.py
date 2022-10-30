@@ -937,7 +937,7 @@ class Galaxy(object):
         x, y, z, colours, scales = self.starpositions
         equat, polar, radius = self.cartesian_to_spherical(x, y, z)
         
-        if self.blackhole != None:
+        if self.blackhole == True:
             BHequat, BHpolar, distance = self.spherical
             BHcolour = self.blackhole.get_BH_colour()
             BHscale = self.blackhole.get_BH_scale() / (0.05 * distance)

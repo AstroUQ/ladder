@@ -11,9 +11,10 @@ import scipy.ndimage
 from matplotlib.colors import ListedColormap, LinearSegmentedColormap
 
 class Nebula(object):
-    def __init__(self, species, position, radius=None, cartesian=False, rotation=None):
+    def __init__(self, species, position, radius=None, cartesian=False, rotation=None, localgalaxy=False):
         self.species = species
         self.radius = radius
+        self.local = localgalaxy
         self.nebula_params()
         self.rotation = rotation if rotation is not None else np.random.uniform(0, 2*np.pi, 3)
         self.cmap = self.initColourMap(self.palette)
@@ -80,10 +81,10 @@ class Nebula(object):
             valsDisk[alphamid:, 3] = np.linspace(0, 0.5, N - alphamid); valsDisk[:alphamid, 3] = 0
             SpiralDisk = ListedColormap(valsDisk)
             
-            valsBulge[:, 0] = 211 / 256; valsBulge[midval:, 0] = np.linspace(211 / 256, 253 / 256, N - midval)
-            valsBulge[:midval, 1] = 165 / 256; valsBulge[midval:, 1] = np.linspace(165 / 256, 244/256, N - midval)
-            valsBulge[:midval, 2] = 157 / 256; valsBulge[midval:, 2] = np.linspace(157 / 256, 239/256, N - midval)
-            valsBulge[alphamid:, 3] = np.linspace(0, 0.4, N - alphamid); valsBulge[:alphamid, 3] = 0
+            valsBulge[:, 0] = 229 / 256; valsBulge[midval:, 0] = np.linspace(229 / 256, 253 / 256, N - midval)
+            valsBulge[:midval, 1] = 199 / 256; valsBulge[midval:, 1] = np.linspace(199 / 256, 244/256, N - midval)
+            valsBulge[:midval, 2] = 189 / 256; valsBulge[midval:, 2] = np.linspace(189 / 256, 239/256, N - midval)
+            valsBulge[alphamid:, 3] = np.linspace(0, 0.3, N - alphamid); valsBulge[:alphamid, 3] = 0
             SpiralBulge = ListedColormap(valsBulge)
             
             valsArms[:, 0] = 183 / 256
@@ -164,19 +165,30 @@ class Nebula(object):
                 bulgepop = pop
                 theta = np.random.uniform(0, 2*np.pi, bulgepop)
                 
-                # phi = np.random.uniform(0, 2*np.pi, bulgepop)
-                # bulgeradius = 0.4 * self.radius
-                # bulgeR = bulgeradius * np.random.uniform(0, 1, bulgepop)**(3/5)    #bulgedists was meant to be RVs between 0 and 1, but the mult makes up for it
+                phi = np.random.uniform(0, 2*np.pi, bulgepop)
+                bulgeradius = 0.5 * self.radius
+                bulgeR = bulgeradius * np.random.uniform(0, 1, bulgepop)**(1/3)    #bulgedists was meant to be RVs between 0 and 1, but the mult makes up for it
                 # x = bulgeR * (np.cos(theta) * np.sin(phi) + np.random.normal(0, 0.1, bulgepop))
                 # y = bulgeR * (np.sin(theta) * np.sin(phi) + np.random.normal(0, 0.1, bulgepop))
                 # distanceflat = (1 / self.radius) * np.sqrt(np.square(x) + np.square(y))     #this makes the z lower for stars further from the center
-                # z = (0.83 * bulgeR * (np.cos(phi) + np.random.normal(0, 0.1, bulgepop))) * 0.9**distanceflat
+                # # z = 0.83 * bulgeR * np.cos(phi) + np.random.normal(0, 0.1, bulgepop) * 0.95**distanceflat
+                # z = np.sqrt(0.6**2 * (bulgeradius**2 - (x**2 + y**2))) #* np.random.normal(0, 1, bulgepop)
                 
-                bulgeradius = 0.4 * self.radius
-                bulgeR = bulgeradius * np.random.uniform(0, 1, bulgepop)**(3/5)
-                x = np.cos(theta) * bulgeR * np.random.normal(1, 0.2, bulgepop)
-                z = np.sin(theta) * bulgeR * np.random.normal(1, 0.2, bulgepop)
-                y = np.zeros(bulgepop) + 0.02 * self.radius * np.random.randn(bulgepop)
+                
+                x = np.cos(theta) * np.sin(phi)
+                y = np.sin(theta) * np.sin(phi)
+                z = np.sqrt(0.8**2 * (1 - (x**2 + y**2))) #* np.random.normal(0, 1, bulgepop)
+                x *= bulgeR * np.random.normal(0, 0.5, bulgepop)
+                y *= bulgeR * np.random.normal(0, 0.5, bulgepop)
+                z *= bulgeR * np.random.normal(0, 0.5, bulgepop)
+                
+                
+                # bulgeradius = 0.4 * self.radius
+                # bulgeR = bulgeradius * np.random.uniform(0, 1, bulgepop)**(3/5)
+                # x = np.cos(theta) * bulgeR * np.random.normal(1, 0.2, bulgepop)
+                # z = np.sin(theta) * bulgeR * np.random.normal(1, 0.2, bulgepop)
+                # y = np.zeros(bulgepop) + 0.02 * self.radius * np.random.randn(bulgepop)
+                
             elif i in [2, 3]:       # we're dealing with spiral arms
                 pop = int(pop/10)
                 speciesindex = {"S0":0, "Sa":1, "Sb":2, "Sc":3, "SBa":4, "SBb": 5, "SBc":6}
@@ -208,10 +220,13 @@ class Nebula(object):
             
             points = np.array([x, y, z])
             
-            if i != 1:
-                points = np.dot(self.nebula_rotation(self.rotation[0], 'x'), points)
-                points = np.dot(self.nebula_rotation(self.rotation[1], 'y'), points)
-                points = np.dot(self.nebula_rotation(self.rotation[2], 'z'), points)
+            # if i != 1:
+            #     points = np.dot(self.nebula_rotation(self.rotation[0], 'x'), points)
+            #     points = np.dot(self.nebula_rotation(self.rotation[1], 'y'), points)
+            #     points = np.dot(self.nebula_rotation(self.rotation[2], 'z'), points)
+            points = np.dot(self.nebula_rotation(self.rotation[0], 'x'), points)
+            points = np.dot(self.nebula_rotation(self.rotation[1], 'y'), points)
+            points = np.dot(self.nebula_rotation(self.rotation[2], 'z'), points)
             
             
             # x = np.append(diskx, bulgex); y = np.append(disky, bulgey); z = np.append(diskz, bulgez)
@@ -239,6 +254,16 @@ class Nebula(object):
             ax.set_aspect('equal')
         if style in ['colormesh', 'imshow']:
             for i, colour in enumerate(self.cmap):
+                # if self.palette == 'Spiral' and self.local == True:
+                if self.palette == 'Spiral':
+                    if i == 1:
+                        vmax = 50
+                    else: 
+                        vmax = None
+                else: 
+                    vmax = None
+                # vmax=None
+                    
                 # if self.palette != 'Spiral':
                 #     smooth = 1
                 # else:
@@ -260,17 +285,11 @@ class Nebula(object):
                 polarbins = scipy.ndimage.zoom(polarbins, 2)
                 density = scipy.ndimage.gaussian_filter(density, sigma=2.5)  # this smooths the area density even moreso (not necessary, but keeping for posterity)
                 
-                # from scipy.interpolate import interp2d
-                # fint = interp2d(equatbins, polarbins, density.T, kind='cubic')
-                # equatnew = np.arange(min(equatbins), max(equatbins), 1e4)
-                # polarnew = np.arange(min(polarbins), max(polarbins), 1e4)
-                # density = fint(equatnew, polarnew).T
-                
                 if style == 'colormesh':
                     # import matplotlib.colors as colors
                     # ax.pcolormesh(equatbins, polarbins, density, cmap=colour, shading='auto', rasterized=True, 
                     #               norm=colors.PowerNorm(gamma=0.8))
-                    ax.pcolormesh(equatbins, polarbins, density, cmap=colour, shading='auto', rasterized=True, antialiased=True)
+                    ax.pcolormesh(equatbins, polarbins, density, cmap=colour, vmax=vmax, shading='auto', rasterized=True, antialiased=True)
                 elif style == 'imshow':
                     extent = [min(equat), max(equat), min(polar), max(polar)]
                     ax.imshow(density, extent=extent, cmap=colour, interpolation='none')
@@ -348,7 +367,7 @@ def main():
     # ringNeb.plot_nebula(style='hexbin')
     from Galaxy import Galaxy
     # position = [45, 90, 1000]
-    # species = 'Sa'
+    # species = 'SBa'
     # galax = Galaxy(species, position)
     # fig, ax = plt.subplots()
     
@@ -359,15 +378,13 @@ def main():
     # ax.set_ylim(95, 85)
     
     species = 'SBa'
-    position = [180, 60, 40]
+    position = [180, 90, 40]
     galax = Galaxy(species, position, rotate=False)
     fig, ax = plt.subplots()
     
-    spiralNeb = Nebula(species, position, galax.radius, rotation=galax.rotation)
+    spiralNeb = Nebula(species, position, galax.radius, rotation=galax.rotation, localgalaxy=True)
     spiralNeb.plot_nebula(style='colormesh', ax=ax)
     galax.plot_2d(fig, ax)
-    # ax.set_xlim(40, 50)
-    # ax.set_ylim(95, 85)
     
     
 if __name__ == "__main__":

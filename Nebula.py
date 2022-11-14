@@ -24,7 +24,7 @@ class Nebula(object):
         
     def nebula_params(self):
         if self.species == "ring":
-            self.radii = [0.15, 0.12, 0.08] if self.radii == None else self.radii
+            self.radii = np.array([0.15, 0.12, 0.08]) * 5 if self.radius == None else self.radius
             self.palette = "Hubble"
         elif self.species[0] == "S":
             self.radii = self.radius
@@ -78,7 +78,7 @@ class Nebula(object):
             valsDisk[:, 0] = 102 / 256; valsDisk[midval:, 0] = np.linspace(166 / 256, 43/256, N - midval)
             valsDisk[:midval, 1] = 96 / 256; valsDisk[midval:, 1] = np.linspace(134 / 256, 43/256, N - midval)
             valsDisk[:midval, 2] = 129 / 256; valsDisk[midval:, 2] = np.linspace(155 / 256, 29/256, N - midval)
-            valsDisk[alphamid:, 3] = np.linspace(0, 0.5, N - alphamid); valsDisk[:alphamid, 3] = 0
+            valsDisk[alphamid:, 3] = np.linspace(0, 0.1, N - alphamid); valsDisk[:alphamid, 3] = 0
             SpiralDisk = ListedColormap(valsDisk)
             
             valsBulge[:, 0] = 229 / 256; valsBulge[midval:, 0] = np.linspace(229 / 256, 253 / 256, N - midval)
@@ -152,6 +152,7 @@ class Nebula(object):
         coords = []
         for i, colour in enumerate(self.cmap):
             pop = 100000
+            pop = int(3e5)
             
             theta = np.random.uniform(0, 2*np.pi, pop)
             # phi = np.random.uniform(0, 2*np.pi, pop)
@@ -163,24 +164,27 @@ class Nebula(object):
                 z = np.zeros(pop) + 0.02 * self.radius * np.random.randn(pop)
             elif i == 1:       # we're dealing with the bulge
                 bulgepop = pop
-                theta = np.random.uniform(0, 2*np.pi, bulgepop)
+                
+                # theta = np.random.uniform(0, 2*np.pi, bulgepop)
+                costheta = np.random.uniform(-1, 1, bulgepop)
+                theta = np.arccos(costheta)
                 
                 phi = np.random.uniform(0, 2*np.pi, bulgepop)
-                bulgeradius = 0.5 * self.radius
-                bulgeR = bulgeradius * np.random.uniform(0, 1, bulgepop)**(1/3)    #bulgedists was meant to be RVs between 0 and 1, but the mult makes up for it
-                # x = bulgeR * (np.cos(theta) * np.sin(phi) + np.random.normal(0, 0.1, bulgepop))
-                # y = bulgeR * (np.sin(theta) * np.sin(phi) + np.random.normal(0, 0.1, bulgepop))
-                # distanceflat = (1 / self.radius) * np.sqrt(np.square(x) + np.square(y))     #this makes the z lower for stars further from the center
-                # # z = 0.83 * bulgeR * np.cos(phi) + np.random.normal(0, 0.1, bulgepop) * 0.95**distanceflat
+                bulgeradius = 0.4 * self.radius
+                bulgeR = bulgeradius * np.random.uniform(0, 1, bulgepop)**(1/2)    #bulgedists was meant to be RVs between 0 and 1, but the mult makes up for it
+                x = bulgeR * (np.cos(theta) * np.sin(phi) + np.random.normal(0, 0.1, bulgepop))
+                y = bulgeR * (np.sin(theta) * np.sin(phi) + np.random.normal(0, 0.1, bulgepop))
+                distanceflat = (1 / self.radius) * np.sqrt(np.square(x) + np.square(y))     #this makes the z lower for stars further from the center
+                z = 0.5 * bulgeR * np.cos(phi) + np.random.normal(0, 0.1, bulgepop) #* 0.8**distanceflat
                 # z = np.sqrt(0.6**2 * (bulgeradius**2 - (x**2 + y**2))) #* np.random.normal(0, 1, bulgepop)
                 
                 
-                x = np.cos(theta) * np.sin(phi)
-                y = np.sin(theta) * np.sin(phi)
-                z = np.sqrt(0.8**2 * (1 - (x**2 + y**2))) #* np.random.normal(0, 1, bulgepop)
-                x *= bulgeR * np.random.normal(0, 0.5, bulgepop)
-                y *= bulgeR * np.random.normal(0, 0.5, bulgepop)
-                z *= bulgeR * np.random.normal(0, 0.5, bulgepop)
+                # x = np.cos(theta) * np.sin(phi) * np.random.uniform(0, 1, bulgepop)**(1/3)
+                # y = np.sin(theta) * np.sin(phi) * np.random.uniform(0, 1, bulgepop)**(1/3)
+                # z =  np.sqrt(0.4**2 * (1 - (x**2 + y**2))) * np.random.choice([-1, 1], bulgepop)#* np.random.normal(0, 1, bulgepop)
+                # x *= bulgeradius #* np.random.normal(0, 0.5, bulgepop)
+                # y *= bulgeradius #* np.random.normal(0, 0.5, bulgepop)
+                # z *= bulgeradius * np.random.uniform(0, 1, bulgepop)**(1/3) #* np.random.normal(0, 0.5, bulgepop)
                 
                 
                 # bulgeradius = 0.4 * self.radius
@@ -190,7 +194,7 @@ class Nebula(object):
                 # y = np.zeros(bulgepop) + 0.02 * self.radius * np.random.randn(bulgepop)
                 
             elif i in [2, 3]:       # we're dealing with spiral arms
-                pop = int(pop/10)
+                pop = 10000
                 speciesindex = {"S0":0, "Sa":1, "Sb":2, "Sc":3, "SBa":4, "SBb": 5, "SBc":6}
                 wrap = [[None, None], [0.9, 4 * np.pi], [0.7, 2 * np.pi], [0.2, 0.8 * np.pi], 
                         [np.pi / 2.1, 3 * np.pi], [np.pi / 2.1, 2 * np.pi], [np.pi / 2.1, 1.15 * np.pi]]
@@ -207,7 +211,7 @@ class Nebula(object):
                     reflect = np.random.choice([-1, 1], pop)
                     # power = 1/2 if self.species[:2] == "SB" else 1
                     spiralpow = np.sqrt(spiralangle) if self.species[:2] == "SB" else spiralangle
-                    [lag, scatter, scatter2, zscatter] = [0, 0.1, 0.1, 0.01]
+                    [lag, scatter, scatter2, zscatter] = [0, 0.1, 0.1, 0.03]
                     x = (self.radius / mult) * (spiralpow * np.cos(spiralangle + lag)  * np.random.normal(1, scatter, pop) * reflect + np.random.normal(0, scatter2, pop))
                     y = (self.radius / mult) * (spiralpow * np.sin(spiralangle + lag) * np.random.normal(1, scatter, pop) * - reflect + np.random.normal(0, scatter2, pop))
                     z = np.random.normal(0, zscatter * self.radius, pop)
@@ -215,7 +219,8 @@ class Nebula(object):
                     barradii = [0, 0, 0, 0, 0.3, 0.4, 0.5]
                     barradius = barradii[speciesindex[self.species]] * self.radius
                     x = np.random.normal(0, 0.3 * barradius, pop)
-                    y = barradius * (np.geomspace(0.3, 1.1, pop) * np.random.choice([-1, 1], pop) + np.random.normal(0, 0.3, pop))
+                    # y = barradius * (np.geomspace(0.3, 1.1, pop) * np.random.choice([-1, 1], pop) + np.random.normal(0, 0.3, pop))
+                    y = barradius * (np.linspace(0, 1.1, pop) * np.random.choice([-1, 1], pop) + np.random.normal(0, 0.3, pop))
                     z = np.random.normal(0, 0.1 * barradius, pop)
             
             points = np.array([x, y, z])
@@ -254,23 +259,13 @@ class Nebula(object):
             ax.set_aspect('equal')
         if style in ['colormesh', 'imshow']:
             for i, colour in enumerate(self.cmap):
-                # if self.palette == 'Spiral' and self.local == True:
-                if self.palette == 'Spiral':
-                    if i == 1:
-                        vmax = 50
-                    else: 
-                        vmax = None
-                else: 
-                    vmax = None
-                # vmax=None
+                vmax = None
                     
-                # if self.palette != 'Spiral':
-                #     smooth = 1
-                # else:
-                #     if i != 2:
-                #         smooth = 2.5
-                #     else:
-                #         smooth = 1
+                if self.palette == 'Spiral':
+                    smooth = 2.5
+                else:
+                    smooth = 1.5
+  
                 x, y, z = self.points[i]
                 equat, polar, distance = self.cartesian_to_spherical(x, y, z)
                     
@@ -283,7 +278,8 @@ class Nebula(object):
                 density = scipy.ndimage.zoom(density, 2)    # this smooths out the data so that it's less boxy and more curvey
                 equatbins = scipy.ndimage.zoom(equatbins, 2)
                 polarbins = scipy.ndimage.zoom(polarbins, 2)
-                density = scipy.ndimage.gaussian_filter(density, sigma=2.5)  # this smooths the area density even moreso (not necessary, but keeping for posterity)
+                # if self.palette == 'Spiral:'
+                density = scipy.ndimage.gaussian_filter(density, sigma=smooth)  # this smooths the area density even moreso (not necessary, but keeping for posterity)
                 
                 if style == 'colormesh':
                     # import matplotlib.colors as colors
@@ -366,25 +362,33 @@ def main():
     # ringNeb = Nebula('ring', [45, 90, 10])
     # ringNeb.plot_nebula(style='hexbin')
     from Galaxy import Galaxy
-    # position = [45, 90, 1000]
-    # species = 'SBa'
-    # galax = Galaxy(species, position)
-    # fig, ax = plt.subplots()
-    
-    # spiralNeb = Nebula(species, position, galax.radius, rotation=galax.rotation)
-    # spiralNeb.plot_nebula(style='colormesh', ax=ax)
-    # galax.plot_2d(fig, ax)
-    # ax.set_xlim(40, 50)
-    # ax.set_ylim(95, 85)
-    
+    position = [45, 90, 1000]
     species = 'SBa'
-    position = [180, 90, 40]
-    galax = Galaxy(species, position, rotate=False)
+    galax = Galaxy(species, position)
     fig, ax = plt.subplots()
     
-    spiralNeb = Nebula(species, position, galax.radius, rotation=galax.rotation, localgalaxy=True)
+    spiralNeb = Nebula(species, position, galax.radius, rotation=galax.rotation)
     spiralNeb.plot_nebula(style='colormesh', ax=ax)
     galax.plot_2d(fig, ax)
+    ax.set_xlim(40, 50)
+    ax.set_ylim(95, 85)
+    
+    # species = 'SBa'
+    # position = [180, 90, 40]
+    # galax = Galaxy(species, position, rotate=False)
+    # fig, ax = plt.subplots()
+    
+    # spiralNeb = Nebula(species, position, galax.radius, rotation=galax.rotation, localgalaxy=True)
+    # spiralNeb.plot_nebula(style='colormesh', ax=ax)
+    
+    # # ringNeb = Nebula('ring', [150, 85, 10])
+    # # ringNeb.plot_nebula(ax=ax)
+    
+    # galax.plot_2d(fig, ax)
+    # fig.set_size_inches(18, 9, forward=True)
+    # fig.savefig('galax.png', dpi=1500, bbox_inches='tight', pad_inches = 0.01)
+    
+    
     
     
 if __name__ == "__main__":

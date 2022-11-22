@@ -28,7 +28,7 @@ nav:
         - Introduction: Analysing Data/introduction.md
         - Uncertainties in Data: Analysing Data/Uncertainties.md
         - 'Useful Formulae': Analysing Data/UsefulFormulae.md
-        - 'Walkthrough (Spoilers!)':
+        - 'Walkthrough':
             - Introduction: Analysing Data/Walkthrough/introduction.md
             - Local Universe: Analysing Data/Walkthrough/Local Universe.ipynb
             - Identifying Galaxies: Analysing Data/Walkthrough/GalaxyFinding.ipynb

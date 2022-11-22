@@ -633,8 +633,22 @@ def main():
     #           "with SD =", [sdbluef, sdgreenf, sdredf])
     
     ### -- this is the function that you should run! -- ###
-    sim = UniverseSim(1000, mode="Normal")
-    sim.save_data()
+    # sim = UniverseSim(1000, mode="Normal")
+    # sim.save_data()
+    
+    galax = Galaxy('Sb', [0,0,0])
+    temps1 = [star.mass for star in galax.stars]
+    galax = Galaxy('E7', [0,0,0])
+    temps2 = [star.mass for star in galax.stars]
+    
+    fig, ax = plt.subplots(figsize=(10, 6))
+    hist = ax.hist(temps1, bins=30, alpha=0.7, label='Sb')
+    hist = ax.hist(temps2, bins=30, alpha=0.7, label='E7')
+    ax.set_xlabel('Temperature (K)')
+    ax.set_ylabel('Frequency')
+    ax.set_xlim(xmin=0)
+    ax.legend()
+
     
 if __name__ == "__main__":
     main()

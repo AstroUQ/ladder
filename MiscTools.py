@@ -53,3 +53,25 @@ def spherical_to_cartesian(equat, polar, distance):
     y = distance * np.sin(equat) * np.sin(polar)
     z = distance * np.cos(polar)
     return (x, y, z)
+
+def cartesian_rotation(angle, axis):
+    '''Rotate a point in cartesian coordinates about the origin by some angle along the specified axis. 
+    The rotation matrices were taken from https://stackoverflow.com/questions/34050929/3d-point-rotation-algorithm
+    Parameters
+    ----------
+    angle : float
+        An angle in radians.
+    axis : str
+        The axis to perform the rotation on. Must be in ['x', 'y', 'z']
+    Returns
+    -------
+    numpy array
+        The transformation matrix for the rotation of angle 'angle'. This output must be used as the first argument within "np.dot(a, b)"
+        where 'b' is an 3 dimensional array of coordinates.
+    '''
+    if axis == 'x':
+        return np.array([[1, 0, 0], [0, np.cos(angle), -np.sin(angle)], [0, np.sin(angle), np.cos(angle)]])
+    elif axis == 'y':
+        return np.array([[np.cos(angle), 0, np.sin(angle)], [0, 1, 0], [-np.sin(angle), 0, np.cos(angle)]])
+    else:
+        return np.array([[np.cos(angle), -np.sin(angle), 0], [np.sin(angle), np.cos(angle), 0], [0, 0, 1]])

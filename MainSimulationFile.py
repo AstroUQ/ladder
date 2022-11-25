@@ -13,6 +13,7 @@ import os
 import pandas as pd
 from time import time
 from tqdm import tqdm     # this is a progress bar for a for loop
+import MiscTools as misc
 from BlackHole import BlackHole
 from Galaxy import Galaxy
 from GalaxyCluster import GalaxyCluster
@@ -87,7 +88,7 @@ class UniverseSim(object):
         fig, ax = plt.subplots()
         stars = self.starpositions
         x, y, z, colours, scales = stars[0], stars[1], stars[2], stars[3], stars[4]
-        equat, polar, radius = self.cartesian_to_spherical(x, y, z)
+        equat, polar, radius = misc.cartesian_to_spherical(x, y, z)
         colours = colours[:]    # this fixes an issue when rerunning this program since we want to make a copy of the colours array
         
         for i, blackhole in enumerate(self.blackholes):     # first, plot the black holes at their positions
@@ -188,7 +189,7 @@ class UniverseSim(object):
         fig, (ax, cbar_ax) = plt.subplots(1, 2, gridspec_kw={'width_ratios': [30,1]})   # generate a figure and colourbar with width ratio of 30:1
         stars = self.starpositions  # get all of the star positions 
         x, y, z, _, scales = stars[0], stars[1], stars[2], stars[3], stars[4]
-        equat, polar, radius = self.cartesian_to_spherical(x, y, z)
+        equat, polar, radius = misc.cartesian_to_spherical(x, y, z)
         
         DGspherical = np.array([galaxy.spherical for galaxy in self.distantgalaxies])   # get all of the distant galaxy positions
         DGequat, DGpolar, DGdists = DGspherical[:, 0], DGspherical[:, 1], DGspherical[:, 2]
@@ -232,8 +233,8 @@ class UniverseSim(object):
             return fig
         
             
-    def save_data(self, properties=True, pic=True, radio=True, stars=True, variablestars=True, blackbodies=True, distantgalax=True, 
-                  supernovae=True, doppler=[True, False], blackhole=True, rotcurves=True):
+    def save_data(self, properties=True, pic=True, radio=True, stars=True, variablestars=True, blackbodies=False, 
+                  distantgalax=True, supernovae=True, doppler=[False, False], blackhole=True, rotcurves=False):
         ''' Generates some data, takes other data, and saves it to the system in a new directory within the file directory.
         .pdf images are commented out currently - uncomment them at your own risk! (.pdfs can be in excess of 90mb each!)
         Parameters
@@ -344,7 +345,7 @@ class UniverseSim(object):
             #firstly, get star xyz positions and convert them to equatorial/polar
             starpos = self.starpositions    
             x, y, z, _, _ = starpos[0], starpos[1], starpos[2], starpos[3], starpos[4]
-            equat, polar, radius = self.cartesian_to_spherical(x, y, z)
+            equat, polar, radius = misc.cartesian_to_spherical(x, y, z)
             
             # generate parallax according to p = 1/d (pc) formula, with +/- 1 arcsecond of uncertainty
             parallax = (1 / radius) + np.random.uniform(-0.001, 0.001, len(radius))    
@@ -559,53 +560,27 @@ class UniverseSim(object):
         t1 = time(); total = t1 - t0; print("All data generated and saved in =", total, "s")
         plt.close()     # need this to close the figure (since the "fig" variable persists)
     
-    def cartesian_to_spherical(self, x, y, z):
-        ''' Converts cartesian coordinates to spherical ones (formulae taken from wikipedia) in units of degrees. 
-        Maps polar angle to [0, 180] with 0 at the north pole, 180 at the south pole. 
-        Maps azimuthal (equatorial) angle to [0, 360], with equat=0 corresponding to the negative x-axis, equat=270 the positive y-axis, etc
-        Azimuthal (equat) angles reference (rotates anti-clockwise):
-            equat = 0 or 360 -> -ve x-axis (i.e. y=0)
-            equat = 90 -> -ve y-axis (x=0)
-            equat = 180 -> +ve x-axis (y=0)
-            equat = 270 -> +ve y-axis (x=0)
-        Parameters
-        ----------
-        x, y, z : numpy array
-            x, y, and z cartesian coordinates
+    def savepic(self, directory, radio, proj='AllSky'):
+        if proj == 'AllSky':
+            pictime1 = time(); print("Generating universe picture...")
+            fig = self.plot_universe(save=True)
+            fig.set_size_inches(18, 9, forward=True)
+            fig.savefig(directory + '\\Universe Image.png', dpi=1500, bbox_inches='tight', pad_inches = 0.01)
+            # fig.savefig(self.datadirectory + '\\Universe Image.pdf', dpi=200, bbox_inches='tight', pad_inches = 0.01)
+            pictime2 = time(); total = pictime2 - pictime1; print("Universe picture saved in", total, "s")
+            
+            if radio and self.hasblackhole:       # plot radio data too
+                print("Generating radio overlay...")
+                fig = self.plot_universe(radio=True, save=True)
+                fig.set_size_inches(18, 9, forward=True)
+                fig.savefig(directory + '\\Radio Overlay Image.png', dpi=1500, bbox_inches='tight', pad_inches = 0.01)
+                # fig.savefig(self.datadirectory + '\\Radio Overlay Image.pdf', dpi=200, bbox_inches='tight', pad_inches = 0.01)
+                pictime3 = time(); total = pictime3 - pictime2; print("Radio overlay picture saved in", total, "s")
         
-        Returns
-        -------
-        equat, polar, radius : numpy array
-            equatorial and polar angles (in degrees), and radius from origin
-        '''
-        radius = np.sqrt(x**2 + y**2 + z**2)
-        equat = np.arctan2(y, x)    #returns equatorial angle in radians, maps to [-pi, pi]
-        polar = np.arccos(z / radius)
-        polar = np.degrees(polar)
-        equat = np.degrees(equat)
-        # now need to shift the angles
-        if np.size(equat) != 1:
-            equat = np.array([360 - abs(val) if val < 0 else val for val in equat])  #this reflects negative angles about equat=180
-        else:   #same as above, but for a single element. 
-            equat = 360 - abs(equat) if equat < 0 else equat
-        return (equat, polar, radius)
+        elif proj == 'Cube':
+            pass
+        return None
     
-    def spherical_to_cartesian(self, equat, polar, distance):
-        '''
-        Parameters
-        ----------
-        equat, polar, distance : numpy array
-            equatorial and polar angles, as well as radial distance from the origin
-        Returns
-        -------
-        x, y, z : numpy array
-            Cartesian coordinates relative to the origin. 
-        '''
-        equat, polar = np.radians(equat), np.radians(polar)
-        x = distance * np.cos(equat) * np.sin(polar)
-        y = distance * np.sin(equat) * np.sin(polar)
-        z = distance * np.cos(polar)
-        return (x, y, z)
         
         
 def main():
@@ -633,21 +608,21 @@ def main():
     #           "with SD =", [sdbluef, sdgreenf, sdredf])
     
     ### -- this is the function that you should run! -- ###
-    # sim = UniverseSim(1000, mode="Normal")
-    # sim.save_data()
+    sim = UniverseSim(1000, mode="Normal")
+    sim.save_data()
     
-    galax = Galaxy('Sb', [0,0,0])
-    temps1 = [star.mass for star in galax.stars]
-    galax = Galaxy('E7', [0,0,0])
-    temps2 = [star.mass for star in galax.stars]
+    # galax = Galaxy('Sb', [0,0,0])
+    # temps1 = [star.mass for star in galax.stars]
+    # galax = Galaxy('E7', [0,0,0])
+    # temps2 = [star.mass for star in galax.stars]
     
-    fig, ax = plt.subplots(figsize=(10, 6))
-    hist = ax.hist(temps1, bins=30, alpha=0.7, label='Sb')
-    hist = ax.hist(temps2, bins=30, alpha=0.7, label='E7')
-    ax.set_xlabel('Temperature (K)')
-    ax.set_ylabel('Frequency')
-    ax.set_xlim(xmin=0)
-    ax.legend()
+    # fig, ax = plt.subplots(figsize=(10, 6))
+    # hist = ax.hist(temps1, bins=30, alpha=0.7, label='Sb')
+    # hist = ax.hist(temps2, bins=30, alpha=0.7, label='E7')
+    # ax.set_xlabel('Temperature (K)')
+    # ax.set_ylabel('Frequency')
+    # ax.set_xlim(xmin=0)
+    # ax.legend()
 
     
 if __name__ == "__main__":

@@ -6,6 +6,7 @@ Created on Mon Jun 27 08:38:00 2022
 """
 
 import numpy as np
+import MiscTools as misc
 
 class BlackHole(object):
     def __init__(self, galaxymass, galaxytype, galaxyradius, luminosity):

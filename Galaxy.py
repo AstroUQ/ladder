@@ -11,6 +11,7 @@ import pandas as pd
 import scipy.optimize as opt             # this is to fit two axes in the HR diagram
 import scipy.ndimage                     # this is to smooth out the BH radio lobes
 import warnings
+import MiscTools as misc
 from BlackHole import BlackHole
 from Star import Star
 
@@ -50,10 +51,10 @@ class Galaxy(object):
         self.rotate = rotate
         if cartesian:
             self.cartesian = position
-            self.spherical = self.cartesian_to_spherical(position[0], position[1], position[2])
+            self.spherical = misc.cartesian_to_spherical(position[0], position[1], position[2])
         else:
             self.spherical = position
-            self.cartesian = self.spherical_to_cartesian(position[0], position[1], position[2])
+            self.cartesian = misc.spherical_to_cartesian(position[0], position[1], position[2])
         self.variable = variable
         if self.complexity != "Distant":
             self.starpositions, self.stars, self.rotation = self.generate_galaxy()
@@ -134,28 +135,6 @@ class Galaxy(object):
         rotation = np.random.uniform(0, 2*np.pi, 3)
         
         return mass, bandlumin, rotation
-        
-    def galaxyrotation(self, angle, axis):
-        '''Rotate a point in cartesian coordinates about the origin by some angle along the specified axis. 
-        The rotation matrices were taken from https://stackoverflow.com/questions/34050929/3d-point-rotation-algorithm
-        Parameters
-        ----------
-        angle : float
-            An angle in radians.
-        axis : str
-            The axis to perform the rotation on. Must be in ['x', 'y', 'z']
-        Returns
-        -------
-        numpy array
-            The transformation matrix for the rotation of angle 'angle'. This output must be used as the first argument within "np.dot(a, b)"
-            where 'b' is an 3 dimensional array of coordinates.
-        '''
-        if axis == 'x':
-            return np.array([[1, 0, 0], [0, np.cos(angle), -np.sin(angle)], [0, np.sin(angle), np.cos(angle)]])
-        elif axis == 'y':
-            return np.array([[np.cos(angle), 0, np.sin(angle)], [0, 1, 0], [-np.sin(angle), 0, np.cos(angle)]])
-        else:
-            return np.array([[np.cos(angle), -np.sin(angle), 0], [np.sin(angle), np.cos(angle), 0], [0, 0, 1]])
     
     def determine_population(self, species):
         ''' Determine the number of stars to put in a galaxy depending on the galaxy type
@@ -481,9 +460,9 @@ class Galaxy(object):
         if self.rotate == True:
             # rotate the galaxy randomly
             phi = np.random.uniform(0, 2*np.pi, 3)
-            points = np.dot(self.galaxyrotation(phi[0], 'x'), points)
-            points = np.dot(self.galaxyrotation(phi[1], 'y'), points)
-            points = np.dot(self.galaxyrotation(phi[2], 'z'), points)
+            points = np.dot(misc.cartesian_rotation(phi[0], 'x'), points)
+            points = np.dot(misc.cartesian_rotation(phi[1], 'y'), points)
+            points = np.dot(misc.cartesian_rotation(phi[2], 'z'), points)
         else:
             phi = np.array([0, 0, 0])
         x0, y0, z0 = self.cartesian
@@ -609,9 +588,9 @@ class Galaxy(object):
         phi = self.rotation
         
         # rotate galaxy in the reverse order and opposite direction as initially
-        points = np.dot(self.galaxyrotation(-phi[2], 'z'), points)
-        points = np.dot(self.galaxyrotation(-phi[1], 'y'), points)
-        points = np.dot(self.galaxyrotation(-phi[0], 'x'), points)
+        points = np.dot(misc.cartesian_rotation(-phi[2], 'z'), points)
+        points = np.dot(misc.cartesian_rotation(-phi[1], 'y'), points)
+        points = np.dot(misc.cartesian_rotation(-phi[0], 'x'), points)
         
         x, y, z = points
         if self.species[0] == "S":  # spiral galaxy! explanation in the comment block below :)
@@ -642,9 +621,9 @@ class Galaxy(object):
         # making sure that the sum of their squares is not greater than one. Then, we can subtract the sum of their squares from
         # 1 to find the z component. All of this together gives more or less random direction to the stars about the galactic center. 
 
-        direction = np.dot(self.galaxyrotation(phi[0], 'x'), direction)     # rotate the velocity vectors in the same way as before
-        direction = np.dot(self.galaxyrotation(phi[1], 'y'), direction)
-        direction = np.dot(self.galaxyrotation(phi[2], 'z'), direction)
+        direction = np.dot(misc.cartesian_rotation(phi[0], 'x'), direction)     # rotate the velocity vectors in the same way as before
+        direction = np.dot(misc.cartesian_rotation(phi[1], 'y'), direction)
+        direction = np.dot(misc.cartesian_rotation(phi[2], 'z'), direction)
 
         x, y, z, _, _ = self.starpositions  # getting the xyz again is cheaper than doing the rotations again
         
@@ -714,7 +693,7 @@ class Galaxy(object):
             Whether or not to plot the black hole in the center of the galaxy
         '''
         x, y, z, colours, scales = self.starpositions
-        equat, polar, radius = self.cartesian_to_spherical(x, y, z)
+        equat, polar, radius = misc.cartesian_to_spherical(x, y, z)
         
         if self.darkmatter == True:
             starredshift = self.ObsStarVels[1]
@@ -938,7 +917,7 @@ class Galaxy(object):
         No returns, but adds the current Galaxy instance to the matplotlib axes. 
         '''
         x, y, z, colours, scales = self.starpositions
-        equat, polar, radius = self.cartesian_to_spherical(x, y, z)
+        equat, polar, radius = misc.cartesian_to_spherical(x, y, z)
         
         if self.blackhole == True:
             BHequat, BHpolar, distance = self.spherical
@@ -1048,12 +1027,12 @@ class Galaxy(object):
         if self.rotate == True:
             phi = self.rotation
             points = np.array([x, y, z])
-            points = np.dot(self.galaxyrotation(phi[0], 'x'), points) # radio scatter is centered at the origin, 
-            points = np.dot(self.galaxyrotation(phi[1], 'y'), points) # so we need to rotate it in the same way as the galaxy was
-            points = np.dot(self.galaxyrotation(phi[2], 'z'), points)
+            points = np.dot(misc.cartesian_rotation(phi[0], 'x'), points) # radio scatter is centered at the origin, 
+            points = np.dot(misc.cartesian_rotation(phi[1], 'y'), points) # so we need to rotate it in the same way as the galaxy was
+            points = np.dot(misc.cartesian_rotation(phi[2], 'z'), points)
             x, y, z = points
         x, y, z = x + self.cartesian[0], y + self.cartesian[1], z + self.cartesian[2] # and now translate it to where the galaxy is
-        equat, polar, distance = self.cartesian_to_spherical(x, y, z)
+        equat, polar, distance = misc.cartesian_to_spherical(x, y, z)
             
         extent = [[min(equat) - 3, max(equat) + 3], [min(polar) - 3, max(polar) + 3]]   # this is so that the edge of the contours aren't cut off
         density, equatedges, polaredges = np.histogram2d(equat, polar, bins=len(equat)//50, range=extent, density=False)
@@ -1075,51 +1054,4 @@ class Galaxy(object):
                 ax.scatter(equat, polar, s=0.5)
         if data == True:
             return equatbins, polarbins, density
-            # equat/polar are 1xN matrices, whereas density is a NxN matrix.  
-    
-    def cartesian_to_spherical(self, x, y, z):
-        ''' Converts cartesian coordinates to spherical ones (formulae taken from wikipedia) in units of degrees. 
-        Maps polar angle to [0, 180] with 0 at the north pole, 180 at the south pole. 
-        Maps azimuthal (equatorial) angle to [0, 360], with equat=0 corresponding to the negative x-axis, equat=270 the positive y-axis, etc
-        Azimuthal (equat) angles reference (rotates anti-clockwise):
-            equat = 0 or 360 -> -ve x-axis (i.e. y=0)
-            equat = 90 -> -ve y-axis (x=0)
-            equat = 180 -> +ve x-axis (y=0)
-            equat = 270 -> +ve y-axis (x=0)
-        Parameters
-        ----------
-        x, y, z : numpy array
-            x, y, and z cartesian coordinates
-        Returns
-        -------
-        (equat, polar, radius) : numpy arrays
-            equatorial and polar angles (in degrees), and radius from origin
-        '''
-        radius = np.sqrt(x**2 + y**2 + z**2)
-        equat = np.arctan2(y, x)    #returns equatorial angle in radians, maps to [-pi, pi]
-        polar = np.arccos(z / radius)
-        polar = np.degrees(polar)
-        equat = np.degrees(equat)
-        # now need to shift the angles
-        if np.size(equat) != 1:
-            equat = np.array([360 - abs(val) if val < 0 else val for val in equat])  #this reflects negative angles about equat=180
-        else:   #same as above, but for a single element. 
-            equat = 360 - abs(equat) if equat < 0 else equat
-        return (equat, polar, radius)
-    
-    def spherical_to_cartesian(self, equat, polar, distance):
-        '''
-        Parameters
-        ----------
-        equat, polar, distance : numpy arrays
-            equatorial and polar angles, as well as radial distance from the origin
-        Returns
-        -------
-        (x, y, z) : numpy arrays
-            Cartesian coordinates relative to the origin. 
-        '''
-        equat, polar = np.radians(equat), np.radians(polar)
-        x = distance * np.cos(equat) * np.sin(polar)
-        y = distance * np.sin(equat) * np.sin(polar)
-        z = distance * np.cos(polar)
-        return (x, y, z)
+            # equat/polar are 1xN matrices, whereas density is a NxN matrix.

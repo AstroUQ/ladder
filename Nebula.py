@@ -9,6 +9,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import scipy.ndimage
 from matplotlib.colors import ListedColormap, LinearSegmentedColormap
+import MiscTools as misc
 
 class Nebula(object):
     def __init__(self, species, position, radius=None, cartesian=False, rotation=None, localgalaxy=False):
@@ -18,8 +19,8 @@ class Nebula(object):
         self.nebula_params()
         self.rotation = rotation if rotation is not None else np.random.uniform(0, 2*np.pi, 3)
         self.cmap = self.initColourMap(self.palette)
-        self.cartesian = position if cartesian == True else self.spherical_to_cartesian(position[0], position[1], position[2])
-        self.spherical = self.cartesian_to_spherical(position[0], position[1], position[2]) if cartesian == True else position
+        self.cartesian = position if cartesian == True else misc.spherical_to_cartesian(position[0], position[1], position[2])
+        self.spherical = misc.cartesian_to_spherical(position[0], position[1], position[2]) if cartesian == True else position
         self.points = self.gen_points()
         
     def nebula_params(self):
@@ -138,9 +139,9 @@ class Nebula(object):
                 centerz = np.append(centerz, outRad * (np.cos(outPhi) * np.random.normal(1, 0.3, outPop)))
             
             points = np.array([centerx, centery, centerz])
-            points = np.dot(self.nebula_rotation(self.rotation[0], 'x'), points)
-            points = np.dot(self.nebula_rotation(self.rotation[1], 'y'), points)
-            points = np.dot(self.nebula_rotation(self.rotation[2], 'z'), points)
+            points = np.dot(misc.cartesian_rotation(self.rotation[0], 'x'), points)
+            points = np.dot(misc.cartesian_rotation(self.rotation[1], 'y'), points)
+            points = np.dot(misc.cartesian_rotation(self.rotation[2], 'z'), points)
             
             points[0] += self.cartesian[0]
             points[1] += self.cartesian[1]
@@ -226,12 +227,12 @@ class Nebula(object):
             points = np.array([x, y, z])
             
             # if i != 1:
-            #     points = np.dot(self.nebula_rotation(self.rotation[0], 'x'), points)
-            #     points = np.dot(self.nebula_rotation(self.rotation[1], 'y'), points)
-            #     points = np.dot(self.nebula_rotation(self.rotation[2], 'z'), points)
-            points = np.dot(self.nebula_rotation(self.rotation[0], 'x'), points)
-            points = np.dot(self.nebula_rotation(self.rotation[1], 'y'), points)
-            points = np.dot(self.nebula_rotation(self.rotation[2], 'z'), points)
+            #     points = np.dot(misc.cartesian_rotation(self.rotation[0], 'x'), points)
+            #     points = np.dot(misc.cartesian_rotation(self.rotation[1], 'y'), points)
+            #     points = np.dot(misc.cartesian_rotation(self.rotation[2], 'z'), points)
+            points = np.dot(misc.cartesian_rotation(self.rotation[0], 'x'), points)
+            points = np.dot(misc.cartesian_rotation(self.rotation[1], 'y'), points)
+            points = np.dot(misc.cartesian_rotation(self.rotation[2], 'z'), points)
             
             
             # x = np.append(diskx, bulgex); y = np.append(disky, bulgey); z = np.append(diskz, bulgez)
@@ -267,7 +268,7 @@ class Nebula(object):
                     smooth = 1.5
   
                 x, y, z = self.points[i]
-                equat, polar, distance = self.cartesian_to_spherical(x, y, z)
+                equat, polar, distance = misc.cartesian_to_spherical(x, y, z)
                     
                 extent = [[min(equat) - 3, max(equat) + 3], [min(polar) - 3, max(polar) + 3]]   # this is so that the edge of the contours aren't cut off
                 density, equatedges, polaredges = np.histogram2d(equat, polar, bins=[2 * bins, bins], range=extent)
@@ -292,63 +293,11 @@ class Nebula(object):
         elif style == 'hexbin':
             for i, colour in enumerate(self.cmap):
                 x, y, z = self.points[i]
-                equat, polar, distance = self.cartesian_to_spherical(x, y, z)
+                equat, polar, distance = misc.cartesian_to_spherical(x, y, z)
                 if self.species == 'spiral':
                     ax.hexbin(equat, polar, gridsize=(2 * grid, grid), bins=bins, vmax = 6, linewidths=0.01, cmap=colour, aa=True)
                 else:
                     ax.hexbin(equat, polar, gridsize=(2 * grid, grid), bins=bins, linewidths=0.01, cmap=colour)
-
-    def nebula_rotation(self, angle, axis):
-        '''Rotate a point in cartesian coordinates about the origin by some angle along the specified axis. 
-        The rotation matrices were taken from https://stackoverflow.com/questions/34050929/3d-point-rotation-algorithm
-        Parameters
-        ----------
-        angle : float
-            An angle in radians.
-        axis : str
-            The axis to perform the rotation on. Must be in ['x', 'y', 'z']
-        Returns
-        -------
-        numpy array
-            The transformation matrix for the rotation of angle 'angle'. This output must be used as the first argument within "np.dot(a, b)"
-            where 'b' is an 3 dimensional array of coordinates.
-        '''
-        if axis == 'x':
-            return np.array([[1, 0, 0], [0, np.cos(angle), -np.sin(angle)], [0, np.sin(angle), np.cos(angle)]])
-        elif axis == 'y':
-            return np.array([[np.cos(angle), 0, np.sin(angle)], [0, 1, 0], [-np.sin(angle), 0, np.cos(angle)]])
-        else:
-            return np.array([[np.cos(angle), -np.sin(angle), 0], [np.sin(angle), np.cos(angle), 0], [0, 0, 1]])
-
-    def cartesian_to_spherical(self, x, y, z):
-        radius = np.sqrt(x**2 + y**2 + z**2)
-        equat = np.arctan2(y, x)    #returns equatorial angle in radians, maps to [-pi, pi]
-        polar = np.arccos(z / radius)
-        polar = np.degrees(polar)
-        equat = np.degrees(equat)
-        # now need to shift the angles
-        if np.size(equat) != 1:
-            equat = np.array([360 - abs(val) if val < 0 else val for val in equat])  #this reflects negative angles about equat=180
-        else:   #same as above, but for a single element. 
-            equat = 360 - abs(equat) if equat < 0 else equat
-        return (equat, polar, radius)
-    
-    def spherical_to_cartesian(self, equat, polar, distance):
-        '''
-        Parameters
-        ----------
-        equat, polar, distance : numpy arrays
-            equatorial and polar angles, as well as radial distance from the origin
-        Returns
-        -------
-        (x, y, z) : numpy arrays
-            Cartesian coordinates relative to the origin. 
-        '''
-        equat, polar = np.radians(equat), np.radians(polar)
-        x = distance * np.cos(equat) * np.sin(polar)
-        y = distance * np.sin(equat) * np.sin(polar)
-        z = distance * np.cos(polar)
-        return (x, y, z)
 
 
 

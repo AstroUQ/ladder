@@ -7,8 +7,10 @@ Created on Mon Jun 27 13:08:36 2022
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy.stats as stats
+import MiscTools as misc
 from tqdm import tqdm     # this is a progress bar for a for loop
 from GalaxyCluster import GalaxyCluster
+
 
 class Universe(object):
     def __init__(self, radius, clusters, hubble=None, blackholes=True, darkmatter=True, complexity="Comprehensive", 
@@ -251,7 +253,7 @@ class Universe(object):
         '''
         stars = self.get_all_starpositions()
         x, y, z, _, _ = stars[0], stars[1], stars[2], stars[3], stars[4]
-        _, _, radius = self.cartesian_to_spherical(x, y, z)
+        _, _, radius = misc.cartesian_to_spherical(x, y, z)
         
         locgalaxymovement = self.clusters[-1].directions[:, -1]  # the local galaxy is the last galaxy in the last cluster
         localgalaxydist = self.clusters[-1].galaxies[-1].spherical[2]   # get the distance from the observer (origin) to the center of the local galaxy
@@ -395,36 +397,4 @@ class Universe(object):
         if save:
             plt.close()
             return fig
-        
-        
-    def cartesian_to_spherical(self, x, y, z):
-        ''' Converts cartesian coordinates to spherical ones (formulae taken from wikipedia) in units of degrees. 
-        Maps polar angle to [0, 180] with 0 at the north pole, 180 at the south pole. 
-        Maps azimuthal (equatorial) angle to [0, 360], with equat=0 corresponding to the negative x-axis, equat=270 the positive y-axis, etc
-        Azimuthal (equat) angles reference (rotates anti-clockwise):
-            equat = 0 or 360 -> -ve x-axis (i.e. y=0)
-            equat = 90 -> -ve y-axis (x=0)
-            equat = 180 -> +ve x-axis (y=0)
-            equat = 270 -> +ve y-axis (x=0)
-        Parameters
-        ----------
-        x, y, z : numpy array
-            x, y, and z cartesian coordinates
-        
-        Returns
-        -------
-        equat, polar, radius : numpy array
-            equatorial and polar angles (in degrees), and radius from origin
-        '''
-        radius = np.sqrt(x**2 + y**2 + z**2)
-        equat = np.arctan2(y, x)    #returns equatorial angle in radians, maps to [-pi, pi]
-        polar = np.arccos(z / radius)
-        polar = np.degrees(polar)
-        equat = np.degrees(equat)
-        # now need to shift the angles
-        if np.size(equat) != 1:
-            equat = np.array([360 - abs(val) if val < 0 else val for val in equat])  #this reflects negative angles about equat=180
-        else:   #same as above, but for a single element. 
-            equat = 360 - abs(equat) if equat < 0 else equat
-        return (equat, polar, radius)
             

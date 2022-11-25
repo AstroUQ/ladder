@@ -9,6 +9,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib import colors
 import warnings
+import MiscTools as misc
 # import colour as col
 
 class Star(object):

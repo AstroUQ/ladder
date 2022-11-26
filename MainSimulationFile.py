@@ -70,6 +70,7 @@ class UniverseSim(object):
         self.starpositions = self.universe.get_all_starpositions()
         self.blackholes = self.universe.get_blackholes()  
         self.datadirectory = False
+        self.cubemapdirectory = False
     
     def create_directory(self):
         ''' Creates the folder for the universe data to be stored in. Will only be created prior to trying to save data. 
@@ -86,8 +87,18 @@ class UniverseSim(object):
             os.makedirs(self.datadirectory)     # now create the duplicate directory with the number on the end
         else:
             os.makedirs(self.datadirectory)     # if directory doesn't exist, create it
+            
+    def create_cubemap_directory(self):
+        ''' Creates the directional folders needed for the cubemap projection data/images.
+        '''
+        if not self.datadirectory:
+            self.create_directory()
+        directions = ['Front', 'Back', 'Top', 'Bottom', 'Left', 'Right']
+        for direction in directions:
+            os.makedirs(self.datadirectory + f'\\{direction}')
+        self.cubemapdirectory = True
     
-    def plot_universe(self, spikes=True, radio=False, save=False):
+    def plot_universe(self, spikes=True, radio=False, save=False, cubemap=False):
         ''' Plot all of the stars and distant galaxies in the universe onto a rectangular mapping of the inside of the 
         observable universe sphere. X-axis units are in "Equatorial Angle (degrees)", with Y-axis units in "Polar Angle (degrees)."
         Parameters
@@ -102,7 +113,21 @@ class UniverseSim(object):
         -------
         fig : matplotlib figure object (if "save" parameter is True)
         '''
-        fig, ax = plt.subplots()
+        if not cubemap: # we want a single, all sky image
+            fig, ax = plt.subplots()
+        else: # we want 6, directional images of a cubemap
+            figAxes = []
+            for i in range(6):
+                fig, ax = plt.subplots(figsize=(9,9))
+                ax.set_xlim(-45, 45); ax.set_ylim(-45, 45)    # equatorial angle goes from 0->360, polar 0->180
+                ax.set_facecolor('k')   # space has a black background, duh
+                ax.set_aspect(1)    # makes it so that the figure is twice as wide as it is tall - no stretching!
+                # fig.tight_layout()
+                ax.set_xlabel("X Position (degrees)")
+                ax.set_ylabel("Y Position (degrees)")
+                ax.grid()
+                
+                figAxes.append([fig, ax])
         stars = self.starpositions
         x, y, z, colours, scales = stars[0], stars[1], stars[2], stars[3], stars[4]
         equat, polar, radius = misc.cartesian_to_spherical(x, y, z)
@@ -112,15 +137,27 @@ class UniverseSim(object):
             if blackhole == False:
                 continue
             BHequat, BHpolar, distance = self.allgalaxies[i].spherical  # get the coords of each black hole
+            if cubemap:
+                BHx, BHy, BHz = self.allgalaxies[i].cartesian
+                uc, vc, index = self.cubemap(BHx, BHy, BHz)
             BHcolour = blackhole.get_BH_colour()
             BHscale = blackhole.get_BH_scale() / (0.05 * distance)  # determine the scale of the black hole marker from its intrinsic brightness and distance
             if spikes == True and BHscale > 2.5:    # then we want to plot diffraction spikes on the black hole
                 spikesize = BHscale / 2
-                ax.errorbar(BHequat, BHpolar, yerr=spikesize, xerr=spikesize, ecolor=BHcolour, fmt='none', elinewidth=0.3, alpha=0.5)
+                if not cubemap:
+                    ax.errorbar(BHequat, BHpolar, yerr=spikesize, xerr=spikesize, ecolor=BHcolour, fmt='none', elinewidth=0.3, alpha=0.5)
+                else:
+                    self.cubemap_plot(uc, vc, index, 0, BHcolour, figAxes, spikes=spikesize)
             if save == True:    # we want to get rid of the circle outline on the marker if we're saving the image
-                ax.scatter(BHequat, BHpolar, color=BHcolour, s=BHscale, linewidths=0)
+                if not cubemap:
+                    ax.scatter(BHequat, BHpolar, color=BHcolour, s=BHscale, linewidths=0)
+                else:
+                    self.cubemap_plot(uc, vc, index, BHscale, BHcolour, figAxes)
             else:   # matplotlib can automatically scale markers when zooming, so we don't need to worry about the circle outlines. 
-                ax.scatter(BHequat, BHpolar, color=BHcolour, s=BHscale)
+                if not cubemap:
+                    ax.scatter(BHequat, BHpolar, color=BHcolour, s=BHscale)
+                else:
+                    self.cubemap_plot(uc, vc, index, BHscale, BHcolour, figAxes)
         
         # now, we want to plot all of the stars in the universe. Firstly, we need to determine how large they should appear
         j = np.zeros(len(self.galaxies) + 1)    # initialise an array to store galaxy populations
@@ -133,43 +170,74 @@ class UniverseSim(object):
                   for k, galaxy in enumerate(self.galaxies)]    # get the scale of each star, and divide it by some function of its distance to get its apparent brightness
         scales = [scale for galaxy in scales for scale in galaxy]   # the above operation produces nested lists, so this step flattens the list
         if spikes == True:  # now to plot diffraction spikes on the bright stars
-            brightequat, brightpolar, brightscale, brightcolour = [], [], [], np.empty((0, 3))
+            if not cubemap:
+                brightequat, brightpolar, brightscale, brightcolour = [], [], [], np.empty((0, 3))
+            else:
+                brightX, brightY, brightZ, brightscale, brightcolour = [], [], [], [], np.empty((0, 3))
             for i, scale in enumerate(scales):
                 if scale > 2.5:     # we want spikes on this star!
-                    brightequat += [equat[i]]
-                    brightpolar += [polar[i]]
+                    if not cubemap:
+                        brightequat += [equat[i]]
+                        brightpolar += [polar[i]]
+                    else:
+                        brightX += [x[i]]
+                        brightY += [y[i]]
+                        brightZ += [z[i]]
                     brightscale = brightscale + [scale / 4]
                     brightcolour = np.append(brightcolour, [colours[i]], axis=0)
             # now plot makeshift diffraction spikes with no marker (so that the marker can accurately be plotted later)
-            ax.errorbar(brightequat, brightpolar, yerr=brightscale, xerr=brightscale, ecolor=brightcolour, fmt='none', elinewidth=0.3)
+            if not cubemap:
+                ax.errorbar(brightequat, brightpolar, yerr=brightscale, xerr=brightscale, ecolor=brightcolour, fmt='none', elinewidth=0.3)
+            else:
+                brightX, brightY, brightZ, brightscale = np.array(brightX), np.array(brightY), np.array(brightZ), np.array(brightscale)
+                uc, vc, index = self.cubemap(brightX, brightY, brightZ)
+                for i in range(len(uc)): # now plot each of the bright stars individually
+                    self.cubemap_plot(uc[i], vc[i], index[i], 0, brightcolour[i], figAxes, spikes=brightscale[i])
+                    
         scales = [3 if scale > 3 else abs(scale) for scale in scales]   # limit the maximum size of stars so that an abnormally close star doesnt cover the image
         
         # now we obtain the distant galaxy positions and data, and append them to the star arrays (plotting all in one go saves some time)
         DGspherical = np.array([galaxy.spherical for galaxy in self.distantgalaxies])
-        DGequat, DGpolar, DGdists = DGspherical[:, 0], DGspherical[:, 1], DGspherical[:, 2]
-        equat, polar = np.append(equat, DGequat), np.append(polar, DGpolar)     # append the distant galaxy data to the end of the star data
-        
+        if not cubemap:
+            DGequat, DGpolar, DGdists = DGspherical[:, 0], DGspherical[:, 1], DGspherical[:, 2]
+            equat, polar = np.append(equat, DGequat), np.append(polar, DGpolar)     # append the distant galaxy data to the end of the star data
+        else:
+            DGdists = DGspherical[:, 2]
+            DGcartesian = np.array([galaxy.cartesian for galaxy in self.distantgalaxies])
+            DGx, DGy, DGz = DGcartesian[:, 0], DGcartesian[:, 1], DGcartesian[:, 2]
+            x, y, z = np.append(x, DGx), np.append(y, DGy), np.append(z, DGz)
+            
         DGscales = 1 / (0.0001 * DGdists)   # we want to artifically make distant galaxies a bit larger than stars, since they *should* be brighter and bigger
         for scale in DGscales:
             scales.append(scale)
             colours.append([1.0000, 0.8286, 0.7187])    # this is a nice enough colour to show distant galaxies as. Plotting them based on their actual colour would be too expensive
         
-        if save == True:    # as with earlier, plot with no circle outline if saving
-            ax.scatter(equat, polar, s=scales, c=colours, linewidths=0)
+        if not cubemap:
+            if save == True:    # as with earlier, plot with no circle outline if saving
+                ax.scatter(equat, polar, s=scales, c=colours, linewidths=0)
+            else:
+                ax.scatter(equat, polar, s=scales, c=colours)
+            ax.set_xlim(0, 360); ax.set_ylim(0, 180)    # equatorial angle goes from 0->360, polar 0->180
+            ax.set_facecolor('k')   # space has a black background, duh
+            ax.set_aspect(1)    # makes it so that the figure is twice as wide as it is tall - no stretching!
+            fig.tight_layout()
+            ax.invert_yaxis()   # polar angle of 0 is at the top, 180 at the bottom
+            ax.set_xlabel("Equatorial Angle (degrees)")
+            ax.set_ylabel("Polar Angle (degrees)")
         else:
-            ax.scatter(equat, polar, s=scales, c=colours)
-        ax.set_xlim(0, 360); ax.set_ylim(0, 180)    # equatorial angle goes from 0->360, polar 0->180
-        ax.set_facecolor('k')   # space has a black background, duh
-        ax.set_aspect(1)    # makes it so that the figure is twice as wide as it is tall - no stretching!
-        fig.tight_layout()
-        ax.invert_yaxis()   # polar angle of 0 is at the top, 180 at the bottom
-        ax.set_xlabel("Equatorial Angle (degrees)")
-        ax.set_ylabel("Polar Angle (degrees)")
-        if radio == True:   # plot the radio overlay
+            scales = np.array(scales)
+            colours = np.array(colours)
+            uc, vc, index = self.cubemap(x, y, z)
+            self.cubemap_plot(uc, vc, index, scales, colours, figAxes)
+            
+        if radio == True and not cubemap:   # plot the radio overlay
             self.plot_radio(ax)
         if save == True:    # close the figure (so it doesnt pop up during the run) and return the figure to save later.
             plt.close()
-            return fig
+            if not cubemap:
+                return fig, ax
+            else:
+                return figAxes
         
     def cubemap(self, x, y, z):
         ''' Transforms cartesian coordinates into (u, v) coordinates on the 6 faces of a cube, with an index corresponding to 
@@ -228,6 +296,8 @@ class UniverseSim(object):
                 uc[i] = -X
                 vc[i] = Y
                 index[i] = 5
+                
+        uc *= 45; vc *= 45 # transforms coords from +/- 1 to +/- 45 degrees
         return uc, vc, index
     
     def cubemap_plot(self, uc, vc, index, scales, colours, figAxes, spikes=None):
@@ -249,7 +319,6 @@ class UniverseSim(object):
         '''
         for i in range(6):
             x, y = uc[index == i], vc[index == i] # get all coords of points on this cube face
-            x *= 45; y *= 45 # transforms coords from +/- 1 to +/- 45 degrees
             if spikes == None: # don't need to worry about diffraction spikes, just scatter the points
                 if uc.size == 1:
                     figAxes[i][1].scatter(x, y, s=scales, color=colours, linewidths=0)
@@ -257,100 +326,6 @@ class UniverseSim(object):
                     figAxes[i][1].scatter(x, y, s=scales[index == i], color=colours[index == i], linewidths=0)
             else: # we have spikes, so need to use error bar
                 figAxes[i][1].errorbar(x, y, yerr=spikes, xerr=spikes, ecolor=colours, fmt='none', elinewidth=0.3)
-        
-    def save_cubemap(self, spikes=True):
-        ''' Plot all of the stars and distant galaxies in the universe onto a cube map of the inside of the 
-        observable universe sphere. X-axis units are in "Equatorial Angle (degrees)", with Y-axis units in "Polar Angle (degrees)."
-        Parameters
-        ----------
-        spikes : bool
-            If true, add diffraction spikes to stars according to their apparent brightness
-
-        '''
-        directions = ['Front', 'Back', 'Top', 'Bottom', 'Left', 'Right']
-        figAxes = []
-        for i in range(6):
-            fig, ax = plt.subplots(figsize=(9,9))
-            ax.set_xlim(-45, 45); ax.set_ylim(-45, 45)    # equatorial angle goes from 0->360, polar 0->180
-            ax.set_facecolor('k')   # space has a black background, duh
-            ax.set_aspect(1)    # makes it so that the figure is twice as wide as it is tall - no stretching!
-            fig.tight_layout()
-            ax.set_xlabel("X Position (degrees)")
-            ax.set_ylabel("Y Position (degrees)")
-            ax.grid()
-            figAxes.append([fig, ax])
-        stars = self.starpositions
-        x, y, z, colours, scales = stars[0], stars[1], stars[2], stars[3], stars[4]
-        equat, polar, radius = misc.cartesian_to_spherical(x, y, z)
-        colours = colours[:]    # this fixes an issue when rerunning this program since we want to make a copy of the colours array
-        
-        for i, blackhole in enumerate(self.blackholes):     # first, plot the black holes at their positions
-            if blackhole == False:
-                continue
-            BHequat, BHpolar, distance = self.allgalaxies[i].spherical  # get the coords of each black hole
-            BHx, BHy, BHz = self.allgalaxies[i].cartesian
-            uc, vc, index = self.cubemap(BHx, BHy, BHz)
-            BHcolour = blackhole.get_BH_colour()
-            BHscale = blackhole.get_BH_scale() / (0.05 * distance)  # determine the scale of the black hole marker from its intrinsic brightness and distance
-            if spikes == True and BHscale > 2.5:    # then we want to plot diffraction spikes on the black hole
-                spikesize = BHscale / 2
-                self.cubemap_plot(uc, vc, index, 0, BHcolour, figAxes, spikes=spikesize)
-            self.cubemap_plot(uc, vc, index, BHscale, BHcolour, figAxes)
-        
-        # now, we want to plot all of the stars in the universe. Firstly, we need to determine how large they should appear
-        j = np.zeros(len(self.galaxies) + 1)    # initialise an array to store galaxy populations
-        for i, galaxy in enumerate(self.galaxies):
-            pop = len(galaxy.get_stars()[0])
-            j[i+1] = int(pop)       # add this galaxy's population to the aforementioned array
-        cumpops = [int(sum(j[:i + 1])) if i != 0 else int(j[i]) for i in range(len(j))]     # determine the cumulative population of the galaxies in their order
-        # the cumulative population is needed to keep track of which star is being looked at in the next step
-        scales = [[scales[i+cumpops[k]] / (0.05 * radius[i+cumpops[k]]) for i in range(len(galaxy.get_stars()[0]))] 
-                  for k, galaxy in enumerate(self.galaxies)]    # get the scale of each star, and divide it by some function of its distance to get its apparent brightness
-        scales = [scale for galaxy in scales for scale in galaxy]   # the above operation produces nested lists, so this step flattens the list
-        if spikes == True:  # now to plot diffraction spikes on the bright stars
-            brightX, brightY, brightZ, brightscale, brightcolour = [], [], [], [], np.empty((0, 3))
-            for i, scale in enumerate(scales):
-                if scale > 2.5:     # we want spikes on this star!
-                    brightX += [x[i]]
-                    brightY += [y[i]]
-                    brightZ += [z[i]]
-                    brightscale += [scale / 4]
-                    brightcolour = np.append(brightcolour, [colours[i]], axis=0)
-            # now plot makeshift diffraction spikes with no marker (so that the marker can accurately be plotted later)
-            brightX, brightY, brightZ, brightscale = np.array(brightX), np.array(brightY), np.array(brightZ), np.array(brightscale)
-            uc, vc, index = self.cubemap(brightX, brightY, brightZ)
-            for i in range(len(uc)): # now plot each of the bright stars individually
-                self.cubemap_plot(uc[i], vc[i], index[i], 0, brightcolour[i], figAxes, spikes=brightscale[i])
-        scales = [3 if scale > 3 else abs(scale) for scale in scales]   # limit the maximum size of stars so that an abnormally close star doesnt cover the image
-        
-        # now we obtain the distant galaxy positions and data, and append them to the star arrays (plotting all in one go saves some time)
-        DGspherical = np.array([galaxy.spherical for galaxy in self.distantgalaxies])
-        DGdists = DGspherical[:, 2]
-        # equat, polar = np.append(equat, DGequat), np.append(polar, DGpolar)     # append the distant galaxy data to the end of the star data
-       
-        DGcartesian = np.array([galaxy.cartesian for galaxy in self.distantgalaxies])
-        DGx, DGy, DGz = DGcartesian[:, 0], DGcartesian[:, 1], DGcartesian[:, 2]
-        x, y, z = np.append(x, DGx), np.append(y, DGy), np.append(z, DGz)
-        
-        DGscales = 1 / (0.0001 * DGdists)   # we want to artifically make distant galaxies a bit larger than stars, since they *should* be brighter and bigger
-        for scale in DGscales:
-            scales.append(scale)
-            colours.append([1.0000, 0.8286, 0.7187])    # this is a nice enough colour to show distant galaxies as. Plotting them based on their actual colour would be too expensive
-        
-        # ax.scatter(equat, polar, s=scales, c=colours, linewidths=0)
-        scales = np.array(scales)
-        colours = np.array(colours)
-        uc, vc, index = self.cubemap(x, y, z)
-        self.cubemap_plot(uc, vc, index, scales, colours, figAxes)
-        
-        if not self.datadirectory:
-            self.create_directory()
-        
-        for i in range(6):
-            fig, ax = figAxes[i]
-            fig.savefig(self.datadirectory + f'\\{directions[i]}.png', dpi=1500)
-        
-        plt.close()
     
     def plot_radio(self, ax):
         ''' Plot the radio contours of the SMBH emission onto a 2D sky plot. 
@@ -431,14 +406,16 @@ class UniverseSim(object):
             return fig
         
             
-    def save_data(self, properties=True, pic=True, radio=True, stars=True, variablestars=True, blackbodies=False, 
-                  distantgalax=True, supernovae=True, doppler=[False, False], blackhole=True, rotcurves=False):
+    def save_data(self, properties=True, proj='AllSky', pic=True, radio=True, stars=True, variablestars=True, blackbodies=False, 
+                  distantgalax=True, supernovae=True, doppler=[False, False], blackhole=False, rotcurves=False):
         ''' Generates some data, takes other data, and saves it to the system in a new directory within the file directory.
         .pdf images are commented out currently - uncomment them at your own risk! (.pdfs can be in excess of 90mb each!)
         Parameters
         ----------
         properties : bool
             Whether to save the properties of the universe (e.g. variable star parameters, galaxy size, etc)
+        proj : str
+            One of {'AllSky', 'Cube', 'Both'} to determine output of images/data
         pic : bool
             Whether to generate and save a 2d plot of the universe.
         radio : bool
@@ -467,6 +444,8 @@ class UniverseSim(object):
         print("Starting data saving..."); t0 = time()
         if not self.datadirectory:
             self.create_directory()
+        if proj == 'Cube' and not self.cubemapdirectory:
+            self.create_cubemap_directory()
         
         if properties:
             proptime1 = time(); print("Writing universe properties...")
@@ -513,20 +492,11 @@ class UniverseSim(object):
             proptime2 = time(); total = proptime2 - proptime1; print("Universe properties saved in", total, "s")
         
         if pic:     # now save a huge pic of the universe. say goodbye to your diskspace
-            pictime1 = time(); print("Generating universe picture...")
-            fig = self.plot_universe(save=True)
-            fig.set_size_inches(18, 9, forward=True)
-            fig.savefig(self.datadirectory + '\\Universe Image.png', dpi=1500, bbox_inches='tight', pad_inches = 0.01)
-            # fig.savefig(self.datadirectory + '\\Universe Image.pdf', dpi=200, bbox_inches='tight', pad_inches = 0.01)
-            pictime2 = time(); total = pictime2 - pictime1; print("Universe picture saved in", total, "s")
-            
-            if radio and self.hasblackhole:       # plot radio data too
-                print("Generating radio overlay...")
-                fig = self.plot_universe(radio=True, save=True)
-                fig.set_size_inches(18, 9, forward=True)
-                fig.savefig(self.datadirectory + '\\Radio Overlay Image.png', dpi=1500, bbox_inches='tight', pad_inches = 0.01)
-                # fig.savefig(self.datadirectory + '\\Radio Overlay Image.pdf', dpi=200, bbox_inches='tight', pad_inches = 0.01)
-                pictime3 = time(); total = pictime3 - pictime2; print("Radio overlay picture saved in", total, "s")
+            if proj == 'Both':
+                self.savepic(self.datadirectory, radio=radio, proj='AllSky')
+                self.savepic(self.datadirectory, radio=False, proj='Cube') # we don't need to create the radio image twice!
+            else:
+                self.savepic(self.datadirectory, radio=False, proj=proj)
             
         if stars:   # generate and save star data
             startime1 = time(); print("Generating star data...")
@@ -748,26 +718,40 @@ class UniverseSim(object):
         t1 = time(); total = t1 - t0; print("All data generated and saved in =", total, "s")
         plt.close()     # need this to close the figure (since the "fig" variable persists)
     
-    def savepic(self, directory, radio, proj='AllSky'):
+    def savepic(self, directory, radio=False, proj='AllSky'):
         if proj == 'AllSky':
             pictime1 = time(); print("Generating universe picture...")
-            fig = self.plot_universe(save=True)
+            fig, ax = self.plot_universe(save=True)
             fig.set_size_inches(18, 9, forward=True)
-            fig.savefig(directory + '\\Universe Image.png', dpi=1500, bbox_inches='tight', pad_inches = 0.01)
+            fig.savefig(directory + '\\AllSky Universe Image.png', dpi=1500, bbox_inches='tight', pad_inches = 0.01)
             # fig.savefig(self.datadirectory + '\\Universe Image.pdf', dpi=200, bbox_inches='tight', pad_inches = 0.01)
             pictime2 = time(); total = pictime2 - pictime1; print("Universe picture saved in", total, "s")
             
             if radio and self.hasblackhole:       # plot radio data too
                 print("Generating radio overlay...")
-                fig = self.plot_universe(radio=True, save=True)
-                fig.set_size_inches(18, 9, forward=True)
-                fig.savefig(directory + '\\Radio Overlay Image.png', dpi=1500, bbox_inches='tight', pad_inches = 0.01)
+                self.plot_radio(ax)
+                fig.savefig(directory + '\\AllSky Radio Overlay Image.png', dpi=1500, bbox_inches='tight', pad_inches = 0.01)
                 # fig.savefig(self.datadirectory + '\\Radio Overlay Image.pdf', dpi=200, bbox_inches='tight', pad_inches = 0.01)
                 pictime3 = time(); total = pictime3 - pictime2; print("Radio overlay picture saved in", total, "s")
         
         elif proj == 'Cube':
-            pass
-        return None
+            pictime1 = time(); print("Generating universe picture...")
+            figAxes = self.plot_universe(save=True, cubemap=True)
+            directions = ['Front', 'Back', 'Top', 'Bottom', 'Left', 'Right']
+            for i in range(6):
+                fig, ax = figAxes[i]
+                fig.savefig(self.datadirectory + f'\\{directions[i]}\\{directions[i]}.png', dpi=1500, bbox_inches='tight', 
+                            pad_inches = 0.01)
+            pictime2 = time(); total = pictime2 - pictime1; print("Universe pictures saved in", total, "s")
+            
+            if radio and self.hasblackhole:       # plot radio data too
+                print("Generating radio overlay...")
+                fig, ax = self.plot_universe(save=True)
+                fig.set_size_inches(18, 9, forward=True)
+                self.plot_radio(ax)
+                fig.savefig(directory + '\\AllSky Radio Overlay Image.png', dpi=1500, bbox_inches='tight', pad_inches = 0.01)
+                # fig.savefig(self.datadirectory + '\\Radio Overlay Image.pdf', dpi=200, bbox_inches='tight', pad_inches = 0.01)
+                pictime3 = time(); total = pictime3 - pictime2; print("Radio overlay picture saved in", total, "s")
     
         
         
@@ -800,8 +784,7 @@ def main():
     # sim.save_data()
     
     sim = UniverseSim(20)
-    sim.save_cubemap()
-    
+    sim.save_data(proj='Cube')
 
     
 if __name__ == "__main__":

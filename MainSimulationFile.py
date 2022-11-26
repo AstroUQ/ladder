@@ -41,7 +41,7 @@ def plot_all_3d(galaxies):
         galaxy.plot_3d(ax, camera=False)
 
 class UniverseSim(object):
-    def __init__(self, numclusters, hubble=None, seed=None, blackholes=True, darkmatter=True, mode="Comprehensive",
+    def __init__(self, numclusters, hubble=None, seed=None, blackholes=True, darkmatter=True, mode="Normal",
                  homogeneous=False):
         ''' Generates a Universe object and imports important data from it. 
         Parameters
@@ -69,6 +69,23 @@ class UniverseSim(object):
         self.supernovae = self.universe.supernovae
         self.starpositions = self.universe.get_all_starpositions()
         self.blackholes = self.universe.get_blackholes()  
+        self.datadirectory = False
+    
+    def create_directory(self):
+        ''' Creates the folder for the universe data to be stored in. Will only be created prior to trying to save data. 
+        '''
+        # first, initialise the directory where all data will be saved
+        self.directory = os.path.dirname(os.path.realpath(__file__))    # this is where this .py file is located on the system
+        subdirectory = f"\\Datasets\\Sim Data (Clusters; {self.universe.clusterpop}, Seed; {self.seed})"
+        self.datadirectory = self.directory + subdirectory
+        if os.path.exists(self.datadirectory):  # if this directory exists, we need to append a number to the end of it
+            i = 1
+            while os.path.exists(self.datadirectory):   # this accounts for multiple copies that may exist
+                self.datadirectory = self.datadirectory + f" ({i})"   # add the number to the end
+                i += 1
+            os.makedirs(self.datadirectory)     # now create the duplicate directory with the number on the end
+        else:
+            os.makedirs(self.datadirectory)     # if directory doesn't exist, create it
     
     def plot_universe(self, spikes=True, radio=False, save=False):
         ''' Plot all of the stars and distant galaxies in the universe onto a rectangular mapping of the inside of the 
@@ -153,6 +170,187 @@ class UniverseSim(object):
         if save == True:    # close the figure (so it doesnt pop up during the run) and return the figure to save later.
             plt.close()
             return fig
+        
+    def cubemap(self, x, y, z):
+        ''' Transforms cartesian coordinates into (u, v) coordinates on the 6 faces of a cube, with an index corresponding to 
+            which cube face the point is projected on to. 
+        Parameters
+        ----------
+        x, y, z : np.array
+            Cartesian coordinates of the point(s)
+        Returns
+        -------
+        uc, vc : np.array
+            horiz, vertical coords (respectively) in the corresponding cube face
+        index : np.array
+            corresponding cube face index of each projected point in (x, y, z):
+            {0: front, 1: back, 2: top, 3: bottom, 4: left, 5: right}
+        '''
+        # initialise arrays
+        index = np.zeros(x.size); uc = np.zeros(x.size); vc = np.zeros(x.size)
+        # rotate the points so that the local galactic center is centered in the 'front' image
+        points = np.array([x, y, z])
+        points = np.dot(misc.cartesian_rotation(np.pi, 'y'), points)
+        points = np.dot(misc.cartesian_rotation(np.pi / 2, 'x'), points)
+        x, y, z = points
+        
+        # now, let's find which cube face each point is projected to. This algorithm was taken from wikipedia, and adapted
+        # for python: https://en.wikipedia.org/wiki/Cube_mapping#Memory_addressing
+        for i in range(x.size):
+            if x.size == 1: # gotta account for arrays of one value
+                X = x; Y = y; Z = z
+            else:
+                X = x[i]; Y = y[i]; Z = z[i]
+            # normalise each vector component so that the output coords are between -x and +x (for example)
+            absArray = abs(np.array([X, Y, Z]))
+            X /= max(absArray); Y /= max(absArray); Z /= max(absArray)
+            # now we can find which cube face the point is projected onto:
+            if X > 0 and abs(X) >= abs(Y) and abs(X) >= abs(Z): # point is on: POS X -- front
+                uc[i] = -Z
+                vc[i] = Y
+            elif X < 0 and abs(X) >= abs(Y) and abs(X) >= abs(Z): # NEG X -- back
+                uc[i] = Z
+                vc[i] = Y
+                index[i] = 1
+            elif Y > 0 and abs(Y) >= abs(X) and abs(Y) >= abs(Z): # POS Y -- top
+                uc[i] = X
+                vc[i] = -Z
+                index[i] = 2
+            elif Y < 0 and abs(Y) >= abs(X) and abs(Y) >= abs(Z): # NEG Y -- bottom
+                uc[i] = X
+                vc[i] = Z
+                index[i] = 3
+            elif Z > 0 and abs(Z) >= abs(X) and abs(Z) >= abs(Y): # POS Z -- left
+                uc[i] = X
+                vc[i] = Y
+                index[i] = 4
+            else: # Z < 0 and abs(Z) >= abs(X) and abs(Z) >= abs(Y)  # NEG Z -- right
+                uc[i] = -X
+                vc[i] = Y
+                index[i] = 5
+        return uc, vc, index
+    
+    def cubemap_plot(self, uc, vc, index, scales, colours, figAxes, spikes=None):
+        ''' Plots the points on each cube face for the cube mapping. 
+        Parameters
+        ----------
+        uc, vc : np.array
+            horiz, vert coords (respectively) of each point
+        index : np.array
+            indices of each point corresponding to their projected cube face
+        scales, colours : np.array
+            size and colour of each point on the image
+        figAxes: list of matplotlib objects
+            The 6 figure/ax matplotlib objects corresponding to the plot of each cube face. Must be arranged like:
+                [[fig1, ax1], [fig2, ax2], ..., [fig6, ax6]]
+        spikes : float
+            None by default if no diffraction spikes, but input a number to get diffraction spikes on these coords
+            Spiked coords MUST be plotted one at a time, otherwise code changes are needed
+        '''
+        for i in range(6):
+            x, y = uc[index == i], vc[index == i] # get all coords of points on this cube face
+            x *= 45; y *= 45 # transforms coords from +/- 1 to +/- 45 degrees
+            if spikes == None: # don't need to worry about diffraction spikes, just scatter the points
+                if uc.size == 1:
+                    figAxes[i][1].scatter(x, y, s=scales, color=colours, linewidths=0)
+                else:
+                    figAxes[i][1].scatter(x, y, s=scales[index == i], color=colours[index == i], linewidths=0)
+            else: # we have spikes, so need to use error bar
+                figAxes[i][1].errorbar(x, y, yerr=spikes, xerr=spikes, ecolor=colours, fmt='none', elinewidth=0.3)
+        
+    def save_cubemap(self, spikes=True):
+        ''' Plot all of the stars and distant galaxies in the universe onto a cube map of the inside of the 
+        observable universe sphere. X-axis units are in "Equatorial Angle (degrees)", with Y-axis units in "Polar Angle (degrees)."
+        Parameters
+        ----------
+        spikes : bool
+            If true, add diffraction spikes to stars according to their apparent brightness
+
+        '''
+        directions = ['Front', 'Back', 'Top', 'Bottom', 'Left', 'Right']
+        figAxes = []
+        for i in range(6):
+            fig, ax = plt.subplots(figsize=(9,9))
+            ax.set_xlim(-45, 45); ax.set_ylim(-45, 45)    # equatorial angle goes from 0->360, polar 0->180
+            ax.set_facecolor('k')   # space has a black background, duh
+            ax.set_aspect(1)    # makes it so that the figure is twice as wide as it is tall - no stretching!
+            fig.tight_layout()
+            ax.set_xlabel("X Position (degrees)")
+            ax.set_ylabel("Y Position (degrees)")
+            ax.grid()
+            figAxes.append([fig, ax])
+        stars = self.starpositions
+        x, y, z, colours, scales = stars[0], stars[1], stars[2], stars[3], stars[4]
+        equat, polar, radius = misc.cartesian_to_spherical(x, y, z)
+        colours = colours[:]    # this fixes an issue when rerunning this program since we want to make a copy of the colours array
+        
+        for i, blackhole in enumerate(self.blackholes):     # first, plot the black holes at their positions
+            if blackhole == False:
+                continue
+            BHequat, BHpolar, distance = self.allgalaxies[i].spherical  # get the coords of each black hole
+            BHx, BHy, BHz = self.allgalaxies[i].cartesian
+            uc, vc, index = self.cubemap(BHx, BHy, BHz)
+            BHcolour = blackhole.get_BH_colour()
+            BHscale = blackhole.get_BH_scale() / (0.05 * distance)  # determine the scale of the black hole marker from its intrinsic brightness and distance
+            if spikes == True and BHscale > 2.5:    # then we want to plot diffraction spikes on the black hole
+                spikesize = BHscale / 2
+                self.cubemap_plot(uc, vc, index, 0, BHcolour, figAxes, spikes=spikesize)
+            self.cubemap_plot(uc, vc, index, BHscale, BHcolour, figAxes)
+        
+        # now, we want to plot all of the stars in the universe. Firstly, we need to determine how large they should appear
+        j = np.zeros(len(self.galaxies) + 1)    # initialise an array to store galaxy populations
+        for i, galaxy in enumerate(self.galaxies):
+            pop = len(galaxy.get_stars()[0])
+            j[i+1] = int(pop)       # add this galaxy's population to the aforementioned array
+        cumpops = [int(sum(j[:i + 1])) if i != 0 else int(j[i]) for i in range(len(j))]     # determine the cumulative population of the galaxies in their order
+        # the cumulative population is needed to keep track of which star is being looked at in the next step
+        scales = [[scales[i+cumpops[k]] / (0.05 * radius[i+cumpops[k]]) for i in range(len(galaxy.get_stars()[0]))] 
+                  for k, galaxy in enumerate(self.galaxies)]    # get the scale of each star, and divide it by some function of its distance to get its apparent brightness
+        scales = [scale for galaxy in scales for scale in galaxy]   # the above operation produces nested lists, so this step flattens the list
+        if spikes == True:  # now to plot diffraction spikes on the bright stars
+            brightX, brightY, brightZ, brightscale, brightcolour = [], [], [], [], np.empty((0, 3))
+            for i, scale in enumerate(scales):
+                if scale > 2.5:     # we want spikes on this star!
+                    brightX += [x[i]]
+                    brightY += [y[i]]
+                    brightZ += [z[i]]
+                    brightscale += [scale / 4]
+                    brightcolour = np.append(brightcolour, [colours[i]], axis=0)
+            # now plot makeshift diffraction spikes with no marker (so that the marker can accurately be plotted later)
+            brightX, brightY, brightZ, brightscale = np.array(brightX), np.array(brightY), np.array(brightZ), np.array(brightscale)
+            uc, vc, index = self.cubemap(brightX, brightY, brightZ)
+            for i in range(len(uc)): # now plot each of the bright stars individually
+                self.cubemap_plot(uc[i], vc[i], index[i], 0, brightcolour[i], figAxes, spikes=brightscale[i])
+        scales = [3 if scale > 3 else abs(scale) for scale in scales]   # limit the maximum size of stars so that an abnormally close star doesnt cover the image
+        
+        # now we obtain the distant galaxy positions and data, and append them to the star arrays (plotting all in one go saves some time)
+        DGspherical = np.array([galaxy.spherical for galaxy in self.distantgalaxies])
+        DGdists = DGspherical[:, 2]
+        # equat, polar = np.append(equat, DGequat), np.append(polar, DGpolar)     # append the distant galaxy data to the end of the star data
+       
+        DGcartesian = np.array([galaxy.cartesian for galaxy in self.distantgalaxies])
+        DGx, DGy, DGz = DGcartesian[:, 0], DGcartesian[:, 1], DGcartesian[:, 2]
+        x, y, z = np.append(x, DGx), np.append(y, DGy), np.append(z, DGz)
+        
+        DGscales = 1 / (0.0001 * DGdists)   # we want to artifically make distant galaxies a bit larger than stars, since they *should* be brighter and bigger
+        for scale in DGscales:
+            scales.append(scale)
+            colours.append([1.0000, 0.8286, 0.7187])    # this is a nice enough colour to show distant galaxies as. Plotting them based on their actual colour would be too expensive
+        
+        # ax.scatter(equat, polar, s=scales, c=colours, linewidths=0)
+        scales = np.array(scales)
+        colours = np.array(colours)
+        uc, vc, index = self.cubemap(x, y, z)
+        self.cubemap_plot(uc, vc, index, scales, colours, figAxes)
+        
+        if not self.datadirectory:
+            self.create_directory()
+        
+        for i in range(6):
+            fig, ax = figAxes[i]
+            fig.savefig(self.datadirectory + f'\\{directions[i]}.png', dpi=1500)
+        
+        plt.close()
     
     def plot_radio(self, ax):
         ''' Plot the radio contours of the SMBH emission onto a 2D sky plot. 
@@ -267,18 +465,8 @@ class UniverseSim(object):
             a subdirectory under the name "{starname}-Temp:{startemp}"
         '''
         print("Starting data saving..."); t0 = time()
-        # first, initialise the directory where all data will be saved
-        self.directory = os.path.dirname(os.path.realpath(__file__))    # this is where this .py file is located on the system
-        subdirectory = f"\\Datasets\\Sim Data (Clusters; {self.universe.clusterpop}, Seed; {self.seed})"
-        self.datadirectory = self.directory + subdirectory
-        if os.path.exists(self.datadirectory):  # if this directory exists, we need to append a number to the end of it
-            i = 1
-            while os.path.exists(self.datadirectory):   # this accounts for multiple copies that may exist
-                self.datadirectory = self.datadirectory + f" ({i})"   # add the number to the end
-                i += 1
-            os.makedirs(self.datadirectory)     # now create the duplicate directory with the number on the end
-        else:
-            os.makedirs(self.datadirectory)     # if directory doesn't exist, create it
+        if not self.datadirectory:
+            self.create_directory()
         
         if properties:
             proptime1 = time(); print("Writing universe properties...")
@@ -608,21 +796,12 @@ def main():
     #           "with SD =", [sdbluef, sdgreenf, sdredf])
     
     ### -- this is the function that you should run! -- ###
-    sim = UniverseSim(1000, mode="Normal")
-    sim.save_data()
+    # sim = UniverseSim(1000, mode="Normal")
+    # sim.save_data()
     
-    # galax = Galaxy('Sb', [0,0,0])
-    # temps1 = [star.mass for star in galax.stars]
-    # galax = Galaxy('E7', [0,0,0])
-    # temps2 = [star.mass for star in galax.stars]
+    sim = UniverseSim(20)
+    sim.save_cubemap()
     
-    # fig, ax = plt.subplots(figsize=(10, 6))
-    # hist = ax.hist(temps1, bins=30, alpha=0.7, label='Sb')
-    # hist = ax.hist(temps2, bins=30, alpha=0.7, label='E7')
-    # ax.set_xlabel('Temperature (K)')
-    # ax.set_ylabel('Frequency')
-    # ax.set_xlim(xmin=0)
-    # ax.legend()
 
     
 if __name__ == "__main__":

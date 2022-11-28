@@ -363,8 +363,16 @@ class Universe(object):
         peaklumin = 2 * 10**36  # 20 billion times solar luminosity, source: https://www.sciencedirect.com/topics/physics-and-astronomy/type-ia-supernovae#:~:text=A%20typical%20supernova%20reaches%20its,times%20that%20of%20the%20Sun.
         distances = positions[:, 2] * 3.086 * 10**16    # convert from parsec to meters
         peakfluxes = (peaklumin / (4 * np.pi * distances**2)) * np.random.normal(1, 0.01, frequency)  # F = L / (4pi*r^2)  - with some random scatter
-        skypositions = [positions[:, 0] + np.random.normal(0, 0.01, frequency),   # equatorial angle, with a bit of scatter
-                        positions[:, 1] + np.random.normal(0, 0.01, frequency)]   # as above, but with polar angle
+        
+        # now we need to find the range of scatter that supernovae can have in the sky. We can do this by guessing the radius of each
+        # galaxy, and then putting it into a function of distance. The below code finds the magnitude of scatter in the *positive* direction
+        # so the actual scatter will be in the range -size -> +size about a central point
+        sizes = np.arctan((70 / 2) / positions[:, 2])   # size of scatter in sky, assuming galaxy is 70pc across
+        sizes = np.rad2deg(sizes)                       # get units in degrees
+        
+        skypositions = [positions[:, 0] + np.random.uniform(-sizes, sizes, frequency),   # equatorial angle, with a bit of scatter
+                        positions[:, 1] + np.random.normal(-sizes, sizes, frequency),   # as above, but with polar angle
+                        positions[:, 2] + np.random.normal(0, 5, frequency)]      # distance of supernovae, with some scatter   
         return skypositions, peakfluxes
     
     def plot_hubblediagram(self, trendline=True, save=False):

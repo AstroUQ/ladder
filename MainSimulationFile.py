@@ -129,7 +129,7 @@ class UniverseSim(object):
                 # fig.tight_layout()
                 ax.set_xlabel("X Position (degrees)")
                 ax.set_ylabel("Y Position (degrees)")
-                ax.grid()
+                ax.grid(linewidth=0.1)
                 
                 figAxes.append([fig, ax])
         stars = self.starpositions
@@ -259,7 +259,7 @@ class UniverseSim(object):
             {0: front, 1: back, 2: top, 3: bottom, 4: left, 5: right}
         '''
         # initialise arrays
-        index = np.zeros(x.size); uc = np.zeros(x.size); vc = np.zeros(x.size)
+        index = np.zeros(x.size, dtype=int); uc = np.zeros(x.size); vc = np.zeros(x.size)
         # rotate the points so that the local galactic center is centered in the 'front' image
         points = np.array([x, y, z])
         points = np.dot(misc.cartesian_rotation(np.pi, 'y'), points)
@@ -451,71 +451,25 @@ class UniverseSim(object):
             self.create_directory()
         if proj in ['Cube', "Both"] and not self.cubemapdirectory:
             self.create_cubemap_directory()
-        
-        if properties:
-            self.save_properties()
-        
+
+        # first, save the *data* that the user might interact with
         if pic:     # now save a huge pic of the universe. say goodbye to your diskspace
-            if proj == 'Both':
-                self.save_pic(radio=radio, proj='AllSky')
-                self.save_pic(radio=False, proj='Cube') # we don't need to create the radio image twice!
-            else:
-                self.save_pic(radio=radio, proj=proj)
-            
+            self.save_pic(radio=radio, proj=proj)
         if stars:   # generate and save star data
             self.save_stars(proj=proj)
-            
         if variablestars:
             self.save_variables()
-        
+        if distantgalax:
+            self.save_distant_galaxies(proj=proj)
+        if supernovae:
+            self.save_supernovae(proj=proj)
+        if blackhole:   # save some data about black holes (radio sources)
+            self.save_blackholes(proj=proj)
+        # now we can save the data that will help check answers, etc
+        if properties:
+            self.save_properties()
         if blackbodies:     # plot and save blackbody curves for stars of a given temperature in the local galaxy
             self.save_blackbodies()
-        
-        if distantgalax:
-            distanttime1 = time(); print("Saving distant galaxy data...")
-            sphericals = np.array([galaxy.spherical for galaxy in self.distantgalaxies])
-            equat, polar, dists = sphericals[:, 0], sphericals[:, 1], sphericals[:, 2]
-            distsMeters = dists * 3.086 * 10**16
-            
-            bandlumin = np.array([galaxy.bandlumin for galaxy in self.distantgalaxies])
-            bluelumin, greenlumin, redlumin = bandlumin[:, 0], bandlumin[:, 1], bandlumin[:, 2]
-            blueflux, greenflux, redflux = bluelumin / distsMeters**2, greenlumin / distsMeters**2, redlumin / distsMeters**2  
-            blueflux = [format(flux, '.3e') for flux in blueflux]   # now round each data point to 3 decimal places
-            greenflux = [format(flux, '.3e') for flux in greenflux]; redflux = [format(flux, '.3e') for flux in redflux]
-            
-            radii = np.array([galaxy.radius for galaxy in self.distantgalaxies])
-            sizes = 2 * np.arctan((radii / 2) / dists)      # gets the apparent size of the galaxy (thanks trig!)
-            sizes = np.rad2deg(sizes) * 3600    # this gives the size of the galaxy in units of arcseconds
-            sizes = np.around(sizes, decimals=4)
-            
-            DGobsvel = self.universe.distantradialvelocities
-            DGobsvel = np.around(DGobsvel, decimals=2)
-            
-            width = int(-(-np.log10(len(equat)) // 1))
-            names = [f"DG{i:0{width}d}" for i in range(1, len(equat)+1)]
-            
-            equat = [format(coord, '3.4f') for coord in equat]; polar = [format(coord, '3.4f') for coord in polar]
-            
-            DGdata = {"Name":names, 'Equatorial':equat, 'Polar':polar,
-                      'BlueF':blueflux, 'GreenF':greenflux, 'RedF':redflux,
-                      'Size':sizes, 'RadialVelocity':DGobsvel}
-            DGfile = pd.DataFrame(DGdata)
-            DGfile.to_csv(self.datadirectory + "\\Distant Galaxy Data.txt", index=None, sep=' ')
-            distanttime2 = time(); total = distanttime2 - distanttime1; print("Distant galaxy data saved in", total, "s")
-            
-        if supernovae:
-            supertime1 = time(); print("Saving supernova data...")
-            pos, peak = self.supernovae
-            equats = [format(abs(equat), '3.2f') for equat in pos[0]]
-            polars = [format(abs(polar), '3.2f') for polar in pos[1]]
-            peak = [format(flux, '.3e') for flux in peak]
-            names = [f"SNe{i:0{width}d}" for i in range(1, len(equats)+1)]
-            supernovadata = {"Name":names, "Equatorial":equats, "Polar":polars, "PeakFlux(W)":peak}
-            
-            supernovafile = pd.DataFrame(supernovadata)
-            supernovafile.to_csv(self.datadirectory + "\\Supernova Data.txt", index=None, sep=' ')
-            supertime2 = time(); total = supertime2 - supertime1; print("Supernova data saved in", total, "s")
-            
         if True in doppler:  # save the doppler image with a log scale
             dopplertime1 = time(); print("Saving doppler image...")
             if doppler[0]:
@@ -529,56 +483,10 @@ class UniverseSim(object):
                 fig.savefig(self.datadirectory + '\\Doppler Image Linear Scale.png', dpi=1500, bbox_inches='tight', pad_inches = 0.01)
                 # fig.savefig(self.datadirectory + '\\Doppler Image Linear Scale.pdf', dpi=200, bbox_inches='tight', pad_inches = 0.01)
             dopplertime2 = time(); total = dopplertime2 - dopplertime1; print("Doppler image saved in", total, "s")
-        
-        if blackhole:   # save some data about black holes (radio sources)
-            bhtime1 = time(); print("Saving black hole data...")
-            equats, polars, BHlumins = [], [], []
-            for galaxy in self.allgalaxies:
-                if galaxy.blackhole != False:
-                    equat, polar, dist = galaxy.spherical
-                    dist *= 3.086 * 10**16     # get the distance to the BH in meters
-                    lumin = (galaxy.blackhole.luminosity * 3.828 * 10**26) / dist**2    # get the lumin in W/m^2
-                    if lumin >= 10**-17:        # we set a hard limit on the distance we can detect black holes
-                        BHlumins.append(lumin); equats.append(equat); polars.append(polar)
-            
-            equats = [format(abs(equat), '3.2f') for equat in equats]
-            polars = [format(abs(polar), '3.2f') for polar in polars]
-            BHlumins = [format(flux, '.3e') for flux in BHlumins]
-            
-            names = [f"RS{i:0{width}d}" for i in range(1, len(BHlumins)+1)]
-            BHdata = {'Name':names, 'Equatorial':equats, 'Polar':polars,
-                      'Luminosity':BHlumins}
-            BHfile = pd.DataFrame(BHdata)
-            BHfile.to_csv(self.datadirectory + "\\Radio Source Data.txt", index=None, sep=' ')
-            bhtime2 = time(); total = bhtime2 - bhtime1; print("Black hole data saved in", total, "s")
-        
         if rotcurves:   # plot and save the rotation curve of each resolved galaxy
-            rottime1 = time(); print("Saving galaxy rotation curves...")
-            rotcurvedirectory = self.datadirectory + "\\Galaxy Rotation Curves"
-            os.makedirs(rotcurvedirectory)  # make a new folder to hold the rotation curves
-            
-            for galaxy in self.galaxies:
-                equat, polar, _ = galaxy.spherical; equat, polar = round(equat, 2), round(polar, 2)
-                bh = "1" if galaxy.blackhole != False else "0"
-                dm = "1" if galaxy.darkmatter == True else "0"
-                fig = galaxy.plot_RotCurve(newtapprox=True, save=True)
-                fig.savefig(rotcurvedirectory + f'\\E{equat}-P{polar} {galaxy.species}, BH{bh}, DM{dm}.png', 
-                            dpi=200, bbox_inches='tight', pad_inches = 0.01)
-            rottime2 = time(); total = rottime2 - rottime1; print("Galaxy rotation curves saved in", total, "s")
-            
-            print("Saving cluster rotation curves...")
-            clustercurvedirectory = self.datadirectory + "\\Cluster Rotation Curves"
-            os.makedirs(clustercurvedirectory)
-            for cluster in self.universe.clusters:
-                pop = cluster.clusterpop
-                if pop >= 10 and cluster.complexity != "Distant":
-                    equat, polar, _ = cluster.spherical; equat, polar = round(equat, 2), round(polar, 2)
-                    fig = cluster.plot_RotCurve(newtapprox=True, save=True)
-                    fig.savefig(clustercurvedirectory + f'\\E{equat}-P{polar}, Pop;{pop}.png', 
-                                dpi=400, bbox_inches='tight', pad_inches = 0.01)
-            rottime3 = time(); total = rottime3 - rottime2; print("Cluster rotation curves saved in", total, "s")
+            self.save_rotcurves()
+        
         t1 = time(); total = t1 - t0; print("All data generated and saved in =", total, "s")
-        plt.close()     # need this to close the figure (since the "fig" variable persists)
         
     def save_properties(self):
         ''' Obtain the universe properties (physics) and write it to a file in the data directory.
@@ -629,7 +537,7 @@ class UniverseSim(object):
         HR = self.galaxies[-1].plot_HR(isoradii=True, xunit="both", yunit="BolLumMag", variable=True, save=True)
         HR.savefig(self.datadirectory + '\\Local Galaxy HR Diagram.png', dpi=600, bbox_inches='tight', pad_inches = 0.01)
         # HR.savefig(self.datadirectory + '\\Local Galaxy HR Diagram.pdf', dpi=600, bbox_inches='tight', pad_inches = 0.01)
-        
+        plt.close('all')
         proptime2 = time(); total = proptime2 - proptime1; print("Universe properties saved in", total, "s")
         
     def save_pic(self, radio=False, proj='AllSky'):
@@ -639,21 +547,15 @@ class UniverseSim(object):
         radio : bool
             True if you want an *extra* image with radio contours overlaid onto the AllSky projection
         proj : str
-            One of {'AllSky', 'Cube'} depending on if you want a single, equirectangular projected image of the sky, or
-            six, cubemapped images of the sky, respectively. 
+            One of {'AllSky', 'Cube', 'Both'} depending on if you want a single, equirectangular projected image of the sky, or
+            six, cubemapped images of the sky, respectively. (or both!)
         '''
         if not self.datadirectory:
             self.create_directory()
         if proj in ['Cube', "Both"] and not self.cubemapdirectory:
             self.create_cubemap_directory()
             
-        if proj == 'AllSky':
-            pictime1 = time(); print("Generating universe picture...")
-            fig, ax = self.plot_universe(save=True)
-            fig.set_size_inches(18, 9, forward=True)
-            fig.savefig(self.datadirectory + '\\AllSky Universe Image.png', dpi=1500, bbox_inches='tight', pad_inches = 0.01)
-            pictime2 = time(); total = pictime2 - pictime1; print("Universe picture saved in", total, "s")
-        elif proj == 'Cube':
+        if proj in ['Cube', 'Both']:
             pictime1 = time(); print("Generating universe picture...")
             figAxes = self.plot_universe(save=True, cubemap=True)
             directions = ['Front', 'Back', 'Top', 'Bottom', 'Left', 'Right']
@@ -661,8 +563,14 @@ class UniverseSim(object):
                 fig, ax = figAxes[i]
                 fig.savefig(self.datadirectory + f'\\{directions[i]}\\{directions[i]}.png', dpi=1500, bbox_inches='tight', 
                             pad_inches = 0.01)
-            pictime2 = time(); total = pictime2 - pictime1; print("Universe pictures saved in", total, "s")
-            
+            pictime2 = time(); total = pictime2 - pictime1; print("Cubemapped universe pictures saved in", total, "s")
+        if proj in ['AllSky', 'Both']:
+            pictime1 = time(); print("Generating universe picture...")
+            fig, ax = self.plot_universe(save=True)
+            fig.set_size_inches(18, 9, forward=True)
+            fig.savefig(self.datadirectory + '\\AllSky Universe Image.png', dpi=1500, bbox_inches='tight', pad_inches = 0.01)
+            pictime2 = time(); total = pictime2 - pictime1; print("AllSky Universe picture saved in", total, "s")
+        
         if radio and self.hasblackhole:       # plot radio data too
             print("Generating radio overlay...")
             if proj == "Cube":
@@ -671,6 +579,9 @@ class UniverseSim(object):
             self.plot_radio(ax)
             fig.savefig(self.datadirectory + '\\AllSky Radio Overlay Image.png', dpi=1500, bbox_inches='tight', pad_inches = 0.01)
             pictime3 = time(); total = pictime3 - pictime2; print("Radio overlay picture saved in", total, "s")
+            
+        plt.close('all')
+        
             
     def save_stars(self, proj='AllSky'):
         ''' Saves the data of all of the stars in the data directory, based on the projection of the images.
@@ -755,6 +666,64 @@ class UniverseSim(object):
         
         startime2 = time(); total = startime2 - startime1; print("Star Data saved in", total, "s")
         
+    def save_distant_galaxies(self, proj='AllSky'):
+        ''' Saves the data of all of the distant galaxies in the data directory, based on the projection of the images.
+        Parameters
+        ----------
+        proj : str
+            One of {'AllSky', 'Cube', 'Both'} depending on if you want a single, equirectangular projected image of the sky, or
+            six, cubemapped images of the sky, respectively. Both is also an option.  
+        '''
+        distanttime1 = time(); print("Saving distant galaxy data...")
+        sphericals = np.array([galaxy.spherical for galaxy in self.distantgalaxies])
+        if proj in ["AllSky", "Both"]:
+            equat, polar, dists = sphericals[:, 0], sphericals[:, 1], sphericals[:, 2]
+        if proj in ["Cube", "Both"]:
+            _, _, dists = sphericals[:, 0], sphericals[:, 1], sphericals[:, 2]
+            carts = np.array([galaxy.cartesian for galaxy in self.distantgalaxies])
+            x, y, z = carts[:, 0], carts[:, 1], carts[:, 2]
+            uc, vc, index = self.cubemap(x, y, z)
+        distsMeters = dists * 3.086 * 10**16
+        
+        bandlumin = np.array([galaxy.bandlumin for galaxy in self.distantgalaxies])
+        bluelumin, greenlumin, redlumin = bandlumin[:, 0], bandlumin[:, 1], bandlumin[:, 2]
+        blueflux, greenflux, redflux = bluelumin / distsMeters**2, greenlumin / distsMeters**2, redlumin / distsMeters**2  
+        blueflux = np.array([format(flux, '.3e') for flux in blueflux])   # now round each data point to 3 decimal places
+        greenflux = np.array([format(flux, '.3e') for flux in greenflux]); redflux = np.array([format(flux, '.3e') for flux in redflux])
+        
+        radii = np.array([galaxy.radius for galaxy in self.distantgalaxies])
+        sizes = 2 * np.arctan((radii / 2) / dists)      # gets the apparent size of the galaxy (thanks trig!)
+        sizes = np.rad2deg(sizes) * 3600    # this gives the size of the galaxy in units of arcseconds
+        sizes = np.around(sizes, decimals=4)
+        
+        DGobsvel = self.universe.distantradialvelocities
+        DGobsvel = np.around(DGobsvel, decimals=2)
+        
+        width = int(-(-np.log10(len(self.distantgalaxies)) // 1))
+        names = np.array([f"DG{i:0{width}d}" for i in range(1, len(self.distantgalaxies) + 1)])
+        
+        if proj in ["AllSky", "Both"]:
+            equat = [format(coord, '3.4f') for coord in equat]; polar = [format(coord, '3.4f') for coord in polar]
+        if proj in ["Cube", "Both"]:
+            uc = np.array([format(coord, '3.4f') for coord in uc]); vc = np.array([format(coord, '3.4f') for coord in vc])
+        
+        if proj in ["AllSky", "Both"]:
+            DGdata = {"Name": names, 'Equatorial': equat, 'Polar': polar,
+                      'BlueF': blueflux, 'GreenF': greenflux, 'RedF': redflux,
+                      'Size': sizes, 'RadialVelocity': DGobsvel}
+            DGfile = pd.DataFrame(DGdata)
+            DGfile.to_csv(self.datadirectory + "\\Distant Galaxy Data.txt", index=None, sep=' ')
+            
+        if proj in ["Cube", "Both"]:
+            directions = ['Front', 'Back', 'Top', 'Bottom', 'Left', 'Right']
+            for i, direction in enumerate(directions):
+                DGdata = {"Name": names[index == i], 'X': uc[index == i], 'Y': vc[index == i],
+                          'BlueF': blueflux[index == i], 'GreenF': greenflux[index == i], 'RedF': redflux[index == i],
+                          'Size': sizes[index == i], 'RadialVelocity': DGobsvel[index == i]}
+                DGfile = pd.DataFrame(DGdata)
+                DGfile.to_csv(self.datadirectory + f"\\{direction}\\Distant Galaxy Data.txt", index=None, sep=' ')
+        distanttime2 = time(); total = distanttime2 - distanttime1; print("Distant galaxy data saved in", total, "s")
+        
     def save_variables(self):
         ''' Saves .txt files of variable star data for close stars in the universe, and images for variable light curves in the local
             galaxy.
@@ -798,6 +767,44 @@ class UniverseSim(object):
         
         vartime2 = time(); total = vartime2 - vartime1; print("Variable data saved in", total, "s")
     
+    def save_supernovae(self, proj='AllSky'):
+        ''' Saves all of the supernova data into the data directory, with coordinates of the events based on the projection.
+        Parameters
+        ----------
+        proj : str
+            The coordinate system for the supernova events. One of {'AllSky', 'Cube', 'Both'}. If 'Cube' is chosen, the direction
+            is output into the file too, with corresponding local coordinates.
+        '''
+        supertime1 = time(); print("Saving supernova data...")
+        pos, peak = self.supernovae
+        
+        if proj in ["AllSky", "Both"]:
+            equats = np.array([format(abs(equat), '3.2f') for equat in pos[0]])
+            polars = np.array([format(abs(polar), '3.2f') for polar in pos[1]])
+        if proj in ["Cube", "Both"]:
+            x, y, z = misc.spherical_to_cartesian(pos[0], pos[1], pos[2])
+            uc, vc, index = self.cubemap(x, y, z)
+            uc = np.array([format(coord, '3.2f') for coord in uc])
+            vc = np.array([format(coord, '3.2f') for coord in vc])
+            
+        peak = np.array([format(flux, '.3e') for flux in peak])
+        width = int(-(-np.log10(len(peak)) // 1))
+        names = [f"SNe{i:0{width}d}" for i in range(1, len(peak) + 1)]
+        
+        if proj in ["AllSky", "Both"]:
+            supernovadata = {"Name": names, "Equatorial": equats, "Polar": polars, "PeakFlux(W)": peak}
+            supernovafile = pd.DataFrame(supernovadata)
+            supernovafile.to_csv(self.datadirectory + "\\AllSky Supernova Data.txt", index=None, sep=' ')
+        if proj in ["Cube", "Both"]:
+            directions = np.array(['Front', 'Back', 'Top', 'Bottom', 'Left', 'Right'])
+            supernovadata = {"Name": names, "Direction": directions[index],
+                             "X": uc, "Y": vc, 
+                             "PeakFlux(W)": peak}
+            supernovafile = pd.DataFrame(supernovadata)
+            supernovafile.to_csv(self.datadirectory + "\\Supernova Data.txt", index=None, sep=' ')
+        
+        supertime2 = time(); total = supertime2 - supertime1; print("Supernova data saved in", total, "s")
+    
     def save_blackbodies(self):
         ''' Saves blackbody curves for all stars in the local galaxy. 
         '''
@@ -818,7 +825,81 @@ class UniverseSim(object):
                     k += 1
             else:   # we still need to increment the ticker so that later data is accurate
                 k += len(galaxy.stars)
+        plt.close('all')
         blacktime2 = time(); total = blacktime2 - blacktime1; print("Blackbody curves saved in", total, "s")
+        
+    def save_blackholes(self, proj='AllSky'):
+        ''' Saves all of the black hole luminosity data into the data directory, with coordinates based on the projection.
+        Parameters
+        ----------
+        proj : str
+            The coordinate system for the black holes. One of {'AllSky', 'Cube', 'Both'}. If 'Cube' is chosen, the direction
+            is output into the file too, with corresponding local coordinates.
+        '''
+        if not self.blackholes:
+            return 0
+        
+        bhtime1 = time(); print("Saving black hole data...")
+        equats, polars, dists, BHlumins = [], [], [], []
+        for galaxy in self.allgalaxies:
+            if galaxy.blackhole != False:
+                equat, polar, dist = galaxy.spherical
+                distM = dist * 3.086 * 10**16     # get the distance to the BH in meters
+                lumin = (galaxy.blackhole.luminosity * 3.828 * 10**26) / distM**2    # get the lumin in W/m^2
+                if lumin >= 10**-17:        # we set a hard limit on the distance we can detect black holes
+                    BHlumins.append(lumin); equats.append(equat); polars.append(polar); dists.append(dist)
+        
+        equats = np.array([format(abs(equat), '3.2f') for equat in equats])
+        polars = np.array([format(abs(polar), '3.2f') for polar in polars])
+        BHlumins = np.array([format(flux, '.3e') for flux in BHlumins])
+        width = int(-(-np.log10(len(BHlumins)) // 1))
+        names = [f"RS{i:0{width}d}" for i in range(1, len(BHlumins) + 1)]
+        if proj in ["AllSky", "Both"]:
+            BHdata = {'Name': names, 'Equatorial': equats, 'Polar': polars,
+                      'Luminosity': BHlumins}
+            BHfile = pd.DataFrame(BHdata)
+            BHfile.to_csv(self.datadirectory + "\\AllSky Radio Source Data.txt", index=None, sep=' ')
+        if proj in ["Cube", "Both"]:
+            x, y, z = misc.spherical_to_cartesian(equats, polars, np.array(dists))
+            uc, vc, index = self.cubemap(x, y, z)
+            
+            directions = np.array(['Front', 'Back', 'Top', 'Bottom', 'Left', 'Right'])
+            
+            BHdata = {'Name': names, 'Direction': directions[index], 'X': uc, 'Y': vc,
+                      'Luminosity': BHlumins}
+            BHfile = pd.DataFrame(BHdata)
+            BHfile.to_csv(self.datadirectory + "\\Radio Source Data.txt", index=None, sep=' ')
+        
+        bhtime2 = time(); total = bhtime2 - bhtime1; print("Black hole data saved in", total, "s")
+    
+    def save_rotcurves(self):
+        ''' Save rotation curves for all of the galaxies and clusters in the universe, each in their own file. 
+        '''
+        rottime1 = time(); print("Saving galaxy rotation curves...")
+        rotcurvedirectory = self.datadirectory + "\\Galaxy Rotation Curves"
+        os.makedirs(rotcurvedirectory)  # make a new folder to hold the rotation curves
+        
+        for galaxy in self.galaxies:
+            equat, polar, _ = galaxy.spherical; equat, polar = round(equat, 2), round(polar, 2)
+            bh = "1" if galaxy.blackhole != False else "0"
+            dm = "1" if galaxy.darkmatter == True else "0"
+            fig = galaxy.plot_RotCurve(newtapprox=True, save=True)
+            fig.savefig(rotcurvedirectory + f'\\E{equat}-P{polar} {galaxy.species}, BH{bh}, DM{dm}.png', 
+                        dpi=200, bbox_inches='tight', pad_inches = 0.01)
+        rottime2 = time(); total = rottime2 - rottime1; print("Galaxy rotation curves saved in", total, "s")
+        
+        print("Saving cluster rotation curves...")
+        clustercurvedirectory = self.datadirectory + "\\Cluster Rotation Curves"
+        os.makedirs(clustercurvedirectory)
+        for cluster in self.universe.clusters:
+            pop = cluster.clusterpop
+            if pop >= 10 and cluster.complexity != "Distant":
+                equat, polar, _ = cluster.spherical; equat, polar = round(equat, 2), round(polar, 2)
+                fig = cluster.plot_RotCurve(newtapprox=True, save=True)
+                fig.savefig(clustercurvedirectory + f'\\E{equat}-P{polar}, Pop;{pop}.png', 
+                            dpi=400, bbox_inches='tight', pad_inches = 0.01)
+        plt.close('all')
+        rottime3 = time(); total = rottime3 - rottime2; print("Cluster rotation curves saved in", total, "s")
         
 def main():
     ### -- this was used to find galaxy averages -- ###
@@ -848,7 +929,7 @@ def main():
     # sim = UniverseSim(1000, mode="Normal")
     # sim.save_data()
     
-    sim = UniverseSim(20)
+    sim = UniverseSim(10)
     sim.save_data(proj='Cube')
 
     

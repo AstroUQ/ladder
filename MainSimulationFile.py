@@ -68,9 +68,13 @@ class UniverseSim(object):
         self.allgalaxies = self.galaxies + self.distantgalaxies
         self.supernovae = self.universe.supernovae
         self.starpositions = self.universe.get_all_starpositions()
+        self.numstars = len(self.starpositions[0])
         self.blackholes = self.universe.get_blackholes()  
-        self.datadirectory = False
-        self.cubemapdirectory = False
+        self.datadirectory, self.cubemapdirectory = False, False
+        
+        # now generate names for each star
+        width = int(-(-np.log10(self.numstars) // 1))   # find the "size" of the number of stars, and round up to the closest decimal
+        self.starnames = np.array([f"S{i:0{width}d}" for i in range(1, self.numstars + 1)])   # generate pretty useless names for each of the stars
     
     def create_directory(self):
         ''' Creates the folder for the universe data to be stored in. Will only be created prior to trying to save data. 
@@ -91,12 +95,12 @@ class UniverseSim(object):
     def create_cubemap_directory(self):
         ''' Creates the directional folders needed for the cubemap projection data/images.
         '''
-        if not self.datadirectory:
-            self.create_directory()
+        if not self.datadirectory: # if the parent data directory hasnt been created,
+            self.create_directory() # it must be created
         directions = ['Front', 'Back', 'Top', 'Bottom', 'Left', 'Right']
-        for direction in directions:
+        for direction in directions: # now make a folder for each direction
             os.makedirs(self.datadirectory + f'\\{direction}')
-        self.cubemapdirectory = True
+        self.cubemapdirectory = True # and finally set it so that we know the cubemap directional directories have been made
     
     def plot_universe(self, spikes=True, radio=False, save=False, cubemap=False):
         ''' Plot all of the stars and distant galaxies in the universe onto a rectangular mapping of the inside of the 
@@ -359,7 +363,8 @@ class UniverseSim(object):
         figure : matplotlib figure object
             If save==True, closes the figure and returns it so that it may be saved later on. 
         '''
-        fig, (ax, cbar_ax) = plt.subplots(1, 2, gridspec_kw={'width_ratios': [30,1]})   # generate a figure and colourbar with width ratio of 30:1
+        fig, (ax, cbar_ax) = plt.subplots(1, 2, gridspec_kw={'width_ratios': [30,1], 'wspace': 0.1, 
+                                                             'height_ratios': [1, 1]})   # generate a figure and colourbar with width ratio of 30:1
         stars = self.starpositions  # get all of the star positions 
         x, y, z, _, scales = stars[0], stars[1], stars[2], stars[3], stars[4]
         equat, polar, radius = misc.cartesian_to_spherical(x, y, z)
@@ -444,171 +449,27 @@ class UniverseSim(object):
         print("Starting data saving..."); t0 = time()
         if not self.datadirectory:
             self.create_directory()
-        if proj == 'Cube' and not self.cubemapdirectory:
+        if proj in ['Cube', "Both"] and not self.cubemapdirectory:
             self.create_cubemap_directory()
         
         if properties:
-            proptime1 = time(); print("Writing universe properties...")
-            # now to write the universe properties to a file. They're all pretty self-explanatory.
-            text = open(self.datadirectory + '\\Universe Details.txt', "w")
-            text.write("Universe Parameters: \n")
-            text.write("Parameter                   | Value   \n")
-            text.write("----------------------------|---------------------------------------\n")
-            text.write(f"Simulation Mode:            | {self.mode} \n")
-            text.write(f"Has Black Holes?            | {self.hasblackhole} \n")
-            text.write(f"Has Dark Matter?            | {self.hasdarkmatter} \n")
-            text.write(f"Universe Homogeneous?       | {self.homogeneous} \n")
-            text.write(f"Universe Radius             | {self.universe.radius} (pc)\n")
-            text.write(f"Hubble Const.               | {round(self.hubble, 3)} (km/s/Mpc)\n")
-            text.write(f"Local Galaxy Type           | {self.galaxies[-1].species} \n")
-            text.write(f"Dist. to local galax center | {round(self.galaxies[-1].spherical[2], 2)} (pc)\n")
-            text.write(f"Radius of local galaxy      | {round(self.galaxies[-1].radius, 2)} (pc)\n")
-            if self.galaxies[-1].blackhole != False:
-                text.write(f"Local Galax Black Hole Mass | {round(self.galaxies[-1].blackhole.mass, 2)} Solar Masses \n")
-            else:
-                text.write("Local Galax Black Hole Mass | N/A \n")
-            text.write(f"Number of clusters          | {self.universe.clusterpop}\n")
-            text.write(f"Number of galaxies          | {len(self.galaxies)} local and {len(self.distantgalaxies)} distant\n")
-            text.write("\n\n")
-            text.write("Variable Star Properties    | [RoughAvePeriod  LightcurveShape  PeriodLumGradient  PeriodLumYInt]\n")
-            text.write("----------------------------|--------------------------------------------------------------------\n")
-            for i, variable in enumerate(self.universe.variablestars):  # now to write the properties of the variable stars to file
-                if i == 0:
-                    text.write(f"Variable Stars?             | {variable}\n")
-                else:
-                    length = "Short" if i == 1 else "Long"
-                    length = "Longest" if i == 3 else length
-                    text.write(f"Variable Class:             | {length}\n")
-                    text.write(f"                            | {variable}\n")
-                    
-            text.close()
-            hubblediag = self.universe.plot_hubblediagram(save=True)
-            hubblediag.savefig(self.datadirectory + '\\Hubble Diagram.png', dpi=600, bbox_inches='tight', pad_inches = 0.01)
-            # hubblediag.savefig(self.datadirectory + '\\Hubble Diagram.pdf', dpi=600, bbox_inches='tight', pad_inches = 0.01)
-            HR = self.galaxies[-1].plot_HR(isoradii=True, xunit="both", yunit="BolLumMag", variable=True, save=True)
-            HR.savefig(self.datadirectory + '\\Local Galaxy HR Diagram.png', dpi=600, bbox_inches='tight', pad_inches = 0.01)
-            # HR.savefig(self.datadirectory + '\\Local Galaxy HR Diagram.pdf', dpi=600, bbox_inches='tight', pad_inches = 0.01)
-            
-            proptime2 = time(); total = proptime2 - proptime1; print("Universe properties saved in", total, "s")
+            self.save_properties()
         
         if pic:     # now save a huge pic of the universe. say goodbye to your diskspace
             if proj == 'Both':
-                self.savepic(self.datadirectory, radio=radio, proj='AllSky')
-                self.savepic(self.datadirectory, radio=False, proj='Cube') # we don't need to create the radio image twice!
+                self.save_pic(radio=radio, proj='AllSky')
+                self.save_pic(radio=False, proj='Cube') # we don't need to create the radio image twice!
             else:
-                self.savepic(self.datadirectory, radio=False, proj=proj)
+                self.save_pic(radio=radio, proj=proj)
             
         if stars:   # generate and save star data
-            startime1 = time(); print("Generating star data...")
-            #firstly, get star xyz positions and convert them to equatorial/polar
-            starpos = self.starpositions    
-            x, y, z, _, _ = starpos[0], starpos[1], starpos[2], starpos[3], starpos[4]
-            equat, polar, radius = misc.cartesian_to_spherical(x, y, z)
-            
-            # generate parallax according to p = 1/d (pc) formula, with +/- 1 arcsecond of uncertainty
-            parallax = (1 / radius) + np.random.uniform(-0.001, 0.001, len(radius))    
-            parallax = [angle if angle >= 0.001 else 0 for angle in parallax]
-            parallax = np.around(parallax, decimals=3)
-            
-            # round position values to 4 decimal places which is about ~1/3 of an arcsecond (or rather 0.0001 degrees)
-            equat = np.around(equat, decimals=4); polar = np.around(polar, decimals=4);  
-            
-            # now generate names for each star
-            width = int(-(-np.log10(len(equat)) // 1))   # find the "size" of the number of stars, and round up to the closest decimal
-            names = [f"S{i:0{width}d}" for i in range(1, len(equat)+1)]   # generate pretty useless names for each of the stars
-            
-            # now to work with the band luminosity data. First, get the data for each star in the universe
-            blueflux = [[star.bandlumin[0] for star in galaxy.stars] for galaxy in self.galaxies]
-            greenflux = [[star.bandlumin[1] for star in galaxy.stars] for galaxy in self.galaxies]
-            redflux = [[star.bandlumin[2] for star in galaxy.stars] for galaxy in self.galaxies]
-            # now, flatten the above arrays and divide them by the distance to the star, squared
-            blueflux = np.array([flux for galaxy in blueflux for flux in galaxy]) / (3.086 * 10**16 * radius)**2
-            greenflux = np.array([flux for galaxy in greenflux for flux in galaxy]) / (3.086 * 10**16 * radius)**2
-            redflux = np.array([flux for galaxy in redflux for flux in galaxy]) / (3.086 * 10**16 * radius)**2
-            blueflux = [format(flux, '.3e') for flux in blueflux]   # now round each data point to 3 decimal places
-            greenflux = [format(flux, '.3e') for flux in greenflux]; redflux = [format(flux, '.3e') for flux in redflux]
-            
-            obsvel = self.universe.radialvelocities     # retrieve the radial velocities from the universe object
-            obsvel = np.around(obsvel, decimals=2)
-            
-            # now to append data to the star.txt file as to whether a particular star shows a variable light curve
-            variabool = np.zeros(len(names))    # get it? variable but in terms of bools
-            k = 0
-            for galaxy in self.galaxies:
-                for star in galaxy.stars:
-                    variabool[k] = star.variable
-                    k += 1
-            
-            # now, write all star data to a pandas dataframe
-            stardata = {'Name':names, 'Equatorial':equat, 'Polar':polar,        # units of the equat/polar are in degrees
-                        'BlueF':blueflux, 'GreenF':greenflux, 'RedF':redflux,   # units of these fluxes are in W/m^2/nm
-                        'Parallax':parallax, 'RadialVelocity':obsvel,           # units of parallax are in arcsec, obsvel in km/s
-                        'Variable?':variabool}                                  # outputs 1.0 if variable, 0.0 if not      
-            starfile = pd.DataFrame(stardata)
-            
-            starfile.to_csv(self.datadirectory + "\\Star Data.txt", index=None, sep=' ')    # and finally save the dataframe to the directory
-            startime2 = time(); total = startime2 - startime1; print("Star Data.txt saved in", total, "s")
+            self.save_stars(proj=proj)
             
         if variablestars:
-            vartime1 = time(); print("Saving variable data...")
-            variabledirectory = self.datadirectory + "\\Variable Star Data"     # save data within a subfolder
-            os.makedirs(variabledirectory)
-            names = [f"S{i:0{width}d}" for i in range(1, len(equat)+1)]     # names consistent with star names done earlier
-            k = 0
-            for galaxy in self.galaxies:
-                if galaxy.spherical[2] <= 15000:    # we only want to save variable star data if the stars are close-ish
-                    for star in galaxy.stars:
-                        if star.variable == True:
-                            condition1 = galaxy.spherical[2] <= 5000 and star.variabletype[0] == "Long"
-                            condition2 = galaxy.spherical[2] <= 7500 and star.variabletype[0] == "Longest"
-                            condition3 = star.variabletype[0] in ["Short", "False"]
-                            if condition1 or condition2 or condition3:  # if one of the above criteria are met, we want to save the data
-                                starname = names[k]
-                                if galaxy.rotate == False:      # must be the local galaxy, so we want to save a pic of the lightcurve
-                                    fig = star.plot_lightcurve(save=True)
-                                    fig.savefig(variabledirectory + f'\\{starname}.png', dpi=400, bbox_inches='tight', pad_inches = 0.01)
-                                times, fluxes = star.lightcurve
-                                variabledata = {"Time":times, "NormalisedFlux":fluxes}
-                                variablefile = pd.DataFrame(variabledata)
-                                variablefile.to_csv(variabledirectory + f"\\{starname}.txt", index=None, sep=' ')
-                        k +=1
-                else:   # we still need to increment the ticker so that later data is accurate
-                    k += len(galaxy.stars)
-            
-            # now to take and plot the period-luminosity data of the local galaxy!
-            periods, lumins = [], []
-            for star in self.galaxies[-1].stars:
-                if star.variable == True:
-                    periods.append(star.period)
-                    lumins.append(star.luminosity)
-            fig, ax = plt.subplots()
-            ax.scatter(periods, lumins, s=0.5)
-            ax.set_yscale('log'); ax.set_xlim(xmin=0)
-            ax.set_xlabel("Period (hours)"); ax.set_ylabel(r"Log Luminosity ($L / L_\odot$)")
-            plt.close()
-            fig.savefig(self.datadirectory + '\\Period-Luminosity Data.png', dpi=400, bbox_inches='tight', pad_inches = 0.01)
-            
-            vartime2 = time(); total = vartime2 - vartime1; print("Variable data saved in", total, "s")
+            self.save_variables()
         
         if blackbodies:     # plot and save blackbody curves for stars of a given temperature in the local galaxy
-            blacktime1 = time(); print("Generating blackbody curves for local galaxy...")
-            blackbodydirectory = self.datadirectory + "\\Local Galaxy Blackbody Curves"     # save data within a subfolder
-            os.makedirs(blackbodydirectory)
-            names = [f"S{i:0{width}d}" for i in range(1, len(equat)+1)]     # names consistent with star names done earlier
-            k = 0
-            blackbodytemps = np.arange(0, 50)     # we only want two curves for each 1000K temps, so these are the temps/500
-            for galaxy in self.galaxies:
-                if galaxy.rotate == False:  # must be the local galaxy, so lets plot some blackbody curves!
-                    for i, star in enumerate(galaxy.stars):
-                        roundtemp = round(star.temperature/500)
-                        if roundtemp in blackbodytemps:
-                            fig = star.plot_blackbodycurve(markers=True, visible=True, save=True)
-                            fig.savefig(blackbodydirectory + f'\\{names[k]}-Temp={round(star.temperature)}.png', dpi=400, bbox_inches='tight', pad_inches = 0.01)
-                            blackbodytemps = np.where(blackbodytemps==roundtemp, 0, blackbodytemps)     # remove this temperature from the pool of temps to plot
-                        k += 1
-                else:   # we still need to increment the ticker so that later data is accurate
-                    k += len(galaxy.stars)
-            blacktime2 = time(); total = blacktime2 - blacktime1; print("Blackbody curves saved in", total, "s")
+            self.save_blackbodies()
         
         if distantgalax:
             distanttime1 = time(); print("Saving distant galaxy data...")
@@ -655,18 +516,19 @@ class UniverseSim(object):
             supernovafile.to_csv(self.datadirectory + "\\Supernova Data.txt", index=None, sep=' ')
             supertime2 = time(); total = supertime2 - supertime1; print("Supernova data saved in", total, "s")
             
-        if doppler[0]:  # save the doppler image with a log scale
+        if True in doppler:  # save the doppler image with a log scale
             dopplertime1 = time(); print("Saving doppler image...")
-            fig = self.plot_doppler(save=True)
-            fig.set_size_inches(18, 9, forward=True)
-            fig.savefig(self.datadirectory + '\\Doppler Image Log Scale.png', dpi=1500, bbox_inches='tight', pad_inches = 0.01)
-            # fig.savefig(self.datadirectory + '\\Doppler Image Log Scale.pdf', dpi=200, bbox_inches='tight', pad_inches = 0.01)
-            dopplertime2 = time(); total = dopplertime2 - dopplertime1; print("Doppler image saved in", total, "s")
+            if doppler[0]:
+                fig = self.plot_doppler(save=True)
+                fig.set_size_inches(18, 9, forward=True)
+                fig.savefig(self.datadirectory + '\\Doppler Image Log Scale.png', dpi=1500, bbox_inches='tight', pad_inches = 0.01)
+                # fig.savefig(self.datadirectory + '\\Doppler Image Log Scale.pdf', dpi=200, bbox_inches='tight', pad_inches = 0.01)
             if doppler[1]:
                 fig = self.plot_doppler(log=False, save=True)
                 fig.set_size_inches(18, 9, forward=True)
                 fig.savefig(self.datadirectory + '\\Doppler Image Linear Scale.png', dpi=1500, bbox_inches='tight', pad_inches = 0.01)
                 # fig.savefig(self.datadirectory + '\\Doppler Image Linear Scale.pdf', dpi=200, bbox_inches='tight', pad_inches = 0.01)
+            dopplertime2 = time(); total = dopplertime2 - dopplertime1; print("Doppler image saved in", total, "s")
         
         if blackhole:   # save some data about black holes (radio sources)
             bhtime1 = time(); print("Saving black hole data...")
@@ -717,23 +579,80 @@ class UniverseSim(object):
             rottime3 = time(); total = rottime3 - rottime2; print("Cluster rotation curves saved in", total, "s")
         t1 = time(); total = t1 - t0; print("All data generated and saved in =", total, "s")
         plt.close()     # need this to close the figure (since the "fig" variable persists)
-    
-    def savepic(self, directory, radio=False, proj='AllSky'):
+        
+    def save_properties(self):
+        ''' Obtain the universe properties (physics) and write it to a file in the data directory.
+        '''
+        if not self.datadirectory:
+            self.create_directory()
+            
+        proptime1 = time(); print("Writing universe properties...")
+        # now to write the universe properties to a file. They're all pretty self-explanatory.
+        text = open(self.datadirectory + '\\Universe Details.txt', "w")
+        text.write("Universe Parameters: \n")
+        text.write("Parameter                   | Value   \n")
+        text.write("----------------------------|---------------------------------------\n")
+        text.write(f"Simulation Mode:            | {self.mode} \n")
+        text.write(f"Has Black Holes?            | {self.hasblackhole} \n")
+        text.write(f"Has Dark Matter?            | {self.hasdarkmatter} \n")
+        text.write(f"Universe Homogeneous?       | {self.homogeneous} \n")
+        text.write(f"Universe Radius             | {self.universe.radius} (pc)\n")
+        text.write(f"Hubble Const.               | {round(self.hubble, 3)} (km/s/Mpc)\n")
+        text.write(f"Local Galaxy Type           | {self.galaxies[-1].species} \n")
+        text.write(f"Dist. to local galax center | {round(self.galaxies[-1].spherical[2], 2)} (pc)\n")
+        text.write(f"Radius of local galaxy      | {round(self.galaxies[-1].radius, 2)} (pc)\n")
+        if self.galaxies[-1].blackhole != False:
+            text.write(f"Local Galax Black Hole Mass | {round(self.galaxies[-1].blackhole.mass, 2)} Solar Masses \n")
+        else:
+            text.write("Local Galax Black Hole Mass | N/A \n")
+        text.write(f"Number of clusters          | {self.universe.clusterpop}\n")
+        text.write(f"Number of galaxies          | {len(self.galaxies)} local and {len(self.distantgalaxies)} distant\n")
+        text.write("\n\n")
+        text.write("Variable Star Properties    | [RoughAvePeriod  LightcurveShape  PeriodLumGradient  PeriodLumYInt]\n")
+        text.write("----------------------------|--------------------------------------------------------------------\n")
+        for i, variable in enumerate(self.universe.variablestars):  # now to write the properties of the variable stars to file
+            if i == 0:
+                text.write(f"Variable Stars?             | {variable}\n")
+            else:
+                length = "Short" if i == 1 else "Long"
+                length = "Longest" if i == 3 else length
+                text.write(f"Variable Class:             | {length}\n")
+                text.write(f"                            | {variable}\n")
+                
+        text.close()
+        
+        # plot and save the hubble diagram for the universe
+        hubblediag = self.universe.plot_hubblediagram(save=True) 
+        hubblediag.savefig(self.datadirectory + '\\Hubble Diagram.png', dpi=600, bbox_inches='tight', pad_inches = 0.01)
+        # hubblediag.savefig(self.datadirectory + '\\Hubble Diagram.pdf', dpi=600, bbox_inches='tight', pad_inches = 0.01)
+        # now plot and save the HR diagram for the local galaxy
+        HR = self.galaxies[-1].plot_HR(isoradii=True, xunit="both", yunit="BolLumMag", variable=True, save=True)
+        HR.savefig(self.datadirectory + '\\Local Galaxy HR Diagram.png', dpi=600, bbox_inches='tight', pad_inches = 0.01)
+        # HR.savefig(self.datadirectory + '\\Local Galaxy HR Diagram.pdf', dpi=600, bbox_inches='tight', pad_inches = 0.01)
+        
+        proptime2 = time(); total = proptime2 - proptime1; print("Universe properties saved in", total, "s")
+        
+    def save_pic(self, radio=False, proj='AllSky'):
+        ''' Saves the universe picture(s) in the directory of choice, given desired projection and radio contours.
+        Parameters
+        ----------
+        radio : bool
+            True if you want an *extra* image with radio contours overlaid onto the AllSky projection
+        proj : str
+            One of {'AllSky', 'Cube'} depending on if you want a single, equirectangular projected image of the sky, or
+            six, cubemapped images of the sky, respectively. 
+        '''
+        if not self.datadirectory:
+            self.create_directory()
+        if proj in ['Cube', "Both"] and not self.cubemapdirectory:
+            self.create_cubemap_directory()
+            
         if proj == 'AllSky':
             pictime1 = time(); print("Generating universe picture...")
             fig, ax = self.plot_universe(save=True)
             fig.set_size_inches(18, 9, forward=True)
-            fig.savefig(directory + '\\AllSky Universe Image.png', dpi=1500, bbox_inches='tight', pad_inches = 0.01)
-            # fig.savefig(self.datadirectory + '\\Universe Image.pdf', dpi=200, bbox_inches='tight', pad_inches = 0.01)
+            fig.savefig(self.datadirectory + '\\AllSky Universe Image.png', dpi=1500, bbox_inches='tight', pad_inches = 0.01)
             pictime2 = time(); total = pictime2 - pictime1; print("Universe picture saved in", total, "s")
-            
-            if radio and self.hasblackhole:       # plot radio data too
-                print("Generating radio overlay...")
-                self.plot_radio(ax)
-                fig.savefig(directory + '\\AllSky Radio Overlay Image.png', dpi=1500, bbox_inches='tight', pad_inches = 0.01)
-                # fig.savefig(self.datadirectory + '\\Radio Overlay Image.pdf', dpi=200, bbox_inches='tight', pad_inches = 0.01)
-                pictime3 = time(); total = pictime3 - pictime2; print("Radio overlay picture saved in", total, "s")
-        
         elif proj == 'Cube':
             pictime1 = time(); print("Generating universe picture...")
             figAxes = self.plot_universe(save=True, cubemap=True)
@@ -744,16 +663,162 @@ class UniverseSim(object):
                             pad_inches = 0.01)
             pictime2 = time(); total = pictime2 - pictime1; print("Universe pictures saved in", total, "s")
             
-            if radio and self.hasblackhole:       # plot radio data too
-                print("Generating radio overlay...")
+        if radio and self.hasblackhole:       # plot radio data too
+            print("Generating radio overlay...")
+            if proj == "Cube":
                 fig, ax = self.plot_universe(save=True)
                 fig.set_size_inches(18, 9, forward=True)
-                self.plot_radio(ax)
-                fig.savefig(directory + '\\AllSky Radio Overlay Image.png', dpi=1500, bbox_inches='tight', pad_inches = 0.01)
-                # fig.savefig(self.datadirectory + '\\Radio Overlay Image.pdf', dpi=200, bbox_inches='tight', pad_inches = 0.01)
-                pictime3 = time(); total = pictime3 - pictime2; print("Radio overlay picture saved in", total, "s")
-    
+            self.plot_radio(ax)
+            fig.savefig(self.datadirectory + '\\AllSky Radio Overlay Image.png', dpi=1500, bbox_inches='tight', pad_inches = 0.01)
+            pictime3 = time(); total = pictime3 - pictime2; print("Radio overlay picture saved in", total, "s")
+            
+    def save_stars(self, proj='AllSky'):
+        ''' Saves the data of all of the stars in the data directory, based on the projection of the images.
+        Parameters
+        ----------
+        proj : str
+            One of {'AllSky', 'Cube', 'Both'} depending on if you want a single, equirectangular projected image of the sky, or
+            six, cubemapped images of the sky, respectively. Both is also an option.  
+        '''
+        if not self.datadirectory:
+            self.create_directory()
+        if proj in ['Cube', "Both"] and not self.cubemapdirectory:
+            self.create_cubemap_directory()
+            
+        startime1 = time(); print("Generating star data...")
+        #firstly, get star xyz positions and convert them to equatorial/polar
+        starpos = self.starpositions    
+        x, y, z, _, _ = starpos[0], starpos[1], starpos[2], starpos[3], starpos[4]
         
+        if proj in ["Cube", "Both"]:
+            uc, vc, index = self.cubemap(x, y, z)
+            if proj == "Cube":
+                _, _, radius = misc.cartesian_to_spherical(x, y, z)
+        if proj in ['AllSky', 'Both']:
+            equat, polar, radius = misc.cartesian_to_spherical(x, y, z)
+            
+        # generate parallax according to p = 1/d (pc) formula, with +/- 1 arcsecond of uncertainty
+        parallax = (1 / radius) + np.random.uniform(-0.001, 0.001, self.numstars)    
+        parallax = [angle if angle >= 0.001 else 0 for angle in parallax]
+        parallax = np.around(parallax, decimals=3)
+        
+        # round position values to 4 decimal places which is about ~1/3 of an arcsecond (or rather 0.0001 degrees)
+        if proj in ["AllSky", "Both"]:
+            equat = np.around(equat, decimals=4); polar = np.around(polar, decimals=4);  
+        if proj in ["Cube", "Both"]:
+            uc = np.around(uc, decimals=4); vc = np.around(vc, decimals=4);
+            
+        # now to work with the band luminosity data. First, get the data for each star in the universe
+        blueflux = [[star.bandlumin[0] for star in galaxy.stars] for galaxy in self.galaxies]
+        greenflux = [[star.bandlumin[1] for star in galaxy.stars] for galaxy in self.galaxies]
+        redflux = [[star.bandlumin[2] for star in galaxy.stars] for galaxy in self.galaxies]
+        # now, flatten the above arrays and divide them by the distance to the star, squared
+        blueflux = np.array([flux for galaxy in blueflux for flux in galaxy]) / (3.086 * 10**16 * radius)**2
+        greenflux = np.array([flux for galaxy in greenflux for flux in galaxy]) / (3.086 * 10**16 * radius)**2
+        redflux = np.array([flux for galaxy in redflux for flux in galaxy]) / (3.086 * 10**16 * radius)**2
+        blueflux = np.array([format(flux, '.3e') for flux in blueflux])   # now round each data point to 3 decimal places
+        greenflux = np.array([format(flux, '.3e') for flux in greenflux]); redflux = np.array([format(flux, '.3e') for flux in redflux])
+        
+        obsvel = self.universe.radialvelocities     # retrieve the radial velocities from the universe object
+        obsvel = np.around(obsvel, decimals=2)
+        
+        # now to append data to the star.txt file as to whether a particular star shows a variable light curve
+        variabool = np.zeros(self.numstars)    # get it? variable but in terms of bools
+        k = 0
+        for galaxy in self.galaxies:
+            for star in galaxy.stars:
+                variabool[k] = star.variable
+                k += 1
+        
+        if proj in ["Cube", "Both"]:
+            directions = ['Front', 'Back', 'Top', 'Bottom', 'Left', 'Right']
+            for i, direction in enumerate(directions):
+                # now, write all star data to a pandas dataframe
+                stardata = {'Name': self.starnames[index == i], 
+                            'X': uc[index == i], 'Y': vc[index == i],        # units of the X/Y are in degrees
+                            'BlueF': blueflux[index == i], 'GreenF': greenflux[index == i], 'RedF': redflux[index == i],   # units of these fluxes are in W/m^2/nm
+                            'Parallax': parallax[index == i], 'RadialVelocity': obsvel[index == i], # units of parallax are in arcsec, obsvel in km/s
+                            'Variable?': variabool[index == i]}  # outputs 1.0 if variable, 0.0 if not      
+                starfile = pd.DataFrame(stardata)
+                
+                starfile.to_csv(self.datadirectory + f"\\{direction}\\Star Data.txt", index=None, sep=' ')    # and finally save the dataframe to the directory
+        
+        if proj in ["AllSky", "Both"]:
+            # now, write all star data to a pandas dataframe
+            stardata = {'Name': self.starnames, 'Equatorial': equat, 'Polar': polar,        # units of the equat/polar are in degrees
+                        'BlueF': blueflux, 'GreenF': greenflux, 'RedF': redflux,   # units of these fluxes are in W/m^2/nm
+                        'Parallax': parallax, 'RadialVelocity': obsvel,           # units of parallax are in arcsec, obsvel in km/s
+                        'Variable?': variabool}                                  # outputs 1.0 if variable, 0.0 if not      
+            starfile = pd.DataFrame(stardata)
+            
+            starfile.to_csv(self.datadirectory + "\\All Star Data.txt", index=None, sep=' ')    # and finally save the dataframe to the directory
+        
+        startime2 = time(); total = startime2 - startime1; print("Star Data saved in", total, "s")
+        
+    def save_variables(self):
+        ''' Saves .txt files of variable star data for close stars in the universe, and images for variable light curves in the local
+            galaxy.
+        '''
+        vartime1 = time(); print("Saving variable data...")
+        variabledirectory = self.datadirectory + "\\Variable Star Data"     # save data within a subfolder
+        os.makedirs(variabledirectory)
+        k = 0
+        for galaxy in self.galaxies:
+            if galaxy.spherical[2] <= 15000:    # we only want to save variable star data if the stars are close-ish
+                for star in galaxy.stars:
+                    if star.variable == True:
+                        condition1 = galaxy.spherical[2] <= 5000 and star.variabletype[0] == "Long"
+                        condition2 = galaxy.spherical[2] <= 7500 and star.variabletype[0] == "Longest"
+                        condition3 = star.variabletype[0] in ["Short", "False"]
+                        if condition1 or condition2 or condition3:  # if one of the above criteria are met, we want to save the data
+                            starname = self.starnames[k]
+                            if galaxy.rotate == False:      # must be the local galaxy, so we want to save a pic of the lightcurve
+                                fig = star.plot_lightcurve(save=True)
+                                fig.savefig(variabledirectory + f'\\{starname}.png', dpi=400, bbox_inches='tight', pad_inches = 0.01)
+                            times, fluxes = star.lightcurve
+                            variabledata = {"Time":times, "NormalisedFlux":fluxes}
+                            variablefile = pd.DataFrame(variabledata)
+                            variablefile.to_csv(variabledirectory + f"\\{starname}.txt", index=None, sep=' ')
+                    k +=1
+            else:   # we still need to increment the ticker so that later data is accurate
+                k += len(galaxy.stars)
+        
+        # now to take and plot the period-luminosity data of the local galaxy!
+        periods, lumins = [], []
+        for star in self.galaxies[-1].stars:
+            if star.variable == True:
+                periods.append(star.period)
+                lumins.append(star.luminosity)
+        fig, ax = plt.subplots()
+        ax.scatter(periods, lumins, s=0.5)
+        ax.set_yscale('log'); ax.set_xlim(xmin=0)
+        ax.set_xlabel("Period (hours)"); ax.set_ylabel(r"Log Luminosity ($L / L_\odot$)")
+        plt.close()
+        fig.savefig(self.datadirectory + '\\Period-Luminosity Data.png', dpi=400, bbox_inches='tight', pad_inches = 0.01)
+        
+        vartime2 = time(); total = vartime2 - vartime1; print("Variable data saved in", total, "s")
+    
+    def save_blackbodies(self):
+        ''' Saves blackbody curves for all stars in the local galaxy. 
+        '''
+        blacktime1 = time(); print("Generating blackbody curves for local galaxy...")
+        blackbodydirectory = self.datadirectory + "\\Local Galaxy Blackbody Curves"     # save data within a subfolder
+        os.makedirs(blackbodydirectory)
+        k = 0
+        blackbodytemps = np.arange(0, 50)     # we only want two curves for each 1000K temps, so these are the temps/500
+        for galaxy in self.galaxies:
+            if galaxy.rotate == False:  # must be the local galaxy, so lets plot some blackbody curves!
+                for i, star in enumerate(galaxy.stars):
+                    roundtemp = round(star.temperature/500)
+                    if roundtemp in blackbodytemps:
+                        fig = star.plot_blackbodycurve(markers=True, visible=True, save=True)
+                        fig.savefig(blackbodydirectory + f'\\{self.starnames[k]}-Temp={round(star.temperature)}.png', 
+                                    dpi=400, bbox_inches='tight', pad_inches = 0.01)
+                        blackbodytemps = np.where(blackbodytemps==roundtemp, 0, blackbodytemps)     # remove this temperature from the pool of temps to plot
+                    k += 1
+            else:   # we still need to increment the ticker so that later data is accurate
+                k += len(galaxy.stars)
+        blacktime2 = time(); total = blacktime2 - blacktime1; print("Blackbody curves saved in", total, "s")
         
 def main():
     ### -- this was used to find galaxy averages -- ###

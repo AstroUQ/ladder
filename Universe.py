@@ -13,8 +13,8 @@ from GalaxyCluster import GalaxyCluster
 
 
 class Universe(object):
-    def __init__(self, radius, clusters, hubble=None, blackholes=True, darkmatter=True, complexity="Comprehensive", 
-                 variablestars=True, homogeneous=False):
+    def __init__(self, radius, clusters, hubble=None, blackholes=True, darkmatter=True, complexity="Normal", 
+                 variablestars=True, homogeneous=False, rotvels="Normal"):
         ''' Generate a universe consisting of Star, BlackHole, Galaxy, and GalaxyCluster objects. 
         Parameters
         ----------
@@ -40,6 +40,7 @@ class Universe(object):
         self.complexity = complexity
         self.variablestars = self.determine_variablestars(variablestars)
         self.homogeneous = homogeneous
+        self.rotvelMult = rotvels
         self.clusters, self.clustervels, self.clusterdists = self.generate_clusters()
         self.galaxies, self.distantgalaxies = self.get_all_galaxies()
         self.supernovae = self.explode_supernovae(min(55, len(self.galaxies) + len(self.distantgalaxies)))
@@ -177,13 +178,14 @@ class Universe(object):
             pos = (equat[i], polar[i], R[i])
             if i == self.clusterpop - 1:    # make the last cluster in the list the local cluster
                 clusters.append(GalaxyCluster((localequat, localpolar, 2000), 15, local=True, blackholes=self.blackholes, 
-                                              darkmatter=self.darkmatter, complexity=self.complexity, variable=self.variablestars))
+                                              darkmatter=self.darkmatter, complexity=self.complexity, variable=self.variablestars,
+                                              rotvels=self.rotvelMult))
             elif R[i] > threshold:  # this must be a distant galaxy
                 clusters.append(GalaxyCluster(pos, populations[i], blackholes=self.blackholes, darkmatter=self.darkmatter, 
-                                              complexity="Distant", variable=self.variablestars))
+                                              complexity="Distant", variable=self.variablestars, rotvels=self.rotvelMult))
             else:
                 clusters.append(GalaxyCluster(pos, populations[i], blackholes=self.blackholes, darkmatter=self.darkmatter, 
-                                              complexity=self.complexity, variable=self.variablestars))
+                                              complexity=self.complexity, variable=self.variablestars, rotvels=self.rotvelMult))
         
         clustervels = (self.hubble * R / (10**6)) * np.random.normal(1, 0.05, len(R))  # the radial velocity of each cluster according to v = HD
         

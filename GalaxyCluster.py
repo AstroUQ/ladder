@@ -11,8 +11,8 @@ import MiscTools as misc
 from Galaxy import Galaxy
 
 class GalaxyCluster(object):
-    def __init__(self, position, population, cartesian=False, local=False, blackholes=True, darkmatter=True, complexity="Comprehensive",
-                 variable=[True, [24.6, "Tri", -6.5, 59], [40.7, "Saw", -14, 64], [75.6, "Sine", 17.9, 35.1]]):
+    def __init__(self, position, population, cartesian=False, local=False, blackholes=True, darkmatter=True, complexity="Normal",
+                 variable=[True, [24.6, "Tri", -6.5, 59], [40.7, "Saw", -14, 64], [75.6, "Sine", 17.9, 35.1]], rotvels="Normal"):
         ''' Generates a few/several Galaxy objects about a central position.
         Parameters
         ----------
@@ -50,8 +50,9 @@ class GalaxyCluster(object):
             self.spherical = position
             self.cartesian = misc.spherical_to_cartesian(position[0], position[1], position[2])
         self.variable = variable
+        self.rotvelMult = rotvels
         self.galaxies, self.galaxmasses, self.galaxorbits, self.galaxpositions = self.generate_galaxies(population)
-        self.galaxvels, self.ObsGalaxVels, self.directions = self.rotation_vels()
+        self.galaxvels, self.ObsGalaxVels, self.directions = self.rotation_vels(mult=self.rotvelMult)
     
     def generate_galaxy(self, species, position, local):
         ''' Generate a Galaxy class object.
@@ -68,7 +69,7 @@ class GalaxyCluster(object):
         Galaxy : Galaxy object
         '''
         return Galaxy(species, position, cartesian=True, rotate=local, blackhole=self.blackholes, darkmatter=self.darkmatter,
-                      complexity=self.complexity, variable=self.variable)
+                      complexity=self.complexity, variable=self.variable, rotvels=self.rotvelMult)
     
     def generate_galaxies(self, population):
         ''' Uniformly distributes and generates galaxies within a sphere, with a central elliptical galaxy if the cluster
@@ -187,7 +188,7 @@ class GalaxyCluster(object):
                     types.append(f'E{n}')
         return types
     
-    def rotation_vels(self):
+    def rotation_vels(self, mult="Normal"):
         ''' Simulates orbit velocities of stars given their distance from the galactic center.
         If the galaxy has dark matter (self.darkmatter == True), then extra mass will be added according to the 
         Navarro-Frenk-White (NFW) dark matter halo mass profile. 
@@ -205,6 +206,8 @@ class GalaxyCluster(object):
         '''
         if self.darkmatter == True:     # time to initialise dark matter properties 
             density = 0.00005 # solar masses per cubic parsec
+            if mult == "Boosted":
+                density *= 10
             scalerad = 1.3 * self.radius  # parsec
             Rs = scalerad * 3.086 * 10**16  # convert scalerad to meters
             p0 = density * (1.988 * 10**30 / (3.086 * 10**16)**3) # convert density to kg/m^3
@@ -213,6 +216,8 @@ class GalaxyCluster(object):
         G = 6.67 * 10**-11
         
         masses, orbits = self.galaxmasses, self.galaxorbits
+        if mult == "Boosted":
+            masses *= 4
         # now, create an array that stores the mass and orbital radius of each star in the form of [[m1, r1], [m2,r2], ...]
         MassRadii = np.array([[masses[i] * 1.988 * 10**30, orbits[i] * 3.086 * 10**16] for i in range(len(masses))])
         vel = np.zeros(len(MassRadii)); darkvel = np.zeros(len(MassRadii))  # initialise arrays to store velocities in

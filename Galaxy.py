@@ -17,8 +17,9 @@ from Star import Star
 
 
 class Galaxy(object):
-    def __init__(self, species, position, cartesian=False, blackhole=True, darkmatter=True, rotate=True, complexity="Comprehensive",
-                 variable=[True, [24.6, "Tri", -6.5, 59], [40.7, "Saw", -14, 64], [75.6, "Sine", 17.9, 35.1]]):
+    def __init__(self, species, position, cartesian=False, blackhole=True, darkmatter=True, rotate=True, complexity="Normal",
+                 variable=[True, [24.6, "Tri", -6.5, 59], [40.7, "Saw", -14, 64], [75.6, "Sine", 17.9, 35.1]],
+                 rotvels="Normal"):
         ''' A galaxy which hosts hundreds to thousands of randomly generated Star objects, potentially with a BlackHole object 
         at its center. 
         Parameters
@@ -58,13 +59,13 @@ class Galaxy(object):
         self.variable = variable
         if self.complexity != "Distant":
             self.starpositions, self.stars, self.rotation = self.generate_galaxy()
-            self.starmasses = [star.get_star_mass() for star in self.stars]
+            self.starmasses = np.array([star.get_star_mass() for star in self.stars])
             self.blackhole = self.generate_BlackHole()
             starorbitradii = [self.starpositions[0] - self.cartesian[0], 
                               self.starpositions[1] - self.cartesian[1], 
                               self.starpositions[2] - self.cartesian[2]]
             self.starorbits = self.star_orbits(starorbitradii[0], starorbitradii[1], starorbitradii[2])
-            self.starvels, _, self.darkmattermass, self.directions = self.rotation_vels()
+            self.starvels, _, self.darkmattermass, self.directions = self.rotation_vels(mult=rotvels)
             self.galaxymass = sum(self.starmasses) + self.darkmattermass
         else:   # distant galaxy
             self.galaxymass, self.bandlumin, self.rotation = self.distant_galaxy()
@@ -519,10 +520,14 @@ class Galaxy(object):
         stars = [Star(region, species, variable=self.variable) for species in choice]
         return stars
     
-    def rotation_vels(self):
+    def rotation_vels(self, mult="Normal"):
         ''' Simulates orbit velocities of stars given their distance from the galactic center.
         If the galaxy has dark matter (self.darkmatter == True), then extra mass will be added according to the 
         Navarro-Frenk-White (NFW) dark matter halo mass profile. 
+        Parameters
+        ----------
+        mult : str
+            One of {"Normal", "Boosted"}. If "Boosted", the masses of stars/dark matter is increased to boost the magnitude of velocities
         Returns
         -------
         velarray : np.array
@@ -547,10 +552,13 @@ class Galaxy(object):
                         "E":1 - num / 15}   # different galaxies should have different probabilities of having dark matter. Each of these values is a prob
             prob = np.random.uniform(0, 1)
             self.darkmatter = True if prob <= dmchance[index] else False
+            
         if self.darkmatter == True:     # time to initialise dark matter properties 
             density = 0.01 # solar masses per cubic parsec
             if self.species[0] in ["E", "c"]:
-                density *= 2
+                density *= 1.5
+            if mult == "Boosted":
+                density *= 10
             scalerad = 1.2 * self.radius  # parsec
             Rs = scalerad * 3.086 * 10**16  # convert scalerad to meters
             p0 = density * (1.988 * 10**30 / (3.086 * 10**16)**3) # convert density to kg/m^3
@@ -560,6 +568,9 @@ class Galaxy(object):
         BHmass = self.blackhole.get_BH_mass() * 1.988 * 10**30 if self.blackhole != False else 0    # get the BH mass in kg if there is a black hole!
         
         masses, orbits = self.starmasses, self.starorbits
+        if mult == "Boosted":
+            masses *= 10
+            BHmass *= 4
         # now, create an array that stores the mass and orbital radius of each star in the form of [[m1, r1], [m2,r2], ...]
         MassRadii = np.array([[masses[i] * 1.988 * 10**30, orbits[i] * 3.086 * 10**16] for i in range(len(masses))])    # units of kg and meters
         vel = np.zeros(len(MassRadii)); darkvel = np.zeros(len(MassRadii))  # initialise arrays to store velocities in

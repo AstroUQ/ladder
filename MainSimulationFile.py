@@ -42,7 +42,7 @@ def plot_all_3d(galaxies):
 
 class UniverseSim(object):
     def __init__(self, numclusters, hubble=None, seed=None, blackholes=True, darkmatter=True, mode="Normal",
-                 homogeneous=False):
+                 homogeneous=False, rotvels="Normal"):
         ''' Generates a Universe object and imports important data from it. 
         Parameters
         ----------
@@ -61,7 +61,7 @@ class UniverseSim(object):
         self.seed = seed if seed != None else int(np.random.uniform(0, 9999)) # randomly choose a <=4 digit seed if one isn't given
         np.random.seed(seed)
         self.universe = Universe(450000, numclusters, hubble, blackholes=blackholes, darkmatter=darkmatter, complexity=mode,
-                                 homogeneous=homogeneous)
+                                 homogeneous=homogeneous, rotvels=rotvels)
         self.hasblackhole = blackholes; self.hasdarkmatter = darkmatter; self.homogeneous = homogeneous; self.mode = mode
         self.hubble = self.universe.hubble
         self.galaxies, self.distantgalaxies = self.universe.get_all_galaxies()
@@ -364,7 +364,7 @@ class UniverseSim(object):
             If save==True, closes the figure and returns it so that it may be saved later on. 
         '''
         fig, (ax, cbar_ax) = plt.subplots(1, 2, gridspec_kw={'width_ratios': [30,1], 'wspace': 0.1, 
-                                                             'height_ratios': [1, 1]})   # generate a figure and colourbar with width ratio of 30:1
+                                                             'height_ratios': [1]})   # generate a figure and colourbar with width ratio of 30:1
         stars = self.starpositions  # get all of the star positions 
         x, y, z, _, scales = stars[0], stars[1], stars[2], stars[3], stars[4]
         equat, polar, radius = misc.cartesian_to_spherical(x, y, z)
@@ -401,7 +401,7 @@ class UniverseSim(object):
         ax.set_xlim(0, 360); ax.set_ylim(0, 180)
         ax.set_facecolor('k')   # the background of space is black, duh
         ax.set_aspect(1)    # sets it to be twice as wide as high, so that angular ratios are preserved
-        fig.tight_layout()
+        # fig.tight_layout()
         ax.invert_yaxis()
         ax.set_xlabel("Equatorial Angle (degrees)")
         ax.set_ylabel("Polar Angle (degrees)")
@@ -929,8 +929,8 @@ def main():
     # sim = UniverseSim(1000, mode="Normal")
     # sim.save_data()
     
-    sim = UniverseSim(10)
-    sim.save_data(proj='Cube')
+    sim = UniverseSim(10, rotvels="Boosted")
+    sim.save_data(pic=False, radio=False, variablestars=False, doppler=[True, False], rotcurves=True)
 
     
 if __name__ == "__main__":

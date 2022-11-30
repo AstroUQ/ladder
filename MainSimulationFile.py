@@ -18,6 +18,7 @@ from BlackHole import BlackHole
 from Galaxy import Galaxy
 from GalaxyCluster import GalaxyCluster
 from Star import Star
+from Nebula import Nebula
 from Universe import Universe
 
 def plot_all_dopplers(galaxies):
@@ -102,7 +103,7 @@ class UniverseSim(object):
             os.makedirs(self.datadirectory + f'\\{direction}')
         self.cubemapdirectory = True # and finally set it so that we know the cubemap directional directories have been made
     
-    def plot_universe(self, spikes=True, radio=False, save=False, cubemap=False):
+    def plot_universe(self, spikes=True, radio=False, pretty=True, save=False, cubemap=False):
         ''' Plot all of the stars and distant galaxies in the universe onto a rectangular mapping of the inside of the 
         observable universe sphere. X-axis units are in "Equatorial Angle (degrees)", with Y-axis units in "Polar Angle (degrees)."
         Parameters
@@ -228,6 +229,12 @@ class UniverseSim(object):
             ax.invert_yaxis()   # polar angle of 0 is at the top, 180 at the bottom
             ax.set_xlabel("Equatorial Angle (degrees)")
             ax.set_ylabel("Polar Angle (degrees)")
+            
+            for i, galaxy in enumerate(self.galaxies):
+                if galaxy.spherical[2] < 15000:
+                    local = True if i == len(self.galaxies) - 1 else False
+                    spiralNeb = Nebula(galaxy.species, galaxy.spherical, galaxy.radius, rotation=galaxy.rotation, localgalaxy=local)
+                    spiralNeb.plot_nebula(style='colormesh', ax=ax)
         else:
             scales = np.array(scales)
             colours = np.array(colours)
@@ -540,7 +547,7 @@ class UniverseSim(object):
         plt.close('all')
         proptime2 = time(); total = proptime2 - proptime1; print("Universe properties saved in", total, "s")
         
-    def save_pic(self, radio=False, proj='AllSky'):
+    def save_pic(self, radio=False, proj='AllSky', pretty=True):
         ''' Saves the universe picture(s) in the directory of choice, given desired projection and radio contours.
         Parameters
         ----------
@@ -929,8 +936,8 @@ def main():
     # sim = UniverseSim(1000, mode="Normal")
     # sim.save_data()
     
-    sim = UniverseSim(10, rotvels="Boosted")
-    sim.save_data(pic=False, radio=False, variablestars=False, doppler=[True, False], rotcurves=True)
+    sim = UniverseSim(100, rotvels="Boosted")
+    sim.save_data(variablestars=False)
 
     
 if __name__ == "__main__":

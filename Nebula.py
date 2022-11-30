@@ -27,9 +27,13 @@ class Nebula(object):
         if self.species == "ring":
             self.radii = np.array([0.15, 0.12, 0.08]) * 5 if self.radius == None else self.radius
             self.palette = "Hubble"
+        elif self.species[0] in ["E", "c"] or self.species == "S0":
+            self.radii = self.radius
+            self.palette = 'Elliptical'
         elif self.species[0] == "S":
             self.radii = self.radius
             self.palette = 'Spiral'
+        
     
     def initColourMap(self, palette):
         N = 256
@@ -62,24 +66,16 @@ class Nebula(object):
             
             colourmap = [HubbleRed, HubbleGreen, HubbleBlue]
         elif palette == 'Spiral':
-            # vals = np.zeros((N, 4))
-            # vals[:, 0] = np.linspace(99, 238, N) / 256
-            # vals[:, 1] = np.linspace(99, 228, N) / 256
-            # vals[:, 2] = np.linspace(125, 214, N) / 256
-            # vals[20:60, 3] = np.linspace(0, 0.2, 60-20); vals[60:, 3] = 0.2
-            # SpiralGalax = ListedColormap(vals)
-            # # LinearSegmentedColormap('SpiralGalax', vals)
-            # colourmap = [SpiralGalax]
             valsDisk = np.zeros((N, 4))
             valsBulge = np.zeros((N, 4))
             valsArms = np.zeros((N, 4))
             
             midval = 100
             alphamid = 20
-            valsDisk[:, 0] = 102 / 256; valsDisk[midval:, 0] = np.linspace(166 / 256, 43/256, N - midval)
-            valsDisk[:midval, 1] = 96 / 256; valsDisk[midval:, 1] = np.linspace(134 / 256, 43/256, N - midval)
-            valsDisk[:midval, 2] = 129 / 256; valsDisk[midval:, 2] = np.linspace(155 / 256, 29/256, N - midval)
-            valsDisk[alphamid:, 3] = np.linspace(0, 0.1, N - alphamid); valsDisk[:alphamid, 3] = 0
+            valsDisk[:, 0] = 229 / 256; valsDisk[midval:, 0] = np.linspace(229 / 256, 253/256, N - midval)
+            valsDisk[:midval, 1] = 209 / 256; valsDisk[midval:, 1] = np.linspace(209 / 256, 244/256, N - midval)
+            valsDisk[:midval, 2] = 199 / 256; valsDisk[midval:, 2] = np.linspace(199 / 256, 239/256, N - midval)
+            valsDisk[alphamid:, 3] = np.linspace(0, 0.08, N - alphamid); valsDisk[:alphamid, 3] = 0
             SpiralDisk = ListedColormap(valsDisk)
             
             valsBulge[:, 0] = 229 / 256; valsBulge[midval:, 0] = np.linspace(229 / 256, 253 / 256, N - midval)
@@ -104,14 +100,29 @@ class Nebula(object):
                 colourmap = [SpiralDisk, SpiralBulge, SpiralArms, SpiralBar]
             else:
                 colourmap = [SpiralDisk, SpiralBulge, SpiralArms]
+        elif palette == 'Elliptical':
+            valsBulge = np.zeros((N, 4))
+            
+            midval = 100
+            alphamid = 20
+        
+            valsBulge[:, 0] = 229 / 256; valsBulge[midval:, 0] = np.linspace(229 / 256, 253 / 256, N - midval)
+            valsBulge[:midval, 1] = 199 / 256; valsBulge[midval:, 1] = np.linspace(199 / 256, 244/256, N - midval)
+            valsBulge[:midval, 2] = 189 / 256; valsBulge[midval:, 2] = np.linspace(189 / 256, 239/256, N - midval)
+            valsBulge[alphamid:, 3] = np.linspace(0, 0.3, N - alphamid); valsBulge[:alphamid, 3] = 0
+            SpiralBulge = ListedColormap(valsBulge)
+            colourmap = [SpiralBulge]
             
         return colourmap
     
     def gen_points(self):
         if self.species == 'ring':
             points = self.gen_ring_nebula()
+        elif self.species[0] in ["E", "c"] or self.species == "S0":
+            points = self.gen_elliptical_nebulosity()
         elif self.species[0] == "S":   # dealing with spiral galaxy
             points = self.gen_spiral_nebulosity()
+        
             
         return points
     
@@ -152,60 +163,44 @@ class Nebula(object):
     def gen_spiral_nebulosity(self):
         coords = []
         for i, colour in enumerate(self.cmap):
-            pop = 100000
             pop = int(3e5)
             
-            theta = np.random.uniform(0, 2*np.pi, pop)
-            # phi = np.random.uniform(0, 2*np.pi, pop)
             if i == 0:      # we're dealing with the disk component
-                # diskdists = np.random.exponential(self.radius/2, size=pop)
-                diskdists = self.radius * np.random.uniform(0, 1, size=pop)**(1/2)
+                theta = np.random.uniform(0, 2*np.pi, pop)
+                diskdists = 1.05 * self.radius * np.random.uniform(0, 1, pop)**(1/2)
                 x = np.cos(theta) * diskdists * np.random.normal(1, 0.2, pop)
                 y = np.sin(theta) * diskdists * np.random.normal(1, 0.2, pop)
                 z = np.zeros(pop) + 0.02 * self.radius * np.random.randn(pop)
             elif i == 1:       # we're dealing with the bulge
                 bulgepop = pop
                 
-                # theta = np.random.uniform(0, 2*np.pi, bulgepop)
-                costheta = np.random.uniform(-1, 1, bulgepop)
-                theta = np.arccos(costheta)
+                cosphi = np.random.uniform(-1, 1, bulgepop)
+                phi = np.arccos(cosphi)
+                theta = np.random.uniform(0, 2*np.pi, bulgepop)
                 
-                phi = np.random.uniform(0, 2*np.pi, bulgepop)
-                bulgeradius = 0.4 * self.radius
-                bulgeR = bulgeradius * np.random.uniform(0, 1, bulgepop)**(1/2)    #bulgedists was meant to be RVs between 0 and 1, but the mult makes up for it
-                x = bulgeR * (np.cos(theta) * np.sin(phi) + np.random.normal(0, 0.1, bulgepop))
-                y = bulgeR * (np.sin(theta) * np.sin(phi) + np.random.normal(0, 0.1, bulgepop))
+                bulgeradius = 0.3 * self.radius
+                bulgeR = bulgeradius * np.random.uniform(0, 1, bulgepop)**(1/2.5)    #bulgedists was meant to be RVs between 0 and 1, but the mult makes up for it
+                x = bulgeR * (np.cos(theta) * np.sin(phi) + np.random.normal(0, 0.2, bulgepop))
+                y = bulgeR * (np.sin(theta) * np.sin(phi) + np.random.normal(0, 0.2, bulgepop))
                 distanceflat = (1 / self.radius) * np.sqrt(np.square(x) + np.square(y))     #this makes the z lower for stars further from the center
-                z = 0.5 * bulgeR * np.cos(phi) + np.random.normal(0, 0.1, bulgepop) #* 0.8**distanceflat
-                # z = np.sqrt(0.6**2 * (bulgeradius**2 - (x**2 + y**2))) #* np.random.normal(0, 1, bulgepop)
-                
-                
-                # x = np.cos(theta) * np.sin(phi) * np.random.uniform(0, 1, bulgepop)**(1/3)
-                # y = np.sin(theta) * np.sin(phi) * np.random.uniform(0, 1, bulgepop)**(1/3)
-                # z =  np.sqrt(0.4**2 * (1 - (x**2 + y**2))) * np.random.choice([-1, 1], bulgepop)#* np.random.normal(0, 1, bulgepop)
-                # x *= bulgeradius #* np.random.normal(0, 0.5, bulgepop)
-                # y *= bulgeradius #* np.random.normal(0, 0.5, bulgepop)
-                # z *= bulgeradius * np.random.uniform(0, 1, bulgepop)**(1/3) #* np.random.normal(0, 0.5, bulgepop)
-                
-                
-                # bulgeradius = 0.4 * self.radius
-                # bulgeR = bulgeradius * np.random.uniform(0, 1, bulgepop)**(3/5)
-                # x = np.cos(theta) * bulgeR * np.random.normal(1, 0.2, bulgepop)
-                # z = np.sin(theta) * bulgeR * np.random.normal(1, 0.2, bulgepop)
-                # y = np.zeros(bulgepop) + 0.02 * self.radius * np.random.randn(bulgepop)
+                z = 0.5 * (bulgeR * np.cos(phi) + np.random.normal(0, 0.2, bulgepop)) #* 0.7**distanceflat
                 
             elif i in [2, 3]:       # we're dealing with spiral arms
-                pop = 10000
+                popindex = {"S0": 1000, "Sa": 3000, "Sb": 4000, "Sc": 10000, "SBa": 10000, "SBb": 10000, "SBc": 10000}
+                pop = popindex[self.species]
                 speciesindex = {"S0":0, "Sa":1, "Sb":2, "Sc":3, "SBa":4, "SBb": 5, "SBc":6}
-                wrap = [[None, None], [0.9, 4 * np.pi], [0.7, 2 * np.pi], [0.2, 0.8 * np.pi], 
-                        [np.pi / 2.1, 3 * np.pi], [np.pi / 2.1, 2 * np.pi], [np.pi / 2.1, 1.15 * np.pi]]
+                wrap = [[None, None], [0.9, 4 * np.pi], [0.7, 2 * np.pi], [0.2, 1 * np.pi], 
+                        [np.pi / 2.1, 3 * np.pi], [np.pi / 2.1, 3 * np.pi], [np.pi / 2.1, 1.4 * np.pi]]
                 
                 if i == 2:
                     #now to actually grab the parameters for the galaxy type in question:
                     SpiralRadiiDiv = [None, 15, 7, 2.1, 3.7, 3, 2.3] 
                     mult, spiralwrap = [param[speciesindex[self.species]] for param in [SpiralRadiiDiv, wrap]]
                     upper, lower = spiralwrap
-                    if speciesindex[self.species] >= 5:
+                    if self.species in ["Sa", "Sb"]:
+                        spiralangle = np.linspace(lower**2, upper**1.6, pop)
+                        spiralangle = np.sqrt(spiralangle)
+                    elif speciesindex[self.species] >= 5:
                         spiralangle = np.geomspace(lower, upper, pop)
                     else:
                         spiralangle = np.linspace(lower, upper, pop)
@@ -220,34 +215,78 @@ class Nebula(object):
                     barradii = [0, 0, 0, 0, 0.3, 0.4, 0.5]
                     barradius = barradii[speciesindex[self.species]] * self.radius
                     x = np.random.normal(0, 0.3 * barradius, pop)
-                    # y = barradius * (np.geomspace(0.3, 1.1, pop) * np.random.choice([-1, 1], pop) + np.random.normal(0, 0.3, pop))
                     y = barradius * (np.linspace(0, 1.1, pop) * np.random.choice([-1, 1], pop) + np.random.normal(0, 0.3, pop))
                     z = np.random.normal(0, 0.1 * barradius, pop)
             
             points = np.array([x, y, z])
-            
-            # if i != 1:
-            #     points = np.dot(misc.cartesian_rotation(self.rotation[0], 'x'), points)
-            #     points = np.dot(misc.cartesian_rotation(self.rotation[1], 'y'), points)
-            #     points = np.dot(misc.cartesian_rotation(self.rotation[2], 'z'), points)
             points = np.dot(misc.cartesian_rotation(self.rotation[0], 'x'), points)
             points = np.dot(misc.cartesian_rotation(self.rotation[1], 'y'), points)
             points = np.dot(misc.cartesian_rotation(self.rotation[2], 'z'), points)
-            
-            
-            # x = np.append(diskx, bulgex); y = np.append(disky, bulgey); z = np.append(diskz, bulgez)
-
-            # points = [np.append(points[0], bulgex), np.append(points[1], bulgey),np.append(points[2], bulgez)]
             
             points[0] += self.cartesian[0]
             points[1] += self.cartesian[1]
             points[2] += self.cartesian[2]
             coords.append(points)
+            
+        return coords
+    
+    def gen_elliptical_nebulosity(self):
+        pop = 100000
+        pop = int(3e5)
+            
+        ellipsoid_mult = (1 - float(self.species[1]) / 10) if self.species[0]=='E' else 1
+        
+        theta = np.random.uniform(0, 2*np.pi, pop)
+        phi = np.random.uniform(-1, 1, pop)
+        phi = np.arccos(phi)
+        
+        if self.species == "S0":
+            diskdists = self.radius * np.random.uniform(0, 1, pop)**(1/2)
+            x = np.cos(theta) * diskdists * np.random.normal(1, 0.2, pop)
+            y = np.sin(theta) * diskdists * np.random.normal(1, 0.2, pop)
+            z = np.zeros(pop) + 0.08 * self.radius * np.random.randn(pop)
+            
+            bulgepop = int(pop / 15)
+            
+            cosphi = np.random.uniform(-1, 1, bulgepop)
+            phi = np.arccos(cosphi)
+            theta = np.random.uniform(0, 2*np.pi, bulgepop)
+            
+            bulgeradius = 0.3 * self.radius
+            bulgeR = bulgeradius * np.random.uniform(0, 1, bulgepop)**(1/2.5)    #bulgedists was meant to be RVs between 0 and 1, but the mult makes up for it
+            bulgex = bulgeR * (np.cos(theta) * np.sin(phi) + np.random.normal(0, 0.2, bulgepop))
+            bulgey = bulgeR * (np.sin(theta) * np.sin(phi) + np.random.normal(0, 0.2, bulgepop))
+            #distanceflat = (1 / self.radius) * np.sqrt(np.square(bulgex) + np.square(bulgey))     #this makes the z lower for stars further from the center
+            bulgez = 0.5 * (bulgeR * np.cos(phi) + np.random.normal(0, 0.2, bulgepop)) #* 0.7**distanceflat
+            x = np.append(x, bulgex); y = np.append(y, bulgey); z = np.append(z, bulgez)
+            
+        else:
+            spheredists = np.random.exponential(0.4, pop)
+            sphereR = 2 * self.radius * np.sqrt(spheredists)
+            
+            sphereR = 1.5 * self.radius * np.random.uniform(0, 1, pop)**(1/2)
+            
+            x = sphereR * (np.cos(theta) * np.sin(phi) + np.random.normal(0, 0.2, pop))
+            y = sphereR * (np.sin(theta) * np.sin(phi) + np.random.normal(0, 0.2, pop))
+            distanceflat = (1 / self.radius) * np.sqrt(np.square(x) + np.square(y))
+            z = (sphereR * (np.cos(phi) + np.random.normal(0, 0.1, pop))) * ellipsoid_mult**distanceflat
+    
+            
+        points = np.array([x, y, z])
+        points = np.dot(misc.cartesian_rotation(self.rotation[0], 'x'), points)
+        points = np.dot(misc.cartesian_rotation(self.rotation[1], 'y'), points)
+        points = np.dot(misc.cartesian_rotation(self.rotation[2], 'z'), points)
+        
+        points[0] += self.cartesian[0]
+        points[1] += self.cartesian[1]
+        points[2] += self.cartesian[2]
+        
+        coords = [points]
         return coords
         
         
     def plot_nebula(self, ax=None, style='colormesh'):
-        if self.species == 'spiral':
+        if self.palette == 'Spiral':
             bins = 200
             grid = 120
         else:
@@ -266,7 +305,6 @@ class Nebula(object):
                     smooth = 2.5
                 else:
                     smooth = 1.5
-  
                 x, y, z = self.points[i]
                 equat, polar, distance = misc.cartesian_to_spherical(x, y, z)
                     
@@ -312,7 +350,7 @@ def main():
     # ringNeb.plot_nebula(style='hexbin')
     from Galaxy import Galaxy
     position = [45, 90, 1000]
-    species = 'SBa'
+    species = 'S0'
     galax = Galaxy(species, position)
     fig, ax = plt.subplots()
     

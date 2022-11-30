@@ -1,0 +1,24 @@
+Universe Parameters: 
+Parameter                   | Value   
+----------------------------|---------------------------------------
+Simulation Mode:            | Normal 
+Has Black Holes?            | True 
+Has Dark Matter?            | True 
+Universe Homogeneous?       | False 
+Universe Radius             | 450000 (pc)
+Hubble Const.               | 2931.171 (km/s/Mpc)
+Local Galaxy Type           | Sa 
+Dist. to local galax center | 37.57 (pc)
+Radius of local galaxy      | 77.69 (pc)
+Local Galax Black Hole Mass | 79.95 Solar Masses 
+Number of clusters          | 100
+Number of galaxies          | 158 local and 683 distant
+
+
+Variable Star Properties    | [RoughAvePeriod  LightcurveShape  PeriodLumGradient  PeriodLumYInt]
+----------------------------|--------------------------------------------------------------------
+Variable Stars?             | True
+Variable Class:             | Short
+                            | [28.376045044785148, 'Tri', -7.127970021676108, 63.73633945004434]
+Variable Class:             | Long
+                            | [41.88447653015535, 'Sine', -7.829966280697515, 55.23184984850929]

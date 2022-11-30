@@ -183,14 +183,14 @@ class Nebula(object):
                 x = bulgeR * (np.cos(theta) * np.sin(phi) + np.random.normal(0, 0.2, bulgepop))
                 y = bulgeR * (np.sin(theta) * np.sin(phi) + np.random.normal(0, 0.2, bulgepop))
                 distanceflat = (1 / self.radius) * np.sqrt(np.square(x) + np.square(y))     #this makes the z lower for stars further from the center
-                z = 0.5 * (bulgeR * np.cos(phi) + np.random.normal(0, 0.2, bulgepop)) #* 0.7**distanceflat
+                z = 0.7 * (bulgeR * np.cos(phi) + np.random.normal(0, 0.2, bulgepop)) #* 0.7**distanceflat
                 
             elif i in [2, 3]:       # we're dealing with spiral arms
                 popindex = {"S0": 1000, "Sa": 3000, "Sb": 4000, "Sc": 10000, "SBa": 10000, "SBb": 10000, "SBc": 10000}
                 pop = popindex[self.species]
                 speciesindex = {"S0":0, "Sa":1, "Sb":2, "Sc":3, "SBa":4, "SBb": 5, "SBc":6}
                 wrap = [[None, None], [0.9, 4 * np.pi], [0.7, 2 * np.pi], [0.2, 1 * np.pi], 
-                        [np.pi / 2.1, 3 * np.pi], [np.pi / 2.1, 3 * np.pi], [np.pi / 2.1, 1.4 * np.pi]]
+                        [np.pi / 2.1, 3 * np.pi], [np.pi / 2.1, 2.1 * np.pi], [np.pi / 2.1, 1.4 * np.pi]]
                 
                 if i == 2:
                     #now to actually grab the parameters for the galaxy type in question:
@@ -200,7 +200,7 @@ class Nebula(object):
                     if self.species in ["Sa", "Sb"]:
                         spiralangle = np.linspace(lower**2, upper**1.6, pop)
                         spiralangle = np.sqrt(spiralangle)
-                    elif speciesindex[self.species] >= 5:
+                    elif speciesindex[self.species] > 5:
                         spiralangle = np.geomspace(lower, upper, pop)
                     else:
                         spiralangle = np.linspace(lower, upper, pop)
@@ -350,7 +350,7 @@ def main():
     # ringNeb.plot_nebula(style='hexbin')
     from Galaxy import Galaxy
     position = [45, 90, 1000]
-    species = 'S0'
+    species = 'SBc'
     galax = Galaxy(species, position)
     fig, ax = plt.subplots()
     

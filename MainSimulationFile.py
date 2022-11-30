@@ -230,11 +230,13 @@ class UniverseSim(object):
             ax.set_xlabel("Equatorial Angle (degrees)")
             ax.set_ylabel("Polar Angle (degrees)")
             
-            for i, galaxy in enumerate(self.galaxies):
-                if galaxy.spherical[2] < 15000:
-                    local = True if i == len(self.galaxies) - 1 else False
-                    spiralNeb = Nebula(galaxy.species, galaxy.spherical, galaxy.radius, rotation=galaxy.rotation, localgalaxy=local)
-                    spiralNeb.plot_nebula(style='colormesh', ax=ax)
+            if pretty: # let's plot the galaxy nebulosity for the close galaxies
+                for i, galaxy in enumerate(self.galaxies):
+                    if galaxy.spherical[2] < 15000: # if the galaxy is closer than 15kpc
+                        local = True if i == len(self.galaxies) - 1 else False 
+                        galaxNeb = Nebula(galaxy.species, galaxy.spherical, galaxy.radius, rotation=galaxy.rotation, localgalaxy=local)
+                        galaxNeb.plot_nebula(style='colormesh', ax=ax)
+                        del galaxNeb
         else:
             scales = np.array(scales)
             colours = np.array(colours)
@@ -243,8 +245,8 @@ class UniverseSim(object):
             
         if radio == True and not cubemap:   # plot the radio overlay
             self.plot_radio(ax)
+        
         if save == True:    # close the figure (so it doesnt pop up during the run) and return the figure to save later.
-            plt.close()
             if not cubemap:
                 return fig, ax
             else:
@@ -587,6 +589,7 @@ class UniverseSim(object):
             fig.savefig(self.datadirectory + '\\AllSky Radio Overlay Image.png', dpi=1500, bbox_inches='tight', pad_inches = 0.01)
             pictime3 = time(); total = pictime3 - pictime2; print("Radio overlay picture saved in", total, "s")
             
+        plt.clf()
         plt.close('all')
         
             
@@ -936,7 +939,7 @@ def main():
     # sim = UniverseSim(1000, mode="Normal")
     # sim.save_data()
     
-    sim = UniverseSim(100, rotvels="Boosted")
+    sim = UniverseSim(1000, rotvels="Boosted")
     sim.save_data(variablestars=False)
 
     

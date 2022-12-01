@@ -13,6 +13,26 @@ import MiscTools as misc
 
 class Nebula(object):
     def __init__(self, species, position, radius=None, cartesian=False, rotation=None, localgalaxy=False):
+        ''' An object to represent (graphically) planetary nebulae or galaxy nebulosity for valid galaxy types according to the
+        Galaxy class.
+        Parameters
+        ----------
+        species : str
+            The type of nebula (or galaxy type, if wanting galaxy nebulosity). One of {'ring'} or any galaxy type
+            valid in the Galaxy class
+        position : list or np.array
+            Cartesian or spherical coordinates of the center of the nebula. [x, y, z] or [equat, polar, radius] respectively
+        radius : float or None
+            Radius of the nebula. If it is a galaxy type, must input the radius of the Galaxy object. If it is a typical nebula,
+            the size is chosen automatically
+        cartesian : bool
+            True if the given position coordinates are in cartesian form
+        rotation : list or None
+            List of values to rotate the nebula in 3D space according to the function MiscTools > CartesianRotation
+            If None, the rotation is chosen randomly. If galaxy nebulosity, this value must be the same as the galaxy rotation.
+        localgalaxy : bool
+            If this nebula corresponds to the nebulosity of the local (host) galaxy of our civilisation
+        '''
         self.species = species
         self.radius = radius
         self.local = localgalaxy
@@ -24,6 +44,8 @@ class Nebula(object):
         self.points = self.gen_points()
         
     def nebula_params(self):
+        ''' Determine some parameters about the nebula based on its type. (radius, colour palette [for plotting])
+        '''
         if self.species == "ring":
             self.radii = np.array([0.15, 0.12, 0.08]) * 5 if self.radius == None else self.radius
             self.palette = "Hubble"
@@ -36,6 +58,12 @@ class Nebula(object):
         
     
     def initColourMap(self, palette):
+        ''' Generates a colour map for the species of nebula in question
+        Parameters
+        ----------
+        palette : str
+            The colour palette for plotting and generation of points
+        '''
         N = 256
         if palette == "Hubble":
             valsR = np.ones((N, 4))
@@ -116,6 +144,8 @@ class Nebula(object):
         return colourmap
     
     def gen_points(self):
+        ''' Basic function to generate correctly distributed points based on the nebula type. 
+        '''
         if self.species == 'ring':
             points = self.gen_ring_nebula()
         elif self.species[0] in ["E", "c"] or self.species == "S0":
@@ -127,6 +157,8 @@ class Nebula(object):
         return points
     
     def gen_ring_nebula(self):
+        '''
+        '''
         pops = [150000, 120000, 100000]
         lowers = [0, 0.1, 0.2]
         coords = []
@@ -161,6 +193,8 @@ class Nebula(object):
         return coords
     
     def gen_spiral_nebulosity(self):
+        '''
+        '''
         coords = []
         for i, colour in enumerate(self.cmap):
             pop = int(3e5)
@@ -231,6 +265,8 @@ class Nebula(object):
         return coords
     
     def gen_elliptical_nebulosity(self):
+        '''
+        '''
         pop = 100000
         pop = int(3e5)
             
@@ -286,6 +322,8 @@ class Nebula(object):
         
         
     def plot_nebula(self, ax=None, style='colormesh'):
+        '''
+        '''
         if self.palette == 'Spiral':
             bins = 200
             grid = 120

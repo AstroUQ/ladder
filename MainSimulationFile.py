@@ -21,6 +21,7 @@ from Star import Star
 from Nebula import Nebula
 from Universe import Universe
 
+
 def plot_all_dopplers(galaxies):
     ''' Plot the radial velocities of a list of Galaxy objects onto an image. Mainly to be used for troubleshooting.
     '''
@@ -230,13 +231,15 @@ class UniverseSim(object):
             ax.set_xlabel("Equatorial Angle (degrees)")
             ax.set_ylabel("Polar Angle (degrees)")
             
+            print("Doing stuff now!")
             if pretty: # let's plot the galaxy nebulosity for the close galaxies
+                import gc
+                gc.enable()
                 for i, galaxy in enumerate(self.galaxies):
                     if galaxy.spherical[2] < 15000: # if the galaxy is closer than 15kpc
-                        local = True if i == len(self.galaxies) - 1 else False 
-                        galaxNeb = Nebula(galaxy.species, galaxy.spherical, galaxy.radius, rotation=galaxy.rotation, localgalaxy=local)
+                        # local = True if i == len(self.galaxies) - 1 else False 
+                        galaxNeb = Nebula(galaxy.species, galaxy.spherical[:], galaxy.radius, rotation=galaxy.rotation[:])
                         galaxNeb.plot_nebula(style='colormesh', ax=ax)
-                        del galaxNeb
         else:
             scales = np.array(scales)
             colours = np.array(colours)
@@ -566,7 +569,7 @@ class UniverseSim(object):
             
         if proj in ['Cube', 'Both']:
             pictime1 = time(); print("Generating universe picture...")
-            figAxes = self.plot_universe(save=True, cubemap=True)
+            figAxes = self.plot_universe(pretty=pretty, save=True, cubemap=True)
             directions = ['Front', 'Back', 'Top', 'Bottom', 'Left', 'Right']
             for i in range(6):
                 fig, ax = figAxes[i]
@@ -575,7 +578,7 @@ class UniverseSim(object):
             pictime2 = time(); total = pictime2 - pictime1; print("Cubemapped universe pictures saved in", total, "s")
         if proj in ['AllSky', 'Both']:
             pictime1 = time(); print("Generating universe picture...")
-            fig, ax = self.plot_universe(save=True)
+            fig, ax = self.plot_universe(pretty=pretty, save=True)
             fig.set_size_inches(18, 9, forward=True)
             fig.savefig(self.datadirectory + '\\AllSky Universe Image.png', dpi=1500, bbox_inches='tight', pad_inches = 0.01)
             pictime2 = time(); total = pictime2 - pictime1; print("AllSky Universe picture saved in", total, "s")
@@ -583,13 +586,12 @@ class UniverseSim(object):
         if radio and self.hasblackhole:       # plot radio data too
             print("Generating radio overlay...")
             if proj == "Cube":
-                fig, ax = self.plot_universe(save=True)
+                fig, ax = self.plot_universe(pretty=pretty, save=True)
                 fig.set_size_inches(18, 9, forward=True)
             self.plot_radio(ax)
             fig.savefig(self.datadirectory + '\\AllSky Radio Overlay Image.png', dpi=1500, bbox_inches='tight', pad_inches = 0.01)
             pictime3 = time(); total = pictime3 - pictime2; print("Radio overlay picture saved in", total, "s")
             
-        plt.clf()
         plt.close('all')
         
             
@@ -939,7 +941,7 @@ def main():
     # sim = UniverseSim(1000, mode="Normal")
     # sim.save_data()
     
-    sim = UniverseSim(1000, rotvels="Boosted")
+    sim = UniverseSim(200, rotvels="Boosted")
     sim.save_data(variablestars=False)
 
     

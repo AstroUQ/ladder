@@ -8,7 +8,9 @@ Created on Fri Sep 16 17:21:53 2022
 import numpy as np
 import matplotlib.pyplot as plt
 import scipy.ndimage
-from matplotlib.colors import ListedColormap, LinearSegmentedColormap
+from matplotlib.colors import ListedColormap
+import os
+import pickle
 import MiscTools as misc
 
 class Nebula(object):
@@ -38,7 +40,7 @@ class Nebula(object):
         self.local = localgalaxy
         self.nebula_params()
         self.rotation = rotation if rotation is not None else np.random.uniform(0, 2*np.pi, 3)
-        self.cmap = self.initColourMap(self.palette)
+        # self.cmap = self.initColourMap(self.palette)
         self.cartesian = position if cartesian == True else misc.spherical_to_cartesian(position[0], position[1], position[2])
         self.spherical = misc.cartesian_to_spherical(position[0], position[1], position[2]) if cartesian == True else position
         self.points = self.gen_points()
@@ -55,6 +57,17 @@ class Nebula(object):
         elif self.species[0] == "S":
             self.radii = self.radius
             self.palette = 'Spiral'
+        
+        directory = os.path.dirname(os.path.realpath(__file__))    # this is where this .py file is located on the system
+        mapdirectory = directory + "\\Colourmaps"
+        if not os.path.exists(mapdirectory):
+            os.makedirs(mapdirectory)
+        self.paletteDir = mapdirectory + f"\\{self.palette}.pickle"
+        if not os.path.isfile(self.paletteDir):
+            self.cmap = self.initColourMap(self.palette)
+        else:
+            with open(self.paletteDir, 'rb') as f:
+                self.cmap = pickle.load(f)
         
     
     def initColourMap(self, palette):
@@ -141,6 +154,9 @@ class Nebula(object):
             SpiralBulge = ListedColormap(valsBulge)
             colourmap = [SpiralBulge]
             
+        with open(self.paletteDir, 'wb') as f:
+            pickle.dump(colourmap, f)
+            
         return colourmap
     
     def gen_points(self):
@@ -153,7 +169,6 @@ class Nebula(object):
         elif self.species[0] == "S":   # dealing with spiral galaxy
             points = self.gen_spiral_nebulosity()
         
-            
         return points
     
     def gen_ring_nebula(self):
@@ -261,7 +276,6 @@ class Nebula(object):
             points[1] += self.cartesian[1]
             points[2] += self.cartesian[2]
             coords.append(points)
-            
         return coords
     
     def gen_elliptical_nebulosity(self):
@@ -374,7 +388,7 @@ class Nebula(object):
                     ax.hexbin(equat, polar, gridsize=(2 * grid, grid), bins=bins, vmax = 6, linewidths=0.01, cmap=colour, aa=True)
                 else:
                     ax.hexbin(equat, polar, gridsize=(2 * grid, grid), bins=bins, linewidths=0.01, cmap=colour)
-
+                    
 
 
 
@@ -386,17 +400,21 @@ class Nebula(object):
 def main():
     # ringNeb = Nebula('ring', [45, 90, 10])
     # ringNeb.plot_nebula(style='hexbin')
-    from Galaxy import Galaxy
+    # from Galaxy import Galaxy
     position = [45, 90, 1000]
-    species = 'SBc'
-    galax = Galaxy(species, position)
-    fig, ax = plt.subplots()
+    # species = 'E0'
+    # galax = Galaxy(species, position)
+    # fig, ax = plt.subplots()
     
-    spiralNeb = Nebula(species, position, galax.radius, rotation=galax.rotation)
-    spiralNeb.plot_nebula(style='colormesh', ax=ax)
-    galax.plot_2d(fig, ax)
-    ax.set_xlim(40, 50)
-    ax.set_ylim(95, 85)
+    # spiralNeb = Nebula(species, position, galax.radius, rotation=galax.rotation)
+    # spiralNeb.plot_nebula(style='colormesh', ax=ax)
+    # galax.plot_2d(fig, ax)
+    # ax.set_xlim(40, 50)
+    # ax.set_ylim(95, 85)
+    
+    
+    for i in range(1000):
+        h = Nebula('Sa', position, radius=200)
     
     # species = 'SBa'
     # position = [180, 90, 40]

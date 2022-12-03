@@ -13,6 +13,7 @@ import scipy.ndimage                     # this is to smooth out the BH radio lo
 import warnings
 import MiscTools as misc
 from BlackHole import BlackHole
+from Nebula import Nebula
 from Star import Star
 
 
@@ -42,6 +43,9 @@ class Galaxy(object):
             The first element must be a bool, which decides whether or not to generate variability in some stars
             The second and third elements (and fourth [optional]) must be comprised of [period, lightcurve type],
             where the period is in hours (float) and the lightcurve type is one of {"Saw", "Tri", "Sine"} (str). 
+        rotvels : str
+            One of {"Normal", "Boosted"}, which dictates whether rotation curves have arbitrarily (and unphysically) boosted
+            velocity magnitudes.
         '''
         self.darkmatter = darkmatter
         self.complexity = complexity
@@ -647,6 +651,19 @@ class Galaxy(object):
 
         VelObsArray = velarray * velprops   # multiply the actual velocities by the line of sight proportion of the velocity magnitude
         return velarray, VelObsArray, darkmattermass, direction
+    
+    def plot_nebulosity(self, ax, localgalaxy=False):
+        ''' Plots the pretty, glow-y nebulosity of this galaxy on an existing figure.
+        Parameters
+        ----------
+        ax : matplotlib axes object
+            The figure with which we're plotting!
+        localgalaxy : bool
+            Whether or not this galaxy is the local galaxy (and thus fills up much of the figure)
+        '''
+        galaxNeb = Nebula(self.species, self.spherical[:], self.radius, rotation=self.rotation[:],
+                          localgalaxy=localgalaxy)
+        galaxNeb.plot_nebula(style='colormesh', ax=ax)
     
     def plot_RotCurve(self, newtapprox=False, observed=False, save=False):
         ''' Produces a rotation curve of this galaxy. If the galaxy has dark matter and the user opts to display the newtonian

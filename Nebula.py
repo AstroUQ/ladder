@@ -14,7 +14,7 @@ import pickle
 import MiscTools as misc
 
 class Nebula(object):
-    def __init__(self, species, position, radius=None, cartesian=False, rotation=None, localgalaxy=False):
+    def __init__(self, species, position, radius=None, cartesian=False, rotation=None, localgalaxy=False, reduction=True):
         ''' An object to represent (graphically) planetary nebulae or galaxy nebulosity for valid galaxy types according to the
         Galaxy class.
         Parameters
@@ -38,6 +38,7 @@ class Nebula(object):
         self.species = species
         self.radius = radius
         self.local = localgalaxy
+        self.reduce = reduction
         self.nebula_params()
         self.rotation = rotation if rotation is not None else np.random.uniform(0, 2*np.pi, 3)
         # self.cmap = self.initColourMap(self.palette)
@@ -212,7 +213,11 @@ class Nebula(object):
         '''
         coords = []
         for i, colour in enumerate(self.cmap):
-            pop = int(3e5)
+            
+            if self.reduce:
+                pop = int(3e5 * np.exp(-self.spherical[2] / 10**3.7))
+            else:
+                pop = int(3e5)
             
             if i == 0:      # we're dealing with the disk component
                 theta = np.random.uniform(0, 2*np.pi, pop)
@@ -236,7 +241,10 @@ class Nebula(object):
                 
             elif i in [2, 3]:       # we're dealing with spiral arms
                 popindex = {"S0": 1000, "Sa": 3000, "Sb": 4000, "Sc": 10000, "SBa": 10000, "SBb": 10000, "SBc": 10000}
-                pop = popindex[self.species]
+                if self.reduce:
+                    pop = int(popindex[self.species] * np.exp(-self.spherical[2] / 10**4))
+                else:
+                    pop = popindex[self.species]
                 speciesindex = {"S0":0, "Sa":1, "Sb":2, "Sc":3, "SBa":4, "SBb": 5, "SBc":6}
                 wrap = [[None, None], [0.9, 4 * np.pi], [0.7, 2 * np.pi], [0.2, 1 * np.pi], 
                         [np.pi / 2.1, 3 * np.pi], [np.pi / 2.1, 2.1 * np.pi], [np.pi / 2.1, 1.4 * np.pi]]
@@ -281,8 +289,10 @@ class Nebula(object):
     def gen_elliptical_nebulosity(self):
         '''
         '''
-        pop = 100000
-        pop = int(3e5)
+        if self.reduce:
+            pop = int(3e5 * np.exp(-self.spherical[2] / 10**3.7))
+        else:
+            pop = int(3e5)
             
         ellipsoid_mult = (1 - float(self.species[1]) / 10) if self.species[0]=='E' else 1
         
@@ -339,11 +349,11 @@ class Nebula(object):
         '''
         '''
         if self.palette == 'Spiral':
-            bins = 200
-            grid = 120
+            bins = 200 if not self.reduce else int(200 * np.exp(-self.spherical[2] / 10**4.4))
+            grid = 120 if not self.reduce else int(200 * np.exp(-self.spherical[2] / 10**4.4))
         else:
-            bins = 150
-            grid = 50
+            bins = 150 if not self.reduce else int(200 * np.exp(-self.spherical[2] / 10**4.4))
+            grid = 50 if not self.reduce else int(200 * np.exp(-self.spherical[2] / 10**4.4))
         if ax == None:
             fig, ax = plt.subplots()
             ax.invert_yaxis()
@@ -388,8 +398,6 @@ class Nebula(object):
                     ax.hexbin(equat, polar, gridsize=(2 * grid, grid), bins=bins, vmax = 6, linewidths=0.01, cmap=colour, aa=True)
                 else:
                     ax.hexbin(equat, polar, gridsize=(2 * grid, grid), bins=bins, linewidths=0.01, cmap=colour)
-                    
-
 
 
 # img = plt.imread("Datasets/Sim Data (Clusters; 1000, Seed; 588)/Universe Image.png")
@@ -411,7 +419,6 @@ def main():
     # galax.plot_2d(fig, ax)
     # ax.set_xlim(40, 50)
     # ax.set_ylim(95, 85)
-    
     
     for i in range(1000):
         h = Nebula('Sa', position, radius=200)

@@ -44,7 +44,7 @@ def plot_all_3d(galaxies):
 
 class UniverseSim(object):
     def __init__(self, numclusters, hubble=None, seed=None, blackholes=True, darkmatter=True, mode="Normal",
-                 homogeneous=False, rotvels="Normal"):
+                 homogeneous=False, isotropic=True, rotvels="Normal"):
         ''' Generates a Universe object and imports important data from it. 
         Parameters
         ----------
@@ -59,12 +59,24 @@ class UniverseSim(object):
             Comprehensive - some galaxies will and won't have darkmatter/blackholes, and have many stars.
             Normal - all galaxies either will or won't have darkmatter/blackholes, and have many stars.
             Basic - all galaxies either will or won't have darkmatter/blackholes, and have few stars.
+        homogeneous : bool
+            Whether the universe is homogeneous (approx constant density with distance) or not (exp. increasing, then decreasing)
+        isotropic : bool
+            Whether the local galaxy will 'absorb light from distant galaxies' or not. Makes it so galaxy clusters
+            are less likely close to polar = 0 (the galactic plane of the local galaxy)
+        rotvels : str
+            One of {"Normal", "Boosted"}, which dictates whether rotation curves have arbitrarily (and unphysically) boosted
+            velocity magnitudes.
         '''
         self.seed = seed if seed != None else int(np.random.uniform(0, 9999)) # randomly choose a <=4 digit seed if one isn't given
         np.random.seed(seed)
         self.universe = Universe(450000, numclusters, hubble, blackholes=blackholes, darkmatter=darkmatter, complexity=mode,
-                                 homogeneous=homogeneous, rotvels=rotvels)
-        self.hasblackhole = blackholes; self.hasdarkmatter = darkmatter; self.homogeneous = homogeneous; self.mode = mode
+                                 homogeneous=homogeneous, isotropic=isotropic, rotvels=rotvels)
+        self.hasblackhole = blackholes 
+        self.hasdarkmatter = darkmatter
+        self.homogeneous = homogeneous 
+        self.isotropic = isotropic
+        self.mode = mode
         self.hubble = self.universe.hubble
         self.galaxies, self.distantgalaxies = self.universe.get_all_galaxies()
         self.allgalaxies = self.galaxies + self.distantgalaxies
@@ -237,9 +249,10 @@ class UniverseSim(object):
                 gc.enable()
                 for i, galaxy in enumerate(self.galaxies):
                     if galaxy.spherical[2] < 15000: # if the galaxy is closer than 15kpc
-                        # local = True if i == len(self.galaxies) - 1 else False 
-                        galaxNeb = Nebula(galaxy.species, galaxy.spherical[:], galaxy.radius, rotation=galaxy.rotation[:])
-                        galaxNeb.plot_nebula(style='colormesh', ax=ax)
+                        local = True if i == len(self.galaxies) - 1 else False 
+                        galaxy.plot_nebulosity(ax=ax, localgalaxy=local)
+                        gc.collect()
+                
         else:
             scales = np.array(scales)
             colours = np.array(colours)
@@ -516,6 +529,7 @@ class UniverseSim(object):
         text.write(f"Has Black Holes?            | {self.hasblackhole} \n")
         text.write(f"Has Dark Matter?            | {self.hasdarkmatter} \n")
         text.write(f"Universe Homogeneous?       | {self.homogeneous} \n")
+        text.write(f"Universe Isotropic?         | {self.isotropic} \n")
         text.write(f"Universe Radius             | {self.universe.radius} (pc)\n")
         text.write(f"Hubble Const.               | {round(self.hubble, 3)} (km/s/Mpc)\n")
         text.write(f"Local Galaxy Type           | {self.galaxies[-1].species} \n")
@@ -941,8 +955,8 @@ def main():
     # sim = UniverseSim(1000, mode="Normal")
     # sim.save_data()
     
-    sim = UniverseSim(200, rotvels="Boosted")
-    sim.save_data(variablestars=False)
+    sim = UniverseSim(1000, isotropic=False, rotvels="Boosted")
+    sim.save_data(radio=False, variablestars=False)
 
     
 if __name__ == "__main__":

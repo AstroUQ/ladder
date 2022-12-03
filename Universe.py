@@ -13,9 +13,9 @@ from GalaxyCluster import GalaxyCluster
 
 
 class Universe(object):
-    def __init__(self, radius, clusters, hubble=None, blackholes=True, darkmatter=True, complexity="Normal", 
-                 variablestars=True, homogeneous=False, rotvels="Normal"):
-        ''' Generate a universe consisting of Star, BlackHole, Galaxy, and GalaxyCluster objects. 
+    def __init__(self, radius, clusters, hubble=None, blackholes=True, darkmatter=True, complexity="Normal",
+                 variablestars=True, homogeneous=False, isotropic=True, rotvels="Normal"):
+        ''' Generate a universe consisting of Star, BlackHole, Galaxy, and GalaxyCluster objects.
         Parameters
         ----------
         radius : float
@@ -25,40 +25,48 @@ class Universe(object):
         clusters : int
             The number of galaxy clusters to generate
         complexity : str
-            One of {"Comprehensive", "Normal", "Basic"} which chooses how complicated the data analysis will be. 
+            One of {"Comprehensive", "Normal", "Basic"} which chooses how complicated the data analysis will be.
             Comprehensive - some galaxies will and won't have darkmatter/blackholes, and have many stars.
             Normal - all galaxies either will or won't have darkmatter/blackholes, and have many stars.
             Basic - all galaxies either will or won't have darkmatter/blackholes, and have few stars.
         homogeneous : bool
-            Whether the universe is homogeneous or not (approx constant density with distance)
+            Whether the universe is homogeneous (approx constant density with distance) or not (exp. increasing, then decreasing)
+        isotropic : bool
+            Whether the local galaxy will 'absorb light from distant galaxies' or not. Makes it so galaxy clusters
+            are less likely close to polar = 0 (the galactic plane of the local galaxy)
+        rotvels : str
+            One of {"Normal", "Boosted"}, which dictates whether rotation curves have arbitrarily (and unphysically) boosted
+            velocity magnitudes.
         '''
         self.radius = radius
         self.clusterpop = clusters
         self.hubble = self.choosehubble() if hubble == None else hubble
-        self.blackholes = blackholes 
+        self.blackholes = blackholes
         self.darkmatter = darkmatter
         self.complexity = complexity
         self.variablestars = self.determine_variablestars(variablestars)
         self.homogeneous = homogeneous
+        self.isotropic = isotropic
         self.rotvelMult = rotvels
         self.clusters, self.clustervels, self.clusterdists = self.generate_clusters()
         self.galaxies, self.distantgalaxies = self.get_all_galaxies()
-        self.supernovae = self.explode_supernovae(min(55, len(self.galaxies) + len(self.distantgalaxies)))
+        self.supernovae = self.explode_supernovae(
+            min(55, len(self.galaxies) + len(self.distantgalaxies)))
         self.radialvelocities, self.distantradialvelocities = self.get_radial_velocities()
-    
+
     def choosehubble(self):
-        ''' Randomly generate a value for hubble's constant, with random sign. 
+        ''' Randomly generate a value for hubble's constant, with random sign.
         Returns
         -------
         float
             The Hubble constant, in units of km/s/Mpc
         '''
         return np.random.choice([-1, 1]) * np.random.uniform(1000, 5000)
-    
+
     def determine_variablestars(self, variable):
         ''' Determine the type of variable stars in the universe, and their period-luminosity relationships.
         Generates 2 or 3 types of variable stars, with periodicity "Short" (18-30 hours), "Long" (38-55 hours), or "Longest"
-        (75-100 hours), with "Longest" only appearing in 1/3 datasets. 
+        (75-100 hours), with "Longest" only appearing in 1/3 datasets.
         Parameters
         ----------
         variable : bool
@@ -66,11 +74,11 @@ class Universe(object):
         Returns
         -------
         variablestars : list
-            A list composed of [bool, variableparams * n], where the bool corresponds to if this universe has variable stars, 
+            A list composed of [bool, variableparams * n], where the bool corresponds to if this universe has variable stars,
             variable params : list
                 [RoughPeriod, Curvetype, Gradient, Yintercept], where Curvetype is one of {"Saw", "Tri", "Sine"} (Sawtooth wave,
-                Triangle wave, and Sine wave respectively) which determines the shape of the variable lightcurve. RoughPeriod, 
-                Gradient and Yintercept are all float type, where gradient and y-intercept correspond to the parameters of the 
+                Triangle wave, and Sine wave respectively) which determines the shape of the variable lightcurve. RoughPeriod,
+                Gradient and Yintercept are all float type, where gradient and y-intercept correspond to the parameters of the
                 period-luminosity relationship trend (period = gradient * log10(luminosity) + yint). Rough period is the roughly
                 accurate mean period of the period-lum trend.
             and n is the number of variable types in the universe (2/3 chance of n=2, 1/3 chance of n=3)
@@ -78,41 +86,59 @@ class Universe(object):
         if variable:
             # first, we want to determine the shape of each variable type lightcurve. Choose randomly from Saw Tri and Sine
             indexes = np.array([0, 1, 2]); np.random.shuffle(indexes)
-            curvetypes = ["Saw", "Tri", "Sine"]; curvetypes = [curvetypes[index] for index in indexes]
-            
-            prob = np.random.uniform(0, 1); types = 2 if prob <= 0.66 else 3    # determine whether to do 2 or 3 variable types
-            
-            shortperiod = np.random.uniform(18, 30); longperiod = np.random.uniform(38, 55)     # randomly determine period of the variables within some allowed range
+            curvetypes = ["Saw", "Tri", "Sine"]; curvetypes = [
+                curvetypes[index] for index in indexes]
+
+            # determine whether to do 2 or 3 variable types
+            prob = np.random.uniform(0, 1); types = 2 if prob <= 0.66 else 3
+
+            # randomly determine period of the variables within some allowed range
+            shortperiod = np.random.uniform(
+                18, 30); longperiod = np.random.uniform(38, 55)
             longestperiod = np.random.uniform(75, 100)
             periods = [shortperiod, longperiod, longestperiod]
-            signs = np.random.choice([-1, 1], 3)    # randomly choose sign of the period-luminosity trend
+            # randomly choose sign of the period-luminosity trend
+            signs = np.random.choice([-1, 1], 3)
             variablestars = [True]
-            
+
             # we want to find the equation of a line given two points (high lumin and low lumin)
-            shortlower = 3.5*10**5; shortupper = 5*10**6    # lower and upper luminosity bounds
-            shortperiodL = np.random.uniform(0.85, 0.95); shortperiodU = np.random.uniform(1.05, 1.25)     # proportion of lower and upper period bounds
-            shortgradient = signs[0] * (shortperiod * (shortperiodU - shortperiodL)) / (np.log10(shortupper / shortlower))    # m = sign * rise/run
-            shortyint = (shortperiodL * shortperiod) - (shortgradient * np.log10(shortlower))   # y = mx + c => c = y - mx
-            
+            shortlower = 3.5*10**5; shortupper = 5 * \
+                10**6    # lower and upper luminosity bounds
+            shortperiodL = np.random.uniform(0.85, 0.95); shortperiodU = np.random.uniform(
+                1.05, 1.25)     # proportion of lower and upper period bounds
+            shortgradient = signs[0] * (shortperiod * (shortperiodU - shortperiodL)) / (
+                np.log10(shortupper / shortlower))    # m = sign * rise/run
+            shortyint = (shortperiodL * shortperiod) - (shortgradient *
+                         np.log10(shortlower))   # y = mx + c => c = y - mx
+
             # as above, but for the long and longest variable types
             longlower = 100; longupper = 700
-            longperiodL = np.random.uniform(0.92, 0.98); longperiodU = np.random.uniform(1.1, 1.25)
-            longgradient = signs[1] * (longperiod * (longperiodU - longperiodL)) / np.log10(longupper / longlower)
-            longyint = (longperiodL * longperiod) - (longgradient * np.log10(longlower))
-            
+            longperiodL = np.random.uniform(
+                0.92, 0.98); longperiodU = np.random.uniform(1.1, 1.25)
+            longgradient = signs[1] * (longperiod * (longperiodU -
+                                       longperiodL)) / np.log10(longupper / longlower)
+            longyint = (longperiodL * longperiod) - \
+                        (longgradient * np.log10(longlower))
+
             longestlower = 100; longestupper = 700
-            longestperiodL = np.random.uniform(0.9, 0.98); longestperiodU = np.random.uniform(1.05, 1.25)
-            longestgradient = signs[2] * (longestperiod * (longestperiodU - longestperiodL)) / np.log10(longestupper / longestlower)
-            longestyint = (longestperiodL * longestperiod) - (longestgradient * np.log10(longestlower))
-            
+            longestperiodL = np.random.uniform(
+                0.9, 0.98); longestperiodU = np.random.uniform(1.05, 1.25)
+            longestgradient = signs[2] * (longestperiod * (
+                longestperiodU - longestperiodL)) / np.log10(longestupper / longestlower)
+            longestyint = (longestperiodL * longestperiod) - \
+                           (longestgradient * np.log10(longestlower))
+
             gradients = [shortgradient, longgradient, longestgradient]
             yints = [shortyint, longyint, longestyint]
-            for i in range(types):  # append the period-lum parameters to a list to be sent across the universe
-                variablestars.append([periods[i], curvetypes[i], gradients[i], yints[i]])
+            # append the period-lum parameters to a list to be sent across the universe
+            for i in range(types):
+                variablestars.append(
+                    [periods[i], curvetypes[i], gradients[i], yints[i]])
             return variablestars
         else:
-            return [False, [], []]  # if we dont want variable stars, an 'empty' list still needs to be sent out
-    
+            # if we dont want variable stars, an 'empty' list still needs to be sent out
+            return [False, [], []]
+
     def generate_clusters(self):
         ''' Generate all of the galaxy clusters in the universe.
         Returns
@@ -128,9 +154,28 @@ class Universe(object):
         population = self.clusterpop
         clusters = []
 
-        equat = np.random.uniform(0, 360, population)   # generate cluster positions in sky
-        # polar = np.random.uniform(0, 180, population)
+        # generate cluster positions in sky
+        equat = np.random.uniform(0, 360, population)
         polar = np.random.uniform(-1, 1, population)
+
+        if not self.isotropic:
+            # if not isotropic, we want fewer galaxy cluster in the local galactic plane.
+            # we can reject positions if they are close to the galactic plane (given by the lambda function below)
+            rejection = lambda r: np.exp(-10 * (abs(r) - 0.08))
+            # this function has a rough form of
+            #         1 |  \
+            #           |   |
+            #           |    \
+            # prob. of  |      \_
+            # rejection |        \__
+            #           |           \______
+            #         0 +-------------------->
+            #           0     abs(polar)    1
+            randVals = np.random.uniform(0, 1, population)
+            for i, PolVal in enumerate(polar):
+                if randVals[i] < rejection(PolVal):
+                    polar[i] = np.sign(PolVal) * np.random.uniform(abs(PolVal), 1)
+                    
         polar = np.arccos(polar); polar = np.rad2deg(polar)
         
         lowerbound = 5000      # we want a certain area around the origin to be empty (to make space for the local cluster)
@@ -172,7 +217,7 @@ class Universe(object):
         populations = np.random.exponential(8, population)  # generate number of galaxies per cluster
         populations = [1 if pop < 1 else int(pop) for pop in populations]   # make sure each cluster has at least one galaxy
         
-        localequat = np.random.uniform(0, 360); localpolar = np.random.uniform(45, 135)     # choose position of local cluster in the sky
+        localequat = np.random.uniform(45, 315); localpolar = np.random.uniform(45, 135)     # choose position of local cluster in the sky
 
         for i in tqdm(range(self.clusterpop)):
             pos = (equat[i], polar[i], R[i])

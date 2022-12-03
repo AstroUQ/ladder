@@ -35,6 +35,9 @@ class GalaxyCluster(object):
             The first element must be a bool, which decides whether or not to generate variability in some stars
             The second and third elements (and fourth [optional]) must be comprised of [period, lightcurve type],
             where the period is in hours (float) and the lightcurve type is one of {"Saw", "Tri", "Sine"} (str). 
+        rotvels : str
+            One of {"Normal", "Boosted"}, which dictates whether rotation curves have arbitrarily (and unphysically) boosted
+            velocity magnitudes.
         '''
         self.local = local
         self.clusterpop = population

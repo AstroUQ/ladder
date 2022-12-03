@@ -955,8 +955,8 @@ def main():
     # sim = UniverseSim(1000, mode="Normal")
     # sim.save_data()
     
-    sim = UniverseSim(1000, isotropic=False, rotvels="Boosted")
-    sim.save_data(radio=False, variablestars=False)
+    sim = UniverseSim(20, isotropic=False, rotvels="Boosted")
+    sim.save_data(radio=False, variablestars=True)
 
     
 if __name__ == "__main__":

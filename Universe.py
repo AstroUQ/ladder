@@ -102,19 +102,18 @@ class Universe(object):
             variablestars = [True]
 
             # we want to find the equation of a line given two points (high lumin and low lumin)
-            shortlower = 3.5*10**5; shortupper = 5 * \
-                10**6    # lower and upper luminosity bounds
-            shortperiodL = np.random.uniform(0.85, 0.95); shortperiodU = np.random.uniform(
-                1.05, 1.25)     # proportion of lower and upper period bounds
+            shortlower = 100; shortupper = 700    # lower and upper luminosity bounds
+            shortperiodL = np.random.uniform(0.92, 0.98); shortperiodU = np.random.uniform(
+                1.1, 1.25)     # proportion of lower and upper period bounds
             shortgradient = signs[0] * (shortperiod * (shortperiodU - shortperiodL)) / (
                 np.log10(shortupper / shortlower))    # m = sign * rise/run
             shortyint = (shortperiodL * shortperiod) - (shortgradient *
                          np.log10(shortlower))   # y = mx + c => c = y - mx
 
             # as above, but for the long and longest variable types
-            longlower = 100; longupper = 700
+            longlower = 3.5*10**5; longupper = 5 * 10**6
             longperiodL = np.random.uniform(
-                0.92, 0.98); longperiodU = np.random.uniform(1.1, 1.25)
+                0.85, 0.95); longperiodU = np.random.uniform(1.05, 1.25)
             longgradient = signs[1] * (longperiod * (longperiodU -
                                        longperiodL)) / np.log10(longupper / longlower)
             longyint = (longperiodL * longperiod) - \

@@ -652,18 +652,21 @@ class Galaxy(object):
         VelObsArray = velarray * velprops   # multiply the actual velocities by the line of sight proportion of the velocity magnitude
         return velarray, VelObsArray, darkmattermass, direction
     
-    def plot_nebulosity(self, ax, localgalaxy=False):
+    def plot_nebulosity(self, figAxes, method="AllSky", localgalaxy=False):
         ''' Plots the pretty, glow-y nebulosity of this galaxy on an existing figure.
         Parameters
         ----------
-        ax : matplotlib axes object
-            The figure with which we're plotting!
+        figAxes : list (or None)
+            List in the form of [fig, ax] (if AllSky projection), or [[fig1, ax1], [fig2, ax2],...,[fig6, ax6]] if cubemapped.
+            If you want a new generation, input just None
+        method : str
+            One of {"AllSky", "Cube"}
         localgalaxy : bool
             Whether or not this galaxy is the local galaxy (and thus fills up much of the figure)
         '''
-        galaxNeb = Nebula(self.species, self.spherical[:], self.radius, rotation=self.rotation[:],
+        galaxNeb = Nebula(self.species, self.spherical, self.radius, rotation=self.rotation,
                           localgalaxy=localgalaxy)
-        galaxNeb.plot_nebula(style='colormesh', ax=ax)
+        galaxNeb.plot_nebula(figAxes=figAxes, style='colormesh', method=method, localgalaxy=localgalaxy)
     
     def plot_RotCurve(self, newtapprox=False, observed=False, save=False):
         ''' Produces a rotation curve of this galaxy. If the galaxy has dark matter and the user opts to display the newtonian

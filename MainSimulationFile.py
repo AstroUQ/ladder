@@ -242,22 +242,25 @@ class UniverseSim(object):
             ax.invert_yaxis()   # polar angle of 0 is at the top, 180 at the bottom
             ax.set_xlabel("Equatorial Angle (degrees)")
             ax.set_ylabel("Polar Angle (degrees)")
-            
-            print("Doing stuff now!")
-            if pretty: # let's plot the galaxy nebulosity for the close galaxies
-                import gc
-                gc.enable()
-                for i, galaxy in enumerate(self.galaxies):
-                    if galaxy.spherical[2] < 15000: # if the galaxy is closer than 15kpc
-                        local = True if i == len(self.galaxies) - 1 else False 
-                        galaxy.plot_nebulosity(ax=ax, localgalaxy=local)
-                        gc.collect()
-                
         else:
             scales = np.array(scales)
             colours = np.array(colours)
             uc, vc, index = misc.cubemap(x, y, z)
             self.cubemap_plot(uc, vc, index, scales, colours, figAxes)
+        
+        if pretty: # let's plot the galaxy nebulosity for the close galaxies
+            import gc
+            gc.enable()
+            if not cubemap:
+                figAxes = [fig, ax]
+                method = "AllSky"
+            else:
+                method = "Cube" 
+            for i, galaxy in enumerate(self.galaxies):
+                if galaxy.spherical[2] < 20000: # if the galaxy is closer than 15kpc
+                    local = True if i == len(self.galaxies) - 1 else False 
+                    galaxy.plot_nebulosity(figAxes, method=method, localgalaxy=local)
+                    gc.collect()
             
         if radio == True and not cubemap:   # plot the radio overlay
             self.plot_radio(ax)
@@ -375,8 +378,8 @@ class UniverseSim(object):
             return fig
         
             
-    def save_data(self, properties=True, proj='AllSky', pic=True, radio=True, stars=True, variablestars=True, blackbodies=False, 
-                  distantgalax=True, supernovae=True, doppler=[False, False], blackhole=False, rotcurves=False):
+    def save_data(self, properties=True, proj='AllSky', pic=True, pretty=True, radio=True, stars=True, variablestars=True, 
+                  blackbodies=False, distantgalax=True, supernovae=True, doppler=[False, False], blackhole=False, rotcurves=False):
         ''' Generates some data, takes other data, and saves it to the system in a new directory within the file directory.
         .pdf images are commented out currently - uncomment them at your own risk! (.pdfs can be in excess of 90mb each!)
         Parameters
@@ -387,6 +390,8 @@ class UniverseSim(object):
             One of {'AllSky', 'Cube', 'Both'} to determine output of images/data
         pic : bool
             Whether to generate and save a 2d plot of the universe.
+        pretty : bool
+            If true, plots galaxy nebulosity on top of galaxies. Warning: high RAM usage!
         radio : bool
             If true, plot another universe image with radio lobes overlaid.
         stars : bool
@@ -418,7 +423,7 @@ class UniverseSim(object):
 
         # first, save the *data* that the user might interact with
         if pic:     # now save a huge pic of the universe. say goodbye to your diskspace
-            self.save_pic(radio=radio, proj=proj)
+            self.save_pic(radio=radio, proj=proj, pretty=pretty)
         if stars:   # generate and save star data
             self.save_stars(proj=proj)
         if variablestars:
@@ -701,16 +706,16 @@ class UniverseSim(object):
             if galaxy.spherical[2] <= 15000:    # we only want to save variable star data if the stars are close-ish
                 for star in galaxy.stars:
                     if star.variable == True:
-                        condition1 = galaxy.spherical[2] <= 5000 and star.variabletype[0] == "Long"
+                        condition1 = galaxy.spherical[2] <= 5000 and star.variabletype[0] == "Short"
                         condition2 = galaxy.spherical[2] <= 7500 and star.variabletype[0] == "Longest"
-                        condition3 = star.variabletype[0] in ["Short", "False"]
+                        condition3 = star.variabletype[0] in ["Long", "False"]
                         if condition1 or condition2 or condition3:  # if one of the above criteria are met, we want to save the data
                             starname = self.starnames[k]
                             if galaxy.rotate == False:      # must be the local galaxy, so we want to save a pic of the lightcurve
                                 fig = star.plot_lightcurve(save=True)
                                 fig.savefig(variabledirectory + f'\\{starname}.png', dpi=400, bbox_inches='tight', pad_inches = 0.01)
                             times, fluxes = star.lightcurve
-                            variabledata = {"Time":times, "NormalisedFlux":fluxes}
+                            variabledata = {"Time": times, "NormalisedFlux": fluxes}
                             variablefile = pd.DataFrame(variabledata)
                             variablefile.to_csv(variabledirectory + f"\\{starname}.txt", index=None, sep=' ')
                     k +=1
@@ -894,8 +899,8 @@ def main():
     # sim = UniverseSim(1000, mode="Normal")
     # sim.save_data()
     
-    sim = UniverseSim(20, isotropic=False, rotvels="Boosted")
-    sim.save_data(radio=False, variablestars=True)
+    sim = UniverseSim(50, isotropic=False, rotvels="Boosted")
+    sim.save_data(proj="Cube", radio=False, variablestars=True)
 
     
 if __name__ == "__main__":

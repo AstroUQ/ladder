@@ -352,8 +352,9 @@ class Nebula(object):
         figAxes : list (or None)
             List in the form of [fig, ax] (if AllSky projection), or [[fig1, ax1], [fig2, ax2],...,[fig6, ax6]] if cubemapped.
         style : str
+            One of {'colormesh', 'imshow', 'hexbin'}
         method : str
-            One of {"AllSky", "Cubemap"}
+            One of {"AllSky", "Cube"}
         '''
         if self.palette == 'Spiral':
             bins = 200 if not self.reduce else int(200 * np.exp(-self.spherical[2] / 10**4.4))
@@ -391,7 +392,7 @@ class Nebula(object):
                 else:
                     smooth = 1.5
                 x, y, z = self.points[i]
-                if method == "Cubemap":
+                if method == "Cube":
                     origBins = bins
                     if localgalaxy:
                         smooth = 5
@@ -405,7 +406,6 @@ class Nebula(object):
                             # points have *not* been cut off
                             bins = origBins
                             bins *= max(np.sqrt(len(X) / len(x)), np.sqrt(len(Y) / len(y))); bins = int(bins)
-                            print(bins)
                         extent = [[min(X) - 1, max(X) + 1], [min(Y) - 1, max(Y) + 1]]
                         density, Xedges, Yedges = np.histogram2d(X, Y, bins=[2 * bins, bins], range=extent)
                         Xbins = Xedges[:-1] + (Xedges[1] - Xedges[0]) / 2   # this fixes the order of the bins, and centers the bins at the midpoint
@@ -478,7 +478,7 @@ def main():
     # ax.set_ylim(95, 85)
     
     species = 'SBa'
-    position = [225, 90, 600]
+    # position = [225, 90, 600]
     position = [180, 90, 40]
     galax = Galaxy(species, position, rotate=False)
     # fig, ax = plt.subplots()

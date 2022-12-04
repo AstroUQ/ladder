@@ -50,11 +50,11 @@ class Star(object):
         if variable[0]:     # if we want variable stars, it's time to check if this star fits the criteria to be variable
             noiseprob = np.random.uniform(0, 1)
             if 100 <= self.luminosity <= 700 and 10**4 <= self.temperature <= 1.2 * 10**4:    # kinda like delta scutis
-                self.lightcurve = self.generate_variable(variable[2])
+                self.lightcurve = self.generate_variable(variable[1])
                 self.variable = True
                 self.variabletype = ["Short", variable[1][1]]
             elif 3.5*10**5 <= self.luminosity <= 5*10**6 and 5500 <= self.temperature <= 1.2 * 10**4:  # kinda like delta cepheids
-                self.lightcurve = self.generate_variable(variable[1])
+                self.lightcurve = self.generate_variable(variable[2])
                 self.variable = True
                 self.variabletype = ["Long", variable[2][1]]
             elif len(variable) >= 4 and 100 <= self.luminosity <= 4000 and 2200 <= self.temperature <= 4700:

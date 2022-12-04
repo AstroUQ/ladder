@@ -157,7 +157,7 @@ class UniverseSim(object):
             BHequat, BHpolar, distance = self.allgalaxies[i].spherical  # get the coords of each black hole
             if cubemap:
                 BHx, BHy, BHz = self.allgalaxies[i].cartesian
-                uc, vc, index = self.cubemap(BHx, BHy, BHz)
+                uc, vc, index = misc.cubemap(BHx, BHy, BHz)
             BHcolour = blackhole.get_BH_colour()
             BHscale = blackhole.get_BH_scale() / (0.05 * distance)  # determine the scale of the black hole marker from its intrinsic brightness and distance
             if spikes == True and BHscale > 2.5:    # then we want to plot diffraction spikes on the black hole
@@ -208,7 +208,7 @@ class UniverseSim(object):
                 ax.errorbar(brightequat, brightpolar, yerr=brightscale, xerr=brightscale, ecolor=brightcolour, fmt='none', elinewidth=0.3)
             else:
                 brightX, brightY, brightZ, brightscale = np.array(brightX), np.array(brightY), np.array(brightZ), np.array(brightscale)
-                uc, vc, index = self.cubemap(brightX, brightY, brightZ)
+                uc, vc, index = misc.cubemap(brightX, brightY, brightZ)
                 for i in range(len(uc)): # now plot each of the bright stars individually
                     self.cubemap_plot(uc[i], vc[i], index[i], 0, brightcolour[i], figAxes, spikes=brightscale[i])
                     
@@ -256,7 +256,7 @@ class UniverseSim(object):
         else:
             scales = np.array(scales)
             colours = np.array(colours)
-            uc, vc, index = self.cubemap(x, y, z)
+            uc, vc, index = misc.cubemap(x, y, z)
             self.cubemap_plot(uc, vc, index, scales, colours, figAxes)
             
         if radio == True and not cubemap:   # plot the radio overlay
@@ -267,67 +267,6 @@ class UniverseSim(object):
                 return fig, ax
             else:
                 return figAxes
-        
-    def cubemap(self, x, y, z):
-        ''' Transforms cartesian coordinates into (u, v) coordinates on the 6 faces of a cube, with an index corresponding to 
-            which cube face the point is projected on to. 
-        Parameters
-        ----------
-        x, y, z : np.array
-            Cartesian coordinates of the point(s)
-        Returns
-        -------
-        uc, vc : np.array
-            horiz, vertical coords (respectively) in the corresponding cube face
-        index : np.array
-            corresponding cube face index of each projected point in (x, y, z):
-            {0: front, 1: back, 2: top, 3: bottom, 4: left, 5: right}
-        '''
-        # initialise arrays
-        index = np.zeros(x.size, dtype=int); uc = np.zeros(x.size); vc = np.zeros(x.size)
-        # rotate the points so that the local galactic center is centered in the 'front' image
-        points = np.array([x, y, z])
-        points = np.dot(misc.cartesian_rotation(np.pi, 'y'), points)
-        points = np.dot(misc.cartesian_rotation(np.pi / 2, 'x'), points)
-        x, y, z = points
-        
-        # now, let's find which cube face each point is projected to. This algorithm was taken from wikipedia, and adapted
-        # for python: https://en.wikipedia.org/wiki/Cube_mapping#Memory_addressing
-        for i in range(x.size):
-            if x.size == 1: # gotta account for arrays of one value
-                X = x; Y = y; Z = z
-            else:
-                X = x[i]; Y = y[i]; Z = z[i]
-            # normalise each vector component so that the output coords are between -x and +x (for example)
-            absArray = abs(np.array([X, Y, Z]))
-            X /= max(absArray); Y /= max(absArray); Z /= max(absArray)
-            # now we can find which cube face the point is projected onto:
-            if X > 0 and abs(X) >= abs(Y) and abs(X) >= abs(Z): # point is on: POS X -- front
-                uc[i] = -Z
-                vc[i] = Y
-            elif X < 0 and abs(X) >= abs(Y) and abs(X) >= abs(Z): # NEG X -- back
-                uc[i] = Z
-                vc[i] = Y
-                index[i] = 1
-            elif Y > 0 and abs(Y) >= abs(X) and abs(Y) >= abs(Z): # POS Y -- top
-                uc[i] = X
-                vc[i] = -Z
-                index[i] = 2
-            elif Y < 0 and abs(Y) >= abs(X) and abs(Y) >= abs(Z): # NEG Y -- bottom
-                uc[i] = X
-                vc[i] = Z
-                index[i] = 3
-            elif Z > 0 and abs(Z) >= abs(X) and abs(Z) >= abs(Y): # POS Z -- left
-                uc[i] = X
-                vc[i] = Y
-                index[i] = 4
-            else: # Z < 0 and abs(Z) >= abs(X) and abs(Z) >= abs(Y)  # NEG Z -- right
-                uc[i] = -X
-                vc[i] = Y
-                index[i] = 5
-                
-        uc *= 45; vc *= 45 # transforms coords from +/- 1 to +/- 45 degrees
-        return uc, vc, index
     
     def cubemap_plot(self, uc, vc, index, scales, colours, figAxes, spikes=None):
         ''' Plots the points on each cube face for the cube mapping. 
@@ -628,7 +567,7 @@ class UniverseSim(object):
         x, y, z, _, _ = starpos[0], starpos[1], starpos[2], starpos[3], starpos[4]
         
         if proj in ["Cube", "Both"]:
-            uc, vc, index = self.cubemap(x, y, z)
+            uc, vc, index = misc.cubemap(x, y, z)
             if proj == "Cube":
                 _, _, radius = misc.cartesian_to_spherical(x, y, z)
         if proj in ['AllSky', 'Both']:
@@ -708,7 +647,7 @@ class UniverseSim(object):
             _, _, dists = sphericals[:, 0], sphericals[:, 1], sphericals[:, 2]
             carts = np.array([galaxy.cartesian for galaxy in self.distantgalaxies])
             x, y, z = carts[:, 0], carts[:, 1], carts[:, 2]
-            uc, vc, index = self.cubemap(x, y, z)
+            uc, vc, index = misc.cubemap(x, y, z)
         distsMeters = dists * 3.086 * 10**16
         
         bandlumin = np.array([galaxy.bandlumin for galaxy in self.distantgalaxies])
@@ -809,7 +748,7 @@ class UniverseSim(object):
             polars = np.array([format(abs(polar), '3.2f') for polar in pos[1]])
         if proj in ["Cube", "Both"]:
             x, y, z = misc.spherical_to_cartesian(pos[0], pos[1], pos[2])
-            uc, vc, index = self.cubemap(x, y, z)
+            uc, vc, index = misc.cubemap(x, y, z)
             uc = np.array([format(coord, '3.2f') for coord in uc])
             vc = np.array([format(coord, '3.2f') for coord in vc])
             
@@ -887,7 +826,7 @@ class UniverseSim(object):
             BHfile.to_csv(self.datadirectory + "\\AllSky Radio Source Data.txt", index=None, sep=' ')
         if proj in ["Cube", "Both"]:
             x, y, z = misc.spherical_to_cartesian(equats, polars, np.array(dists))
-            uc, vc, index = self.cubemap(x, y, z)
+            uc, vc, index = misc.cubemap(x, y, z)
             
             directions = np.array(['Front', 'Back', 'Top', 'Bottom', 'Left', 'Right'])
             

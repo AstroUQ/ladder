@@ -75,3 +75,65 @@ def cartesian_rotation(angle, axis):
         return np.array([[np.cos(angle), 0, np.sin(angle)], [0, 1, 0], [-np.sin(angle), 0, np.cos(angle)]])
     else:
         return np.array([[np.cos(angle), -np.sin(angle), 0], [np.sin(angle), np.cos(angle), 0], [0, 0, 1]])
+    
+def cubemap(x, y, z):
+    ''' Transforms cartesian coordinates into (u, v) coordinates on the 6 faces of a cube, with an index corresponding to 
+        which cube face the point is projected on to. 
+    Parameters
+    ----------
+    x, y, z : np.array
+        Cartesian coordinates of the point(s)
+    Returns
+    -------
+    uc, vc : np.array
+        horiz, vertical coords (respectively) in the corresponding cube face
+    index : np.array
+        corresponding cube face index of each projected point in (x, y, z):
+        {0: front, 1: back, 2: top, 3: bottom, 4: left, 5: right}
+    '''
+    # initialise arrays
+    index = np.zeros(x.size, dtype=int); uc = np.zeros(x.size); vc = np.zeros(x.size)
+    # rotate the points so that the local galactic center is centered in the 'front' image
+    # that is, equat=180 => front, uc=0
+    points = np.array([x, y, z])
+    points = np.dot(cartesian_rotation(np.pi, 'y'), points)
+    points = np.dot(cartesian_rotation(np.pi / 2, 'x'), points)
+    x, y, z = points
+    
+    # now, let's find which cube face each point is projected to. This algorithm was taken from wikipedia, and adapted
+    # for python: https://en.wikipedia.org/wiki/Cube_mapping#Memory_addressing
+    for i in range(x.size):
+        if x.size == 1: # gotta account for arrays of one value
+            X = x; Y = y; Z = z
+        else:
+            X = x[i]; Y = y[i]; Z = z[i]
+        # normalise each vector component so that the output coords are between -x and +x (for example)
+        absArray = abs(np.array([X, Y, Z]))
+        X /= max(absArray); Y /= max(absArray); Z /= max(absArray)
+        # now we can find which cube face the point is projected onto:
+        if X > 0 and abs(X) >= abs(Y) and abs(X) >= abs(Z): # point is on: POS X -- front
+            uc[i] = -Z
+            vc[i] = Y
+        elif X < 0 and abs(X) >= abs(Y) and abs(X) >= abs(Z): # NEG X -- back
+            uc[i] = Z
+            vc[i] = Y
+            index[i] = 1
+        elif Y > 0 and abs(Y) >= abs(X) and abs(Y) >= abs(Z): # POS Y -- top
+            uc[i] = X
+            vc[i] = -Z
+            index[i] = 2
+        elif Y < 0 and abs(Y) >= abs(X) and abs(Y) >= abs(Z): # NEG Y -- bottom
+            uc[i] = X
+            vc[i] = Z
+            index[i] = 3
+        elif Z > 0 and abs(Z) >= abs(X) and abs(Z) >= abs(Y): # POS Z -- left
+            uc[i] = X
+            vc[i] = Y
+            index[i] = 4
+        else: # Z < 0 and abs(Z) >= abs(X) and abs(Z) >= abs(Y)  # NEG Z -- right
+            uc[i] = -X
+            vc[i] = Y
+            index[i] = 5
+            
+    uc *= 45; vc *= 45 # transforms coords from +/- 1 to +/- 45 degrees
+    return uc, vc, index

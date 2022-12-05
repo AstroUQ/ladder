@@ -150,7 +150,7 @@ def gen_figAxes(method="AllSky"):
     else:
         figAxes = []
         for i in range(6):
-            fig, ax = plt.subplots(figsize=(9,9))
+            fig, ax = plt.subplots(figsize=(6, 6))
             ax.set_xlim(-45, 45); ax.set_ylim(-45, 45)    # equatorial angle goes from 0->360, polar 0->180
             ax.set_facecolor('k')   # space has a black background, duh
             ax.set_aspect(1)    # makes it so that the figure is twice as wide as it is tall - no stretching!

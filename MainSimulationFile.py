@@ -136,7 +136,7 @@ class UniverseSim(object):
         else: # we want 6, directional images of a cubemap
             figAxes = []
             for i in range(6):
-                fig, ax = plt.subplots(figsize=(9,9))
+                fig, ax = plt.subplots(figsize=(6, 6))
                 ax.set_xlim(-45, 45); ax.set_ylim(-45, 45)    # equatorial angle goes from 0->360, polar 0->180
                 ax.set_facecolor('k')   # space has a black background, duh
                 ax.set_aspect(1)    # makes it so that the figure is twice as wide as it is tall - no stretching!
@@ -914,8 +914,8 @@ def main():
     # sim = UniverseSim(1000, mode="Normal")
     # sim.save_data()
     
-    sim = UniverseSim(100, isotropic=False, rotvels="Boosted")
-    sim.save_data(proj="Both", radio=True, variablestars=False)
+    sim = UniverseSim(1000, isotropic=False, rotvels="Boosted")
+    sim.save_data(proj="Both")
 
     
 if __name__ == "__main__":

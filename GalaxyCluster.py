@@ -127,7 +127,7 @@ class GalaxyCluster(object):
             # choose spiral type - we dont want S0 because they have fewer variable stars (due to their position on HR diagrams)
             # also don't want SBc or Sc due to their wild shape
             localgalaxy = np.random.choice(['SBa', 'SBb', 'Sa', 'Sb'])   
-            localdist = np.random.uniform(25, 50)   # we don't want the observer in the center of the galaxy, but also not outside of it
+            localdist = np.random.uniform(15, 50)   # we don't want the observer in the center of the galaxy, but also not outside of it
             localx, localy, localz = misc.spherical_to_cartesian(180, 90, localdist)
             args[-1] = (localgalaxy, [localx, localy, localz], False)   # replace the last galaxy in the cluster with this galaxy, with no rotation!
             # galaxpositions[-1, :] = np.array([localx, localy, localz])

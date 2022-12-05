@@ -248,25 +248,26 @@ class UniverseSim(object):
             uc, vc, index = misc.cubemap(x, y, z)
             self.cubemap_plot(uc, vc, index, scales, colours, figAxes)
         
+        if not cubemap:
+            figAxes = [fig, ax]
+            method = "AllSky"
+        else:
+            method = "Cube" 
         if pretty: # let's plot the galaxy nebulosity for the close galaxies
             import gc
             gc.enable()
-            if not cubemap:
-                figAxes = [fig, ax]
-                method = "AllSky"
-            else:
-                method = "Cube" 
             for i, galaxy in enumerate(self.galaxies):
                 if galaxy.spherical[2] < 20000: # if the galaxy is closer than 15kpc
                     local = True if i == len(self.galaxies) - 1 else False 
                     galaxy.plot_nebulosity(figAxes, method=method, localgalaxy=local)
                     gc.collect()
             
-        if radio == True and not cubemap:   # plot the radio overlay
-            self.plot_radio(ax)
+        if radio == True:   # plot the radio overlay
+            self.plot_radio(figAxes)
         
         if save == True:    # close the figure (so it doesnt pop up during the run) and return the figure to save later.
             if not cubemap:
+                fig, ax = figAxes
                 return fig, ax
             else:
                 return figAxes
@@ -298,22 +299,30 @@ class UniverseSim(object):
             else: # we have spikes, so need to use error bar
                 figAxes[i][1].errorbar(x, y, yerr=spikes, xerr=spikes, ecolor=colours, fmt='none', elinewidth=0.3)
     
-    def plot_radio(self, ax):
+    def plot_radio(self, figAxes, method="AllSky"):
         ''' Plot the radio contours of the SMBH emission onto a 2D sky plot. 
         Parameters
         ----------
-        ax : matplotlib axes object
+        figAxes : list (or None)
+            List in the form of [fig, ax] (if AllSky projection), or [[fig1, ax1], [fig2, ax2],...,[fig6, ax6]] if cubemapped.
+            If you want a new generation, input just None
+        method : str
         '''
-        levels = [2, 3, 4, 5, 6, 10, 15]    # having the contour levels start at 2 removes the noise from the smoothing - important!!
+        # levels = [2, 3, 4, 5, 6, 10, 15]    # having the contour levels start at 2 removes the noise from the smoothing - important!!
+        # for galaxy in self.galaxies:
+        #     if galaxy.blackhole == False or galaxy.blackhole.BHradio == False:
+        #         continue
+        #     equatbins, polarbins, density = galaxy.plot_radio_contour(0, plot=False, data=True)
+        #     _, _, dist = galaxy.spherical   # get the distance to the galaxy in question
+        #     lw = 10 / np.sqrt(dist)     # this makes more distant radio lobes proportionally smaller! nice!
+        #     ax.contour(equatbins, polarbins, density, levels, corner_mask=True, linewidths=lw)     # plot the radio contours
+        # ax.set_ylim(0, 180); ax.set_xlim(0, 360)
+        # ax.invert_yaxis();
+        
         for galaxy in self.galaxies:
             if galaxy.blackhole == False or galaxy.blackhole.BHradio == False:
                 continue
-            equatbins, polarbins, density = galaxy.plot_radio_contour(0, plot=False, data=True)
-            _, _, dist = galaxy.spherical   # get the distance to the galaxy in question
-            lw = 10 / np.sqrt(dist)     # this makes more distant radio lobes proportionally smaller! nice!
-            ax.contour(equatbins, polarbins, density, levels, corner_mask=True, linewidths=lw)     # plot the radio contours
-        ax.set_ylim(0, 180); ax.set_xlim(0, 360)
-        ax.invert_yaxis();
+            galaxy.plot_radio_contour(figAxes, method=method, plot=True, scatter=False, data=False, thin=True)
         
     def plot_doppler(self, log=True, save=False):
         ''' Plot the radial velocities of all of the stars and distant galaxies in the universe in terms of a colour scale,
@@ -506,7 +515,6 @@ class UniverseSim(object):
         # now plot and save the HR diagram for the local galaxy
         HR = self.galaxies[-1].plot_HR(isoradii=True, xunit="both", yunit="BolLumMag", variable=True, save=True)
         HR.savefig(self.datadirectory + '\\Local Galaxy HR Diagram.png', dpi=600, bbox_inches='tight', pad_inches = 0.01)
-        # HR.savefig(self.datadirectory + '\\Local Galaxy HR Diagram.pdf', dpi=600, bbox_inches='tight', pad_inches = 0.01)
         plt.close('all')
         proptime2 = time(); total = proptime2 - proptime1; print("Universe properties saved in", total, "s")
         
@@ -519,6 +527,8 @@ class UniverseSim(object):
         proj : str
             One of {'AllSky', 'Cube', 'Both'} depending on if you want a single, equirectangular projected image of the sky, or
             six, cubemapped images of the sky, respectively. (or both!)
+        pretty : bool
+            Whether to plot galaxy nebulosity on top of galaxies. Warning: high RAM usage!
         '''
         if not self.datadirectory:
             self.create_directory()
@@ -543,12 +553,17 @@ class UniverseSim(object):
         
         if radio and self.hasblackhole:       # plot radio data too
             print("Generating radio overlay...")
-            if proj == "Cube":
-                fig, ax = self.plot_universe(pretty=pretty, save=True)
-                fig.set_size_inches(18, 9, forward=True)
-            self.plot_radio(ax)
-            fig.savefig(self.datadirectory + '\\AllSky Radio Overlay Image.png', dpi=1500, bbox_inches='tight', pad_inches = 0.01)
-            pictime3 = time(); total = pictime3 - pictime2; print("Radio overlay picture saved in", total, "s")
+            if proj in ["AllSky", "Both"]:
+                self.plot_radio([fig, ax], method="AllSky")
+                fig.savefig(self.datadirectory + '\\AllSky Radio Overlay Image.png', dpi=1500, bbox_inches='tight', pad_inches = 0.01)
+                pictime3 = time(); total = pictime3 - pictime2; print("Radio overlay picture saved in", total, "s")
+            if proj in ["Cube", "Both"]:
+                self.plot_radio(figAxes, method="Cube")
+                for i in range(6):
+                    fig, ax = figAxes[i]
+                    fig.savefig(self.datadirectory + f'\\{directions[i]}\\{directions[i]} Radio Overlay.png', dpi=1500, 
+                                bbox_inches='tight', pad_inches = 0.01)
+            
             
         plt.close('all')
         
@@ -899,8 +914,8 @@ def main():
     # sim = UniverseSim(1000, mode="Normal")
     # sim.save_data()
     
-    sim = UniverseSim(50, isotropic=False, rotvels="Boosted")
-    sim.save_data(proj="Cube", radio=False, variablestars=True)
+    sim = UniverseSim(100, isotropic=False, rotvels="Boosted")
+    sim.save_data(proj="Both", radio=True, variablestars=False)
 
     
 if __name__ == "__main__":

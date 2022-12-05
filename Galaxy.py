@@ -666,7 +666,7 @@ class Galaxy(object):
         '''
         galaxNeb = Nebula(self.species, self.spherical, self.radius, rotation=self.rotation,
                           localgalaxy=localgalaxy)
-        galaxNeb.plot_nebula(figAxes=figAxes, style='colormesh', method=method, localgalaxy=localgalaxy)
+        galaxNeb.plot_nebula(figAxes=figAxes, style='colormesh', method=method)
     
     def plot_RotCurve(self, newtapprox=False, observed=False, save=False):
         ''' Produces a rotation curve of this galaxy. If the galaxy has dark matter and the user opts to display the newtonian
@@ -1036,17 +1036,23 @@ class Galaxy(object):
         ax.set_xlim(-radius, radius); ax.set_ylim(-radius, radius), ax.set_zlim(-radius, radius)
         ax.set_xlabel("x"); ax.set_ylabel("y")
     
-    def plot_radio_contour(self, ax, plot=True, scatter=False, data=False):
+    def plot_radio_contour(self, figAxes, method="AllSky", plot=True, scatter=False, data=False, thin=True):
         ''' Plot the radio contours of the SMBH emission onto a 2D sky plot. 
         Parameters
         ----------
-        ax : matplotlib axes object
+        figAxes : list (or None)
+            List in the form of [fig, ax] (if AllSky projection), or [[fig1, ax1], [fig2, ax2],...,[fig6, ax6]] if cubemapped.
+            If you want a new generation, input just None
+        method : str
+            One of {"AllSky", "Cube"}
         plot : bool
             Whether to actually plot the contour
         scatter : bool
             Whether to overlay the raw scatter data for calibration purposes
         data : bool
             Whether to return the area density data for the contours
+        thin : bool
+            Whether to thin the contour lines based on distance of the galaxy from the origin
         Returns (if data=True)
         -------
         equatbins, polarbins : numpy arrays (1xN)
@@ -1054,6 +1060,8 @@ class Galaxy(object):
         density : numpy array (NxN)
             The number count of scatter particles per equat/polar bin. 
         '''
+        if figAxes == None:
+            figAxes = misc.gen_figAxes(method=method)
         x, y, z, radius = self.blackhole.get_BH_radio()
         if self.rotate == True:
             phi = self.rotation
@@ -1063,26 +1071,64 @@ class Galaxy(object):
             points = np.dot(misc.cartesian_rotation(phi[2], 'z'), points)
             x, y, z = points
         x, y, z = x + self.cartesian[0], y + self.cartesian[1], z + self.cartesian[2] # and now translate it to where the galaxy is
-        equat, polar, distance = misc.cartesian_to_spherical(x, y, z)
+        if method == "AllSky":
+            equat, polar, distance = misc.cartesian_to_spherical(x, y, z)
+                
+            extent = [[min(equat) - 3, max(equat) + 3], [min(polar) - 3, max(polar) + 3]]   # this is so that the edge of the contours aren't cut off
+            density, equatedges, polaredges = np.histogram2d(equat, polar, bins=len(equat)//50, range=extent, density=False)
+            equatbins = equatedges[:-1] + (equatedges[1] - equatedges[0]) / 2   # this fixes the order of the bins, and centers the bins at the midpoint
+            polarbins = polaredges[:-1] + (polaredges[1] - polaredges[0]) / 2
+    
+            density = density.T      # take the transpose of the density matrix
+            density = scipy.ndimage.zoom(density, 2)    # this smooths out the data so that it's less boxy and more curvey
+            equatbins = scipy.ndimage.zoom(equatbins, 2)
+            polarbins = scipy.ndimage.zoom(polarbins, 2)
+            # density = scipy.ndimage.gaussian_filter(density, sigma=1)  # this smooths the area density even moreso (not necessary, but keeping for posterity)
+        else: # method == "Cube"
+            uc, vc, index = misc.cubemap(x, y, z)
+            maxDens = 0
+            EXYD = []
+            for i in range(6):
+                X, Y = uc[index == i], vc[index == i] # get all coords of points on this cube face
+                if len(X) <= 1e2 or len(Y) <= 1e2: 
+                    EXYD.append([])
+                    continue # this stops extremely patchy sections of nebulosity
+                # now, we need to make cut-off nebulae smoother, by reducing the number of bins proportionally to how many
+                # points have *not* been cut off
+                pad = 3 / np.log10(self.spherical[2])
+                extent = [[min(X) - pad, max(X) + pad], [min(Y) - pad, max(Y) + pad]]
+                density, Xedges, Yedges = np.histogram2d(X, Y, bins=len(X)//40, range=extent, density=False)
+                # density, Xedges, Yedges = np.histogram2d(X, Y, bins=int(90/0.1), range=[[-45, 45], [-45, 45]], density=False)
+                Xbins = Xedges[:-1] + (Xedges[1] - Xedges[0]) / 2   # this fixes the order of the bins, and centers the bins at the midpoint
+                Ybins = Yedges[:-1] + (Yedges[1] - Yedges[0]) / 2
+                
+                density = density.T      # take the transpose of the density matrix
+                density = scipy.ndimage.zoom(density, 2)    # this smooths out the data so that it's less boxy and more curvey
+                Xbins = scipy.ndimage.zoom(Xbins, 2)
+                Ybins = scipy.ndimage.zoom(Ybins, 2)
+                # density = scipy.ndimage.gaussian_filter(density, sigma=smooth)  # this smooths the area density even moreso (not necessary, but keeping for posterity)
+                maxDens = np.amax(density) if np.amax(density) > maxDens else maxDens
+                EXYD.append([extent, Xbins, Ybins, density])
             
-        extent = [[min(equat) - 3, max(equat) + 3], [min(polar) - 3, max(polar) + 3]]   # this is so that the edge of the contours aren't cut off
-        density, equatedges, polaredges = np.histogram2d(equat, polar, bins=len(equat)//50, range=extent, density=False)
-        equatbins = equatedges[:-1] + (equatedges[1] - equatedges[0]) / 2   # this fixes the order of the bins, and centers the bins at the midpoint
-        polarbins = polaredges[:-1] + (polaredges[1] - polaredges[0]) / 2
-
-        density = density.T      # take the transpose of the density matrix
-        density = scipy.ndimage.zoom(density, 2)    # this smooths out the data so that it's less boxy and more curvey
-        equatbins = scipy.ndimage.zoom(equatbins, 2)
-        polarbins = scipy.ndimage.zoom(polarbins, 2)
-        # density = scipy.ndimage.gaussian_filter(density, sigma=1)  # this smooths the area density even moreso (not necessary, but keeping for posterity)
-
+            
         if plot == True:    # plot the contour
             levels = [2, 3, 4, 5, 6, 10, 15]    # having the contour levels start at 2 removes the noise from the smoothing - important!!
-            ax.contour(equatbins, polarbins, density, levels, corner_mask=True)     # plot the radio contours
-            ax.set_ylim(0, 180); ax.set_xlim(0, 360)
-            ax.invert_yaxis();
-            if scatter == True:     # plot the actual scattered points on top of the contour - mainly just for calibration
-                ax.scatter(equat, polar, s=0.5)
+            lw = 10 / np.sqrt(self.spherical[2]) if thin else None
+            if method == "AllSky":
+                fig, ax = figAxes
+                ax.contour(equatbins, polarbins, density, levels, linewidths=lw)     # plot the radio contours
+                ax.set_ylim(0, 180); ax.set_xlim(0, 360)
+                ax.invert_yaxis();
+                if scatter == True:     # plot the actual scattered points on top of the contour - mainly just for calibration
+                    ax.scatter(equat, polar, s=0.5)
+            else:
+                for i in range(6):
+                    if EXYD[i] == []:
+                        continue
+                    extent, Xbins, Ybins, density = EXYD[i]
+                    figAxes[i][1].grid(False)
+                    figAxes[i][1].contour(Xbins, Ybins, density, levels, linewidths=lw)
+                    figAxes[i][1].grid(True)
         if data == True:
             return equatbins, polarbins, density
             # equat/polar are 1xN matrices, whereas density is a NxN matrix.

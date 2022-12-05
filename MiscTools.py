@@ -5,6 +5,7 @@ Created on Fri Nov 25 19:16:37 2022
 @author: ryanw
 """
 import numpy as np
+import matplotlib.pyplot as plt
 
 def cartesian_to_spherical(x, y, z):
     ''' Converts cartesian coordinates to spherical ones (formulae taken from wikipedia) in units of degrees. 
@@ -137,3 +138,25 @@ def cubemap(x, y, z):
             
     uc *= 45; vc *= 45 # transforms coords from +/- 1 to +/- 45 degrees
     return uc, vc, index
+
+def gen_figAxes(method="AllSky"):
+    '''
+    '''
+    if method=="AllSky":
+        fig, ax = plt.subplots()
+        ax.invert_yaxis()
+        ax.set_facecolor('k')
+        ax.set_aspect('equal')
+    else:
+        figAxes = []
+        for i in range(6):
+            fig, ax = plt.subplots(figsize=(9,9))
+            ax.set_xlim(-45, 45); ax.set_ylim(-45, 45)    # equatorial angle goes from 0->360, polar 0->180
+            ax.set_facecolor('k')   # space has a black background, duh
+            ax.set_aspect(1)    # makes it so that the figure is twice as wide as it is tall - no stretching!
+            # fig.tight_layout()
+            ax.set_xlabel("X Position (degrees)")
+            ax.set_ylabel("Y Position (degrees)")
+            ax.grid(linewidth=0.1)
+            figAxes.append([fig, ax])
+    return figAxes

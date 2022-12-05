@@ -236,7 +236,6 @@ class Nebula(object):
                 bulgeR = bulgeradius * np.random.uniform(0, 1, bulgepop)**(1/2.5)    #bulgedists was meant to be RVs between 0 and 1, but the mult makes up for it
                 x = bulgeR * (np.cos(theta) * np.sin(phi) + np.random.normal(0, 0.2, bulgepop))
                 y = bulgeR * (np.sin(theta) * np.sin(phi) + np.random.normal(0, 0.2, bulgepop))
-                distanceflat = (1 / self.radius) * np.sqrt(np.square(x) + np.square(y))     #this makes the z lower for stars further from the center
                 z = 0.7 * (bulgeR * np.cos(phi) + np.random.normal(0, 0.2, bulgepop)) #* 0.7**distanceflat
                 
             elif i in [2, 3]:       # we're dealing with spiral arms
@@ -345,7 +344,7 @@ class Nebula(object):
         return coords
         
         
-    def plot_nebula(self, figAxes=None, style='colormesh', method='AllSky', localgalaxy=False):
+    def plot_nebula(self, figAxes=None, style='colormesh', method='AllSky'):
         '''
         Parameters
         ----------
@@ -358,103 +357,89 @@ class Nebula(object):
         '''
         if self.palette == 'Spiral':
             bins = 200 if not self.reduce else int(200 * np.exp(-self.spherical[2] / 10**4.4))
-            grid = 120 if not self.reduce else int(200 * np.exp(-self.spherical[2] / 10**4.4))
+            # grid = 120 if not self.reduce else int(200 * np.exp(-self.spherical[2] / 10**4.4))
         else:
             bins = 150 if not self.reduce else int(200 * np.exp(-self.spherical[2] / 10**4.4))
-            grid = 50 if not self.reduce else int(200 * np.exp(-self.spherical[2] / 10**4.4))
+            # grid = 50 if not self.reduce else int(200 * np.exp(-self.spherical[2] / 10**4.4))
         if figAxes == None:
-            if method=="AllSky":
-                fig, ax = plt.subplots()
-                ax.invert_yaxis()
-                ax.set_facecolor('k')
-                ax.set_aspect('equal')
-            else:
-                figAxes = []
-                for i in range(6):
-                    fig, ax = plt.subplots(figsize=(9,9))
-                    ax.set_xlim(-45, 45); ax.set_ylim(-45, 45)    # equatorial angle goes from 0->360, polar 0->180
-                    ax.set_facecolor('k')   # space has a black background, duh
-                    ax.set_aspect(1)    # makes it so that the figure is twice as wide as it is tall - no stretching!
-                    # fig.tight_layout()
-                    ax.set_xlabel("X Position (degrees)")
-                    ax.set_ylabel("Y Position (degrees)")
-                    ax.grid(linewidth=0.1)
-                    figAxes.append([fig, ax])
+            figAxes = misc.gen_figAxes(method=method)
         else:
             if method=="AllSky":
                 fig, ax = figAxes
-        if style in ['colormesh', 'imshow']:
-            for i, colour in enumerate(self.cmap):
-                vmax = None
-                    
-                if self.palette == 'Spiral':
-                    smooth = 2.5
-                else:
-                    smooth = 1.5
-                x, y, z = self.points[i]
-                if method == "Cube":
-                    origBins = bins
-                    if localgalaxy:
-                        smooth = 5
-                    uc, vc, index = misc.cubemap(x, y, z)
-                    for i in range(6):
-                        X, Y = uc[index == i], vc[index == i] # get all coords of points on this cube face
-                        if len(X) <= 1e3 or len(Y) <= 1e3: 
-                            continue # this stops extremely patchy sections of nebulosity
-                        if not localgalaxy:
-                            # now, we need to make cut-off nebulae smoother, by reducing the number of bins proportionally to how many
-                            # points have *not* been cut off
-                            bins = origBins
-                            bins *= max(np.sqrt(len(X) / len(x)), np.sqrt(len(Y) / len(y))); bins = int(bins)
-                        extent = [[min(X) - 1, max(X) + 1], [min(Y) - 1, max(Y) + 1]]
-                        density, Xedges, Yedges = np.histogram2d(X, Y, bins=[2 * bins, bins], range=extent)
-                        Xbins = Xedges[:-1] + (Xedges[1] - Xedges[0]) / 2   # this fixes the order of the bins, and centers the bins at the midpoint
-                        Ybins = Yedges[:-1] + (Yedges[1] - Yedges[0]) / 2
-                        
-                        density = density.T      # take the transpose of the density matrix
-                        density = scipy.ndimage.zoom(density, 2)    # this smooths out the data so that it's less boxy and more curvey
-                        Xbins = scipy.ndimage.zoom(Xbins, 2)
-                        Ybins = scipy.ndimage.zoom(Ybins, 2)
-                        # if self.palette == 'Spiral:'
-                        density = scipy.ndimage.gaussian_filter(density, sigma=smooth)  # this smooths the area density even moreso (not necessary, but keeping for posterity)
-                        if style == 'colormesh':
-                            figAxes[i][1].grid(False)
-                            figAxes[i][1].pcolormesh(Xbins, Ybins, density, cmap=colour, vmax=vmax, shading='auto', rasterized=True, antialiased=True)
-                            figAxes[i][1].grid(True)
-                        elif style == 'imshow':
-                            extent = [min(X), max(X), min(Y), max(Y)]
-                            figAxes[i][1].imshow(density, extent=extent, cmap=colour, interpolation='none')
-                else:
-                    equat, polar, distance = misc.cartesian_to_spherical(x, y, z)
-                        
-                    extent = [[min(equat) - 3, max(equat) + 3], [min(polar) - 3, max(polar) + 3]]   # this is so that the edge of the contours aren't cut off
-                    density, equatedges, polaredges = np.histogram2d(equat, polar, bins=[2 * bins, bins], range=extent)
-                    equatbins = equatedges[:-1] + (equatedges[1] - equatedges[0]) / 2   # this fixes the order of the bins, and centers the bins at the midpoint
-                    polarbins = polaredges[:-1] + (polaredges[1] - polaredges[0]) / 2
+        for i, colour in enumerate(self.cmap):
+            vmax = None
+                
+            if self.palette == 'Spiral':
+                smooth = 2.5
+            else:
+                smooth = 1.5
+            x, y, z = self.points[i]
+            if method == "Cube":
+                origBins = bins
+                if self.local:
+                    smooth = 5
+                uc, vc, index = misc.cubemap(x, y, z)
+                maxDens = 0
+                EXYD = []
+                for i in range(6):
+                    X, Y = uc[index == i], vc[index == i] # get all coords of points on this cube face
+                    if ((len(X) <= 1e3 or len(Y) <= 1e3) and i<2) or ((len(X) <= 1e2 or len(Y) <= 1e2) and i>=2): 
+                        # if len(points) <= 1000 for a bulge/elliptical galaxy, or <=100 for spiral arms/bulge
+                        EXYD.append([])
+                        continue # this stops extremely patchy sections of nebulosity
+                    if not self.local:
+                        # now, we need to make cut-off nebulae smoother, by reducing the number of bins proportionally to how many
+                        # points have *not* been cut off
+                        bins = origBins
+                        bins *= max(np.cbrt(len(X) / len(x)), np.cbrt(len(Y) / len(y)))
+                        bins = int(bins)
+                    extent = [[min(X) - 1, max(X) + 1], [min(Y) - 1, max(Y) + 1]]
+                    density, Xedges, Yedges = np.histogram2d(X, Y, bins=[2 * bins, bins], range=extent)
+                    Xbins = Xedges[:-1] + (Xedges[1] - Xedges[0]) / 2   # this fixes the order of the bins, and centers the bins at the midpoint
+                    Ybins = Yedges[:-1] + (Yedges[1] - Yedges[0]) / 2
                     
                     density = density.T      # take the transpose of the density matrix
                     density = scipy.ndimage.zoom(density, 2)    # this smooths out the data so that it's less boxy and more curvey
-                    equatbins = scipy.ndimage.zoom(equatbins, 2)
-                    polarbins = scipy.ndimage.zoom(polarbins, 2)
-                    # if self.palette == 'Spiral:'
+                    Xbins = scipy.ndimage.zoom(Xbins, 2)
+                    Ybins = scipy.ndimage.zoom(Ybins, 2)
                     density = scipy.ndimage.gaussian_filter(density, sigma=smooth)  # this smooths the area density even moreso (not necessary, but keeping for posterity)
-                    
+                    maxDens = np.amax(density) if np.amax(density) > maxDens else maxDens
+                    EXYD.append([extent, Xbins, Ybins, density])
+                # now let's actually plot the nebulosity
+                for i in range(6):
+                    if EXYD[i] == []:
+                        continue
+                    extent, Xbins, Ybins, density = EXYD[i]
                     if style == 'colormesh':
-                        # import matplotlib.colors as colors
-                        # ax.pcolormesh(equatbins, polarbins, density, cmap=colour, shading='auto', rasterized=True, 
-                        #               norm=colors.PowerNorm(gamma=0.8))
-                        ax.pcolormesh(equatbins, polarbins, density, cmap=colour, vmax=vmax, shading='auto', rasterized=True, antialiased=True)
+                        figAxes[i][1].grid(False)
+                        figAxes[i][1].pcolormesh(Xbins, Ybins, density, cmap=colour, vmax=maxDens, shading='auto', rasterized=True, antialiased=True)
+                        figAxes[i][1].grid(True)
                     elif style == 'imshow':
-                        extent = [min(equat), max(equat), min(polar), max(polar)]
-                        ax.imshow(density, extent=extent, cmap=colour, interpolation='none')
-        elif style == 'hexbin':
-            for i, colour in enumerate(self.cmap):
-                x, y, z = self.points[i]
+                        extent = [min(X), max(X), min(Y), max(Y)]
+                        figAxes[i][1].imshow(density, extent=extent, cmap=colour, interpolation='none')
+            else:
                 equat, polar, distance = misc.cartesian_to_spherical(x, y, z)
-                if self.species == 'spiral':
-                    ax.hexbin(equat, polar, gridsize=(2 * grid, grid), bins=bins, vmax = 6, linewidths=0.01, cmap=colour, aa=True)
-                else:
-                    ax.hexbin(equat, polar, gridsize=(2 * grid, grid), bins=bins, linewidths=0.01, cmap=colour)
+                    
+                extent = [[min(equat) - 3, max(equat) + 3], [min(polar) - 3, max(polar) + 3]]   # this is so that the edge of the contours aren't cut off
+                density, equatedges, polaredges = np.histogram2d(equat, polar, bins=[2 * bins, bins], range=extent)
+                equatbins = equatedges[:-1] + (equatedges[1] - equatedges[0]) / 2   # this fixes the order of the bins, and centers the bins at the midpoint
+                polarbins = polaredges[:-1] + (polaredges[1] - polaredges[0]) / 2
+                
+                density = density.T      # take the transpose of the density matrix
+                density = scipy.ndimage.zoom(density, 2)    # this smooths out the data so that it's less boxy and more curvey
+                equatbins = scipy.ndimage.zoom(equatbins, 2)
+                polarbins = scipy.ndimage.zoom(polarbins, 2)
+                # if self.palette == 'Spiral:'
+                density = scipy.ndimage.gaussian_filter(density, sigma=smooth)  # this smooths the area density even moreso (not necessary, but keeping for posterity)
+                
+                if style == 'colormesh':
+                    # import matplotlib.colors as colors
+                    # ax.pcolormesh(equatbins, polarbins, density, cmap=colour, shading='auto', rasterized=True, 
+                    #               norm=colors.PowerNorm(gamma=0.8))
+                    ax.pcolormesh(equatbins, polarbins, density, cmap=colour, vmax=vmax, shading='auto', rasterized=True, antialiased=True)
+                elif style == 'imshow':
+                    extent = [min(equat), max(equat), min(polar), max(polar)]
+                    ax.imshow(density, extent=extent, cmap=colour, interpolation='none')
 
 
 # img = plt.imread("Datasets/Sim Data (Clusters; 1000, Seed; 588)/Universe Image.png")
@@ -478,13 +463,13 @@ def main():
     # ax.set_ylim(95, 85)
     
     species = 'SBa'
-    # position = [225, 90, 600]
-    position = [180, 90, 40]
-    galax = Galaxy(species, position, rotate=False)
+    position = [225, 90, 600]
+    # position = [180, 90, 40]
+    galax = Galaxy(species, position, rotate=True)
     # fig, ax = plt.subplots()
     
-    spiralNeb = Nebula(species, position, galax.radius, rotation=galax.rotation, localgalaxy=True)
-    spiralNeb.plot_nebula(style='colormesh', method="Cubemap", localgalaxy=True)
+    spiralNeb = Nebula(species, position, galax.radius, rotation=galax.rotation, localgalaxy=False)
+    spiralNeb.plot_nebula(style='colormesh', method="Cube", localgalaxy=False)
     
     # # ringNeb = Nebula('ring', [150, 85, 10])
     # # ringNeb.plot_nebula(ax=ax)

@@ -231,7 +231,7 @@ class Universe(object):
                 clusters.append(GalaxyCluster(pos, populations[i], blackholes=self.blackholes, darkmatter=self.darkmatter, 
                                               complexity=self.complexity, variable=self.variablestars, rotvels=self.rotvelMult))
         
-        clustervels = (self.hubble * R / (10**6)) * np.random.normal(1, 0.05, len(R))  # the radial velocity of each cluster according to v = HD
+        clustervels = (self.hubble * R / (10**6)) + np.random.normal(0, 30, len(R))  # the radial velocity of each cluster according to v = HD
         
         return clusters, clustervels, R
     

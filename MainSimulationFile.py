@@ -914,8 +914,8 @@ def main():
     # sim = UniverseSim(1000, mode="Normal")
     # sim.save_data()
     
-    sim = UniverseSim(1000, isotropic=False, rotvels="Boosted")
-    sim.save_data(proj="Both")
+    sim = UniverseSim(100, isotropic=False, rotvels="Boosted")
+    sim.save_data(proj="AllSky", doppler=[True, False])
 
     
 if __name__ == "__main__":

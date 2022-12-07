@@ -72,9 +72,10 @@ Several real aspects of astronomy are modelled (to varying degrees of accuracy) 
 
 
 ## To-Do:
-- [ ] Make this damn README.md prettier!!
-- [x] Include a 'how to use' section in this readme (thanks saskia!)
-- [x] Fill out many docstrings and comment all code to a degree readable by other users.
+- [ ] Improve efficiency of code, and run times.
+- [ ] More tutorials on the GHPages website.
+- [ ] API for functions, and a detailed "How-To" on the website
+- [ ] Fill out *all* docstrings and comment all code to a degree readable by other users.
 
 
 ## Credits/Acknowledgements

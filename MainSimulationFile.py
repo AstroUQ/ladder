@@ -257,7 +257,7 @@ class UniverseSim(object):
             import gc
             gc.enable()
             for i, galaxy in enumerate(self.galaxies):
-                if galaxy.spherical[2] < 20000: # if the galaxy is closer than 15kpc
+                if galaxy.spherical[2] < 20000: # if the galaxy is closer than 20kpc
                     local = True if i == len(self.galaxies) - 1 else False 
                     galaxy.plot_nebulosity(figAxes, method=method, localgalaxy=local)
                     gc.collect()
@@ -916,8 +916,8 @@ def main():
     # sim = UniverseSim(1000, mode="Normal")
     # sim.save_data()
     
-    sim = UniverseSim(100, isotropic=False, rotvels="Boosted")
-    sim.save_data(proj="AllSky", doppler=[True, False])
+    sim = UniverseSim(1000, isotropic=False, rotvels="Boosted")
+    sim.save_data(proj="AllSky", variablestars=False)
 
     
 if __name__ == "__main__":

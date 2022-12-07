@@ -320,7 +320,9 @@ class UniverseSim(object):
         # ax.invert_yaxis();
         
         for galaxy in self.galaxies:
-            if galaxy.blackhole == False or galaxy.blackhole.BHradio == False:
+            if galaxy.blackhole == False or galaxy.blackhole.BHradio == False or galaxy == self.galaxies[-1]:
+                # we can't plot radio contours if there's no black hole, or if there's no radio lobes from a galaxy's BH
+                # I also don't want to plot any radio contours for the local galaxy
                 continue
             galaxy.plot_radio_contour(figAxes, method=method, plot=True, scatter=False, data=False, thin=True)
         

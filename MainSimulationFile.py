@@ -116,7 +116,7 @@ class UniverseSim(object):
             os.makedirs(self.datadirectory + f'\\{direction}')
         self.cubemapdirectory = True # and finally set it so that we know the cubemap directional directories have been made
     
-    def plot_universe(self, spikes=True, radio=False, pretty=True, save=False, cubemap=False):
+    def plot_universe(self, spikes=True, radio=False, pretty=True, planetNeb=False, save=False, cubemap=False):
         ''' Plot all of the stars and distant galaxies in the universe onto a rectangular mapping of the inside of the 
         observable universe sphere. X-axis units are in "Equatorial Angle (degrees)", with Y-axis units in "Polar Angle (degrees)."
         Parameters
@@ -125,6 +125,10 @@ class UniverseSim(object):
             If true, add diffraction spikes to stars according to their apparent brightness
         radio : bool
             If true, plot the black hole radio lobes overlaid onto the universe image.
+        pretty : bool
+            Whether to plot galaxy nebulosity on top of galaxies. Warning: high RAM usage!
+        planetNeb : bool
+            Whether to generate and plot planetary nebulae in the local/close galaxies
         save : bool
             If true, returns the matplotlib figure object so that it may be saved further downstream. 
         Returns
@@ -253,14 +257,24 @@ class UniverseSim(object):
             method = "AllSky"
         else:
             method = "Cube" 
-        if pretty: # let's plot the galaxy nebulosity for the close galaxies
+        if pretty or planetNeb:
+            # let's plot the galaxy nebulosity for the close galaxies, or planetary nebulae
             import gc
             gc.enable()
             for i, galaxy in enumerate(self.galaxies):
-                if galaxy.spherical[2] < 20000: # if the galaxy is closer than 20kpc
-                    local = True if i == len(self.galaxies) - 1 else False 
-                    galaxy.plot_nebulosity(figAxes, method=method, localgalaxy=local)
-                    gc.collect()
+                if planetNeb:
+                    if galaxy.spherical[2] < 1500:
+                        for j, star in enumerate(galaxy.stars):
+                            if star.species == "WDwarf" and star.temperature >= 18000:
+                                pos = [galaxy.starpositions[0][j], galaxy.starpositions[1][j], galaxy.starpositions[2][j]]
+                                planetaryNeb = Nebula('ring', pos, cartesian=True, reduction=True)
+                                planetaryNeb.plot_nebula(figAxes=figAxes, method=method)
+                if pretty:
+                    if galaxy.spherical[2] < 20000: # if the galaxy is closer than 20kpc
+                        local = True if i == len(self.galaxies) - 1 else False 
+                        galaxy.plot_nebulosity(figAxes, method=method, localgalaxy=local)
+                        gc.collect()
+                
             
         if radio == True:   # plot the radio overlay
             self.plot_radio(figAxes)
@@ -389,8 +403,9 @@ class UniverseSim(object):
             return fig
         
             
-    def save_data(self, properties=True, proj='AllSky', pic=True, pretty=True, radio=True, stars=True, variablestars=True, 
-                  blackbodies=False, distantgalax=True, supernovae=True, doppler=[False, False], blackhole=False, rotcurves=False):
+    def save_data(self, properties=True, proj='AllSky', pic=True, pretty=True, planetNeb=False, radio=True, stars=True, 
+                  variablestars=True, blackbodies=False, distantgalax=True, supernovae=True, doppler=[False, False], blackhole=False, 
+                  rotcurves=False):
         ''' Generates some data, takes other data, and saves it to the system in a new directory within the file directory.
         .pdf images are commented out currently - uncomment them at your own risk! (.pdfs can be in excess of 90mb each!)
         Parameters
@@ -403,6 +418,8 @@ class UniverseSim(object):
             Whether to generate and save a 2d plot of the universe.
         pretty : bool
             If true, plots galaxy nebulosity on top of galaxies. Warning: high RAM usage!
+        planetNeb : bool
+            Whether to generate and plot planetary nebulae in the local/close galaxies
         radio : bool
             If true, plot another universe image with radio lobes overlaid.
         stars : bool
@@ -434,7 +451,7 @@ class UniverseSim(object):
 
         # first, save the *data* that the user might interact with
         if pic:     # now save a huge pic of the universe. say goodbye to your diskspace
-            self.save_pic(radio=radio, proj=proj, pretty=pretty)
+            self.save_pic(radio=radio, proj=proj, pretty=pretty, planetNeb=planetNeb)
         if stars:   # generate and save star data
             self.save_stars(proj=proj)
         if variablestars:
@@ -520,7 +537,7 @@ class UniverseSim(object):
         plt.close('all')
         proptime2 = time(); total = proptime2 - proptime1; print("Universe properties saved in", total, "s")
         
-    def save_pic(self, radio=False, proj='AllSky', pretty=True):
+    def save_pic(self, radio=False, proj='AllSky', pretty=True, planetNeb=False):
         ''' Saves the universe picture(s) in the directory of choice, given desired projection and radio contours.
         Parameters
         ----------
@@ -531,6 +548,8 @@ class UniverseSim(object):
             six, cubemapped images of the sky, respectively. (or both!)
         pretty : bool
             Whether to plot galaxy nebulosity on top of galaxies. Warning: high RAM usage!
+        planetNeb : bool
+            Whether to generate and plot planetary nebulae in the local/close galaxies
         '''
         if not self.datadirectory:
             self.create_directory()
@@ -539,7 +558,7 @@ class UniverseSim(object):
             
         if proj in ['Cube', 'Both']:
             pictime1 = time(); print("Generating universe picture...")
-            figAxes = self.plot_universe(pretty=pretty, save=True, cubemap=True)
+            figAxes = self.plot_universe(pretty=pretty, planetNeb=planetNeb, save=True, cubemap=True)
             directions = ['Front', 'Back', 'Top', 'Bottom', 'Left', 'Right']
             for i in range(6):
                 fig, ax = figAxes[i]
@@ -548,7 +567,7 @@ class UniverseSim(object):
             pictime2 = time(); total = pictime2 - pictime1; print("Cubemapped universe pictures saved in", total, "s")
         if proj in ['AllSky', 'Both']:
             pictime1 = time(); print("Generating universe picture...")
-            fig, ax = self.plot_universe(pretty=pretty, save=True)
+            fig, ax = self.plot_universe(pretty=pretty, planetNeb=planetNeb, save=True)
             fig.set_size_inches(18, 9, forward=True)
             fig.savefig(self.datadirectory + '\\AllSky Universe Image.png', dpi=1500, bbox_inches='tight', pad_inches = 0.01)
             pictime2 = time(); total = pictime2 - pictime1; print("AllSky Universe picture saved in", total, "s")
@@ -916,8 +935,8 @@ def main():
     # sim = UniverseSim(1000, mode="Normal")
     # sim.save_data()
     
-    sim = UniverseSim(1000, isotropic=False, rotvels="Boosted")
-    sim.save_data(proj="AllSky", variablestars=False)
+    sim = UniverseSim(100, isotropic=False, rotvels="Boosted")
+    sim.save_data(proj="AllSky", planetNeb=True, radio=False)
 
     
 if __name__ == "__main__":

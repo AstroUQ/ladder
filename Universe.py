@@ -93,39 +93,60 @@ class Universe(object):
             prob = np.random.uniform(0, 1); types = 2 if prob <= 0.66 else 3
 
             # randomly determine period of the variables within some allowed range
-            shortperiod = np.random.uniform(
-                18, 30); longperiod = np.random.uniform(38, 55)
-            longestperiod = np.random.uniform(75, 100)
+            shortperiod = np.random.uniform(18, 25)
+            longperiod = np.random.uniform(40, 55)
+            longestperiod = np.random.uniform(80, 100)
             periods = [shortperiod, longperiod, longestperiod]
             # randomly choose sign of the period-luminosity trend
             signs = np.random.choice([-1, 1], 3)
             variablestars = [True]
 
+            # # we want to find the equation of a line given two points (high lumin and low lumin)
+            # shortlower = 100; shortupper = 700    # lower and upper luminosity bounds
+            # shortperiodL = np.random.uniform(0.92, 0.98); shortperiodU = np.random.uniform(
+            #     1.1, 1.25)     # proportion of lower and upper period bounds
+            # shortgradient = signs[0] * (shortperiod * (shortperiodU - shortperiodL)) / (
+            #     np.log10(shortupper / shortlower))    # m = sign * rise/run
+            # shortyint = (shortperiodL * shortperiod) - (shortgradient *
+            #              np.log10(shortlower))   # y = mx + c => c = y - mx
+
+            # # as above, but for the long and longest variable types
+            # longlower = 3.5*10**5; longupper = 5 * 10**6
+            # longperiodL = np.random.uniform(
+            #     0.85, 0.95); longperiodU = np.random.uniform(1.05, 1.25)
+            # longgradient = signs[1] * (longperiod * (longperiodU -
+            #                            longperiodL)) / np.log10(longupper / longlower)
+            # longyint = (longperiodL * longperiod) - \
+            #             (longgradient * np.log10(longlower))
+
+            # longestlower = 100; longestupper = 700
+            # longestperiodL = np.random.uniform(
+            #     0.9, 0.98); longestperiodU = np.random.uniform(1.05, 1.25)
+            # longestgradient = signs[2] * (longestperiod * (
+            #     longestperiodU - longestperiodL)) / np.log10(longestupper / longestlower)
+            # longestyint = (longestperiodL * longestperiod) - \
+            #                (longestgradient * np.log10(longestlower))
+            
+            
             # we want to find the equation of a line given two points (high lumin and low lumin)
             shortlower = 100; shortupper = 700    # lower and upper luminosity bounds
             shortperiodL = np.random.uniform(0.92, 0.98); shortperiodU = np.random.uniform(
                 1.1, 1.25)     # proportion of lower and upper period bounds
-            shortgradient = signs[0] * (shortperiod * (shortperiodU - shortperiodL)) / (
-                np.log10(shortupper / shortlower))    # m = sign * rise/run
-            shortyint = (shortperiodL * shortperiod) - (shortgradient *
-                         np.log10(shortlower))   # y = mx + c => c = y - mx
+            shortgradient = signs[0] * (np.log10(shortupper / shortlower)) / (shortperiod * (shortperiodU - shortperiodL))    # m = rise/run
+            shortyint = np.log10(shortlower) - shortgradient * (shortperiodL * shortperiod)   # y = mx + c => c = y - mx
 
             # as above, but for the long and longest variable types
             longlower = 3.5*10**5; longupper = 5 * 10**6
             longperiodL = np.random.uniform(
                 0.85, 0.95); longperiodU = np.random.uniform(1.05, 1.25)
-            longgradient = signs[1] * (longperiod * (longperiodU -
-                                       longperiodL)) / np.log10(longupper / longlower)
-            longyint = (longperiodL * longperiod) - \
-                        (longgradient * np.log10(longlower))
+            longgradient = signs[1] * np.log10(longupper / longlower) / (longperiod * (longperiodU - longperiodL))
+            longyint = np.log10(longlower) - longgradient * (longperiodL * longperiod)
 
             longestlower = 100; longestupper = 700
             longestperiodL = np.random.uniform(
                 0.9, 0.98); longestperiodU = np.random.uniform(1.05, 1.25)
-            longestgradient = signs[2] * (longestperiod * (
-                longestperiodU - longestperiodL)) / np.log10(longestupper / longestlower)
-            longestyint = (longestperiodL * longestperiod) - \
-                           (longestgradient * np.log10(longestlower))
+            longestgradient = signs[2] * np.log10(longestupper / longestlower) / (longestperiod * (longestperiodU - longestperiodL))
+            longestyint = np.log10(longestlower) - longestgradient * (longestperiodL * longestperiod)
 
             gradients = [shortgradient, longgradient, longestgradient]
             yints = [shortyint, longyint, longestyint]

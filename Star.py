@@ -26,6 +26,7 @@ class Star(object):
             The first element should be a bool, which is True if we want to model variable stars. The second to third (or fourth [optional])
             elements should be parameters of the variable stars [ave period, lightcurve type, gradient, y-intercept]
         '''
+        self.species = species
         if species == "MS":         # main sequence star
             self.mass = abs(self.MS_masses(location))
             self.luminosity = abs(self.MS_lumin(self.mass))
@@ -85,7 +86,8 @@ class Star(object):
         '''
         period, wavetype, gradient, yint = params
         
-        period = (gradient * np.log10(self.luminosity) + yint) * np.random.normal(1, 0.02)
+        # period = (gradient * np.log10(self.luminosity) + yint) + np.random.normal(0, 0.05)
+        period = ((np.log10(self.luminosity) - yint) / gradient) + np.random.normal(0, 0.5)
         
         time = np.arange(0, 121)    # 5 days, or 120 hours worth of increments
         shift = np.random.uniform(0, period)    # shift the wave so that all light curves dont start at the same point

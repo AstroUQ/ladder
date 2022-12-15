@@ -10,9 +10,11 @@ import matplotlib.pyplot as plt
 from matplotlib import colors
 import warnings
 import MiscTools as misc
-# import colour as col
 
 class Star(object):
+    ''' A point-like source of light (when plotted) that has 'simulated' mass, luminosity, radius, temperature and
+    possibly even a variable lightcurve. 
+    '''
     def __init__(self, location, species="MS", variable=[True, [24.6, "Tri", -6.5, 59], [40.7, "Saw", -14, 64], [75.6, "Sine", 17.9, 35.1]]):
         ''' Generate a star according to its position in a Galaxy and on the HR diagram. 
         Parameters

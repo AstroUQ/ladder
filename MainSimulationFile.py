@@ -43,6 +43,9 @@ def plot_all_3d(galaxies):
         galaxy.plot_3d(ax, camera=False)
 
 class UniverseSim(object):
+    ''' The class that handles generating the universe and saving subsequent data. Usually, this is the only class
+    that should be interacted with by the user. 
+    '''
     def __init__(self, numclusters, hubble=None, seed=None, blackholes=True, darkmatter=True, mode="Normal",
                  homogeneous=False, isotropic=True, rotvels="Normal"):
         ''' Generates a Universe object and imports important data from it. 
@@ -108,6 +111,7 @@ class UniverseSim(object):
             
     def create_cubemap_directory(self):
         ''' Creates the directional folders needed for the cubemap projection data/images.
+        A folder is created for each of ['Front', 'Back', 'Top', 'Bottom', 'Left', 'Right'].
         '''
         if not self.datadirectory: # if the parent data directory hasnt been created,
             self.create_directory() # it must be created
@@ -322,17 +326,6 @@ class UniverseSim(object):
             If you want a new generation, input just None
         method : str
         '''
-        # levels = [2, 3, 4, 5, 6, 10, 15]    # having the contour levels start at 2 removes the noise from the smoothing - important!!
-        # for galaxy in self.galaxies:
-        #     if galaxy.blackhole == False or galaxy.blackhole.BHradio == False:
-        #         continue
-        #     equatbins, polarbins, density = galaxy.plot_radio_contour(0, plot=False, data=True)
-        #     _, _, dist = galaxy.spherical   # get the distance to the galaxy in question
-        #     lw = 10 / np.sqrt(dist)     # this makes more distant radio lobes proportionally smaller! nice!
-        #     ax.contour(equatbins, polarbins, density, levels, corner_mask=True, linewidths=lw)     # plot the radio contours
-        # ax.set_ylim(0, 180); ax.set_xlim(0, 360)
-        # ax.invert_yaxis();
-        
         for galaxy in self.galaxies:
             if galaxy.blackhole == False or galaxy.blackhole.BHradio == False or galaxy == self.galaxies[-1]:
                 # we can't plot radio contours if there's no black hole, or if there's no radio lobes from a galaxy's BH
@@ -355,8 +348,9 @@ class UniverseSim(object):
         figure : matplotlib figure object
             If save==True, closes the figure and returns it so that it may be saved later on. 
         '''
+        # generate a figure and colourbar with width ratio of 30:1
         fig, (ax, cbar_ax) = plt.subplots(1, 2, gridspec_kw={'width_ratios': [30,1], 'wspace': 0.1, 
-                                                             'height_ratios': [1]})   # generate a figure and colourbar with width ratio of 30:1
+                                                             'height_ratios': [1]})   
         stars = self.starpositions  # get all of the star positions 
         x, y, z, _, scales = stars[0], stars[1], stars[2], stars[3], stars[4]
         equat, polar, radius = misc.cartesian_to_spherical(x, y, z)
@@ -450,11 +444,11 @@ class UniverseSim(object):
             self.create_cubemap_directory()
 
         # first, save the *data* that the user might interact with
-        if pic:     # now save a huge pic of the universe. say goodbye to your diskspace
+        if pic:     # save a huge pic (or pics) of the universe. say goodbye to your diskspace
             self.save_pic(radio=radio, proj=proj, pretty=pretty, planetNeb=planetNeb)
         if stars:   # generate and save star data
             self.save_stars(proj=proj)
-        if variablestars:
+        if variablestars: # save variable star .txt files, and .pngs of the local galaxy variable light curves
             self.save_variables()
         if distantgalax:
             self.save_distant_galaxies(proj=proj)
@@ -585,7 +579,6 @@ class UniverseSim(object):
                     fig.savefig(self.datadirectory + f'\\{directions[i]}\\{directions[i]} Radio Overlay.png', dpi=1500, 
                                 bbox_inches='tight', pad_inches = 0.01)
             
-            
         plt.close('all')
         
             
@@ -629,7 +622,7 @@ class UniverseSim(object):
         blueflux = [[star.bandlumin[0] for star in galaxy.stars] for galaxy in self.galaxies]
         greenflux = [[star.bandlumin[1] for star in galaxy.stars] for galaxy in self.galaxies]
         redflux = [[star.bandlumin[2] for star in galaxy.stars] for galaxy in self.galaxies]
-        # now, flatten the above arrays and divide them by the distance to the star, squared
+        # now, flatten the above arrays and divide them by the distance to the star, squared [for SI unit conversion]
         blueflux = np.array([flux for galaxy in blueflux for flux in galaxy]) / (3.086 * 10**16 * radius)**2
         greenflux = np.array([flux for galaxy in greenflux for flux in galaxy]) / (3.086 * 10**16 * radius)**2
         redflux = np.array([flux for galaxy in redflux for flux in galaxy]) / (3.086 * 10**16 * radius)**2

@@ -14,6 +14,8 @@ import pickle
 import MiscTools as misc
 
 class Nebula(object):
+    ''' An all-encompassing class for plotting galaxy nebulosity, and planetary nebulae. 
+    '''
     def __init__(self, species, position, radius=None, cartesian=False, rotation=None, localgalaxy=False, reduction=True):
         ''' An object to represent (graphically) planetary nebulae or galaxy nebulosity for valid galaxy types according to the
         Galaxy class.
@@ -48,6 +50,8 @@ class Nebula(object):
         
     def nebula_params(self):
         ''' Determine some parameters about the nebula based on its type. (radius, colour palette [for plotting])
+        This will also create a directory to store custom matplotlib colourmaps (if it doesn't already exist). If the
+        desired colourmap doesn't exist, it will call the initColourMap method to create it, otherwise it will load it.
         '''
         if self.species == "ring":
             self.radii = np.array([0.15, 0.12, 0.08]) * 5 if self.radius == None else self.radius
@@ -59,24 +63,30 @@ class Nebula(object):
             self.radii = self.radius
             self.palette = 'Spiral'
         
+        # now to create or load the colourmap for this nebulous object
         directory = os.path.dirname(os.path.realpath(__file__))    # this is where this .py file is located on the system
-        mapdirectory = directory + "\\Colourmaps"
-        if not os.path.exists(mapdirectory):
+        mapdirectory = directory + "\\Colourmaps"  # this is the name of the colourmap directory
+        if not os.path.exists(mapdirectory): # then we need to create the directory for the colourmap
             os.makedirs(mapdirectory)
-        self.paletteDir = mapdirectory + f"\\{self.palette}.pickle"
-        if not os.path.isfile(self.paletteDir):
-            self.cmap = self.initColourMap(self.palette)
-        else:
-            with open(self.paletteDir, 'rb') as f:
-                self.cmap = pickle.load(f)
+        self.paletteDir = mapdirectory + f"\\{self.palette}.pickle" # this should be the name of the colour palette file
+        if not os.path.isfile(self.paletteDir): # if the colour palette doesn't exist,
+            self.cmap = self.initColourMap(self.palette) # create it
+        else: # if the colour palette does exist, 
+            with open(self.paletteDir, 'rb') as f: 
+                self.cmap = pickle.load(f) # load it from file
         
     
     def initColourMap(self, palette):
-        ''' Generates a colour map for the species of nebula in question
+        ''' Generates a colour map for the species of nebula in question. Returns this colourmap, and also saves it to
+        a colour map directory as a pickled object.
         Parameters
         ----------
         palette : str
             The colour palette for plotting and generation of points
+        Returns
+        -------
+        colourmap : list
+            List of matplotlib Colourmap objects, with the list length dependent on colour palette.
         '''
         N = 256
         if palette == "Hubble":
@@ -161,7 +171,13 @@ class Nebula(object):
         return colourmap
     
     def gen_points(self):
-        ''' Basic function to generate correctly distributed points based on the nebula type. 
+        ''' Basic function to generate correctly distributed points based on the nebula type. There is a distinct 
+        set of points for each colourmap in the colour palette. 
+        Returns
+        -------
+        points : list
+            List of [x, y, z] coordinates for each object in the colourmap list. E.g. for a colourmap with two entries, 
+            points = [[x, y, z], [x, y, z]]
         '''
         if self.species == 'ring':
             points = self.gen_ring_nebula()

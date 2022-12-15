@@ -140,13 +140,23 @@ def cubemap(x, y, z):
     return uc, vc, index
 
 def gen_figAxes(method="AllSky"):
-    '''
+    ''' Generates figures in a format applicable for plotting allsky or cubemapped data (as you'd expect from a telescope image).
+    Produces a black background (because space is black, duh), of the appropriate axis limits and length ratio.
+    Parameters
+    ----------
+    method : str
+        Method for creating the figures. One of {"AllSky", "Cube"}, where the output list will be of length 1 and 6 respectively.
+    Returns
+    -------
+    figAxes : list
+        List of one or more lists, formatted as [[fig1, ax1], [fig2, ax2],...] for matplotlib figure and axes objects
     '''
     if method=="AllSky":
         fig, ax = plt.subplots()
         ax.invert_yaxis()
         ax.set_facecolor('k')
         ax.set_aspect('equal')
+        figAxes = [[fig, ax]]
     else:
         figAxes = []
         for i in range(6):

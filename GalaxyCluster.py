@@ -11,6 +11,9 @@ import MiscTools as misc
 from Galaxy import Galaxy
 
 class GalaxyCluster(object):
+    ''' A cluster of Galaxy objects, all spherically distributed about a central position. Generates galaxy objects within this
+    cluster.
+    '''
     def __init__(self, position, population, cartesian=False, local=False, blackholes=True, darkmatter=True, complexity="Normal",
                  variable=[True, [24.6, "Tri", -6.5, 59], [40.7, "Saw", -14, 64], [75.6, "Sine", 17.9, 35.1]], rotvels="Normal"):
         ''' Generates a few/several Galaxy objects about a central position.

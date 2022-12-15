@@ -18,6 +18,9 @@ from Star import Star
 
 
 class Galaxy(object):
+    ''' A disk (or oblate spheroid) shaped collection of stars to imitate real life galaxies via Hubble classification. 
+    Rotation curves, stellar distributions and (if chosen) a SMBH are generated and stored.
+    '''
     def __init__(self, species, position, cartesian=False, blackhole=True, darkmatter=True, rotate=True, complexity="Normal",
                  variable=[True, [24.6, "Tri", -6.5, 59], [40.7, "Saw", -14, 64], [75.6, "Sine", 17.9, 35.1]],
                  rotvels="Normal"):

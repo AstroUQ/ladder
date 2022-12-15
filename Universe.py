@@ -13,6 +13,9 @@ from GalaxyCluster import GalaxyCluster
 
 
 class Universe(object):
+    ''' A coherent collection of Star, BlackHole, Galaxy, and GalaxyCluster objects that interact
+    and are positioned in such a way to imitate a believable universe. 
+    '''
     def __init__(self, radius, clusters, hubble=None, blackholes=True, darkmatter=True, complexity="Normal",
                  variablestars=True, homogeneous=False, isotropic=True, rotvels="Normal"):
         ''' Generate a universe consisting of Star, BlackHole, Galaxy, and GalaxyCluster objects.

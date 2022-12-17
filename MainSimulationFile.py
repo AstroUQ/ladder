@@ -47,7 +47,7 @@ class UniverseSim(object):
     that should be interacted with by the user. 
     '''
     def __init__(self, numclusters, hubble=None, seed=None, blackholes=True, darkmatter=True, mode="Normal",
-                 homogeneous=False, isotropic=True, rotvels="Normal"):
+                 homogeneous=False, isotropic=True, rotvels="Boosted"):
         ''' Generates a Universe object and imports important data from it. 
         Parameters
         ----------
@@ -68,8 +68,8 @@ class UniverseSim(object):
             Whether the local galaxy will 'absorb light from distant galaxies' or not. Makes it so galaxy clusters
             are less likely close to polar = 0 (the galactic plane of the local galaxy)
         rotvels : str
-            One of {"Normal", "Boosted"}, which dictates whether rotation curves have arbitrarily (and unphysically) boosted
-            velocity magnitudes.
+            One of {"Normal", "Boosted"}, which dictates whether rotation curves are normal, or have arbitrarily (and unphysically) 
+            boosted velocity magnitudes.
         '''
         self.seed = seed if seed != None else int(np.random.uniform(0, 9999)) # randomly choose a <=4 digit seed if one isn't given
         np.random.seed(seed)
@@ -929,7 +929,7 @@ def main():
     # sim.save_data()
     
     sim = UniverseSim(100, isotropic=False, rotvels="Boosted")
-    sim.save_data(proj="AllSky", planetNeb=True, radio=False)
+    sim.save_data(proj="AllSky", planetNeb=False, radio=False)
 
     
 if __name__ == "__main__":

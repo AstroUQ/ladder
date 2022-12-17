@@ -785,7 +785,7 @@ class Galaxy(object):
         else:
             ax.scatter(0, 0, s=0)   # plot 'nothing' so that the function works as intended
             
-    def plot_HR(self, isoradii=False, xunit="temp", yunit="BolLum", variable=False, save=False):
+    def plot_HR(self, isoradii=True, xunit="temp", yunit="BolLum", variable=True, save=False):
         '''Plots a Colour-Magnitude (HR) diagram for this galaxy.     
         Parameters
         ----------

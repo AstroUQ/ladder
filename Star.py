@@ -60,7 +60,7 @@ class Star(object):
                 self.lightcurve = self.generate_variable(variable[2])
                 self.variable = True
                 self.variabletype = ["Long", variable[2][1]]
-            elif len(variable) >= 4 and 100 <= self.luminosity <= 4000 and 2200 <= self.temperature <= 4700:
+            elif len(variable) >= 4 and 1e3 <= self.luminosity <= 1e6 and 2000 <= self.temperature <= 3000:
                 self.lightcurve = self.generate_variable(variable[3])
                 self.variable = True
                 self.variabletype = ["Longest", variable[3][1]]
@@ -157,7 +157,7 @@ class Star(object):
             lumin = 1.4 * mass**3.5
         elif 55 < mass:
             lumin = 3.2 * 10**4 * mass
-        else: ValueError("something is wrong")
+        else: ValueError(f"Star mass unphysically low or high: {mass=}")
         lumin += np.random.normal(0, 0.005 * mass)
         lumin = max(0.23 * 0.04**2.3, lumin)
         return lumin
@@ -327,9 +327,12 @@ class Star(object):
         temp : float
             Temperature of giant star in Kelvin. 
         '''
-        a, b = 4, 1     # gamma distribution parameters
-        temp = 1000 * np.random.gamma(a, b) + 2000
-        return temp * np.random.normal(1, 0.1)
+        # a, b = 4, 1     # gamma distribution parameters
+        # temp = 1000 * np.random.gamma(a, b) + 2000
+        # return temp * np.random.normal(1, 0.1)
+        
+        return np.random.normal(1000, 400) + 2200 #+ np.random.exponential(100)
+        # return 500 * np.random.gamma(1.5, 2) + 2500
 
     def giant_lumin(self, temp):
         ''' Calculate luminosity of giant star based on temperature, with a semi-exponential fit that adds extra luminosity to low mass stars. 
@@ -339,9 +342,16 @@ class Star(object):
         lumin : float
             Luminosity of a giant star in units of Solar luminosities
         '''
-        a, b, c = 10**-7 * 2.857, -0.00343, 10.71
-        add = 10**4.3 * np.exp(a*(temp-4000)**2 + b*temp + c) #what the heck is this (it adds extra luminosity to low temp stars)
-        return (temp + add) * abs(np.random.normal(1, 0.8)) * 0.02
+        # a, b, c = 10**-7 * 2.857, -0.00343, 10.71
+        # add = 10**4.3 * np.exp(a*(temp-4000)**2 + b*temp + c) #what the heck is this (it adds extra luminosity to low temp stars)
+        # return (temp + add) * abs(np.random.normal(1, 0.8)) * 0.02
+        
+        # a, b, c, d = 1.307e8, -131.113, 55.137, 2.431
+        # power = (a / (temp/1000)**b) * (1 / (np.exp(c * temp/1000))) + d
+        # return 10**(power + np.random.normal(0, 0.3)) #* np.random.normal(1, 0.5)
+        
+        power = 347.91 * np.exp(-0.002122 * temp) + 1.8654
+        return 10**(power + np.random.normal(0, 0.3))
     
     def giant_mass(self):
         ''' Randomly generate mass of a giant star. Normally distributed mass centered at 8 solar masses with SD of 3. 

@@ -17,7 +17,7 @@ class Universe(object):
     and are positioned in such a way to imitate a believable universe. 
     '''
     def __init__(self, radius, clusters, hubble=None, blackholes=True, darkmatter=True, complexity="Normal",
-                 variablestars=True, homogeneous=False, isotropic=True, rotvels="Normal"):
+                 variablestars=True, homogeneous=False, isotropic=True, rotvels="Normal", event="flash"):
         ''' Generate a universe consisting of Star, BlackHole, Galaxy, and GalaxyCluster objects.
         Parameters
         ----------
@@ -51,10 +51,10 @@ class Universe(object):
         self.homogeneous = homogeneous
         self.isotropic = isotropic
         self.rotvelMult = rotvels
+        self.eventType = event
         self.clusters, self.clustervels, self.clusterdists = self.generate_clusters()
         self.galaxies, self.distantgalaxies = self.get_all_galaxies()
-        self.supernovae = self.explode_supernovae(
-            min(55, len(self.galaxies) + len(self.distantgalaxies)))
+        self.flashes = self.gen_flashes(min(55, len(self.galaxies) + len(self.distantgalaxies)), event=self.eventType)
         self.radialvelocities, self.distantradialvelocities = self.get_radial_velocities()
 
     def choosehubble(self):
@@ -414,18 +414,20 @@ class Universe(object):
                     m += 1
         return obsvel, distantobsvel
     
-    def explode_supernovae(self, frequency):
-        ''' Generate Type 1a supernovae in random galaxies in the universe, with their apparent peak flux.
+    def gen_flashes(self, frequency, event="flash"):
+        ''' Generate bright flashes in random galaxies in the universe, with their apparent peak flux.
         Parameters
         ----------
         frequency : int
-            The number of supernovae to generate
+            The number of events to generate
+        event : str
+            The type of 'flash' event. One of {"flash", "supernova"}, corresponding to a FRB-type flash or Type Ia supernova resp.
         Returns
         -------
         skypositions : list
-            A list of [equat, polar], where equat and polar are numpy arrays of the coordinates of each supernova in the sky
+            A list of [equat, polar], where equat and polar are numpy arrays of the coordinates of each flash in the sky
         peakfluxes : numpy array
-            The peak flux (in W/m^2) of the supernovae, accounting for distance to the observer.
+            The peak flux (in photon count, or W/m^2 depending on event type) of the flash, accounting for distance to the observer.
         '''
         allgalaxies = self.distantgalaxies + self.galaxies
         indexes = np.random.uniform(0, len(allgalaxies) - 1, frequency - 2)     # choose positions of the supernovae in terms of random galaxy indexes
@@ -433,11 +435,20 @@ class Universe(object):
         indexes = np.append(indexes, closeindexes); np.random.shuffle(indexes)  # shuffle the indexes so its not as obvious that the last two supernovae are in close galaxies
         galaxies = [allgalaxies[int(i)] for i in indexes]
         positions = np.array([galaxy.spherical for galaxy in galaxies])
-        
-        peaklumin = 2 * 10**36  # 20 billion times solar luminosity, source: https://www.sciencedirect.com/topics/physics-and-astronomy/type-ia-supernovae#:~:text=A%20typical%20supernova%20reaches%20its,times%20that%20of%20the%20Sun.
         distances = positions[:, 2] * 3.086 * 10**16    # convert from parsec to meters
-        peakfluxes = (peaklumin / (4 * np.pi * distances**2)) * np.random.normal(1, 0.01, frequency)  # F = L / (4pi*r^2)  - with some random scatter
         
+        if event == "supernova":
+            peaklumin = 2 * 10**36  # 20 billion times solar luminosity, source: https://www.sciencedirect.com/topics/physics-and-astronomy/type-ia-supernovae#:~:text=A%20typical%20supernova%20reaches%20its,times%20that%20of%20the%20Sun.
+            peakfluxes = (peaklumin / (4 * np.pi * distances**2)) * np.random.normal(1, 0.01, frequency)  # F = L / (4pi*r^2)  - with some random scatter
+        elif event == "flash":
+            min_photons = 300
+            intrinsic_lumin = min_photons * 4 * np.pi * (self.radius * 3.086 * 10**16)**2
+            peakfluxes = (intrinsic_lumin / (4 * np.pi * np.square(distances))) * np.random.normal(1, 0.01, frequency)
+            peakfluxes = np.around(peakfluxes, 0)
+            peakfluxes = peakfluxes.astype('int32')
+        else:
+            raise ValueError(f"Need a valid supernova/event type. Type of {event} is not valid.")
+            
         # now we need to find the range of scatter that supernovae can have in the sky. We can do this by guessing the radius of each
         # galaxy, and then putting it into a function of distance. The below code finds the magnitude of scatter in the *positive* direction
         # so the actual scatter will be in the range -size -> +size about a central point

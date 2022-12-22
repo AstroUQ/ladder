@@ -47,7 +47,7 @@ class UniverseSim(object):
     that should be interacted with by the user. 
     '''
     def __init__(self, numclusters, hubble=None, seed=None, blackholes=True, darkmatter=True, mode="Normal",
-                 homogeneous=False, isotropic=True, rotvels="Boosted"):
+                 homogeneous=False, isotropic=True, rotvels="Boosted", event="flash"):
         ''' Generates a Universe object and imports important data from it. 
         Parameters
         ----------
@@ -70,20 +70,24 @@ class UniverseSim(object):
         rotvels : str
             One of {"Normal", "Boosted"}, which dictates whether rotation curves are normal, or have arbitrarily (and unphysically) 
             boosted velocity magnitudes.
+        event : str
+            One of {"flash", "supernova"} which determines the type of bright event that allows the distance ladder formulation. The
+            event type determines the format of the output data (photon count of flash, or W/m^2 respectively)
         '''
         self.seed = seed if seed != None else int(np.random.uniform(0, 9999)) # randomly choose a <=4 digit seed if one isn't given
         np.random.seed(seed)
         self.universe = Universe(450000, numclusters, hubble, blackholes=blackholes, darkmatter=darkmatter, complexity=mode,
-                                 homogeneous=homogeneous, isotropic=isotropic, rotvels=rotvels)
+                                 homogeneous=homogeneous, isotropic=isotropic, rotvels=rotvels, event=event)
         self.hasblackhole = blackholes 
         self.hasdarkmatter = darkmatter
+        self.mode = mode
         self.homogeneous = homogeneous 
         self.isotropic = isotropic
-        self.mode = mode
+        self.eventType = event
         self.hubble = self.universe.hubble
         self.galaxies, self.distantgalaxies = self.universe.get_all_galaxies()
         self.allgalaxies = self.galaxies + self.distantgalaxies
-        self.supernovae = self.universe.supernovae
+        self.flashes = self.universe.flashes
         self.starpositions = self.universe.get_all_starpositions()
         self.numstars = len(self.starpositions[0])
         self.blackholes = self.universe.get_blackholes()  
@@ -398,7 +402,7 @@ class UniverseSim(object):
         
             
     def save_data(self, properties=True, proj='AllSky', pic=True, pretty=True, planetNeb=False, radio=True, stars=True, 
-                  variablestars=True, blackbodies=False, distantgalax=True, supernovae=True, doppler=[False, False], blackhole=False, 
+                  variablestars=True, blackbodies=False, distantgalax=True, flashes=True, doppler=[False, False], blackhole=False, 
                   rotcurves=False):
         ''' Generates some data, takes other data, and saves it to the system in a new directory within the file directory.
         .pdf images are commented out currently - uncomment them at your own risk! (.pdfs can be in excess of 90mb each!)
@@ -422,8 +426,8 @@ class UniverseSim(object):
             Generate and save distant galaxy data
         variablestars : bool
             Save variable star data within a subdirectory
-        supernovae : bool
-            Generate and save supernovae data
+        flashes : bool
+            Generate and save bright event data
         doppler : list of bool
             First bool in list is whether or not to save a doppler graph with log scale. Second bool is whether to save a linear
             scaled one as well.
@@ -452,8 +456,8 @@ class UniverseSim(object):
             self.save_variables()
         if distantgalax:
             self.save_distant_galaxies(proj=proj)
-        if supernovae:
-            self.save_supernovae(proj=proj)
+        if flashes:
+            self.save_flashes(proj=proj)
         if blackhole:   # save some data about black holes (radio sources)
             self.save_blackholes(proj=proj)
         # now we can save the data that will help check answers, etc
@@ -766,16 +770,16 @@ class UniverseSim(object):
         
         vartime2 = time(); total = vartime2 - vartime1; print("Variable data saved in", total, "s")
     
-    def save_supernovae(self, proj='AllSky'):
-        ''' Saves all of the supernova data into the data directory, with coordinates of the events based on the projection.
+    def save_flashes(self, proj='AllSky'):
+        ''' Saves all of the bright flash data into the data directory, with coordinates of the events based on the projection.
         Parameters
         ----------
         proj : str
-            The coordinate system for the supernova events. One of {'AllSky', 'Cube', 'Both'}. If 'Cube' is chosen, the direction
+            The coordinate system for the bright flash events. One of {'AllSky', 'Cube', 'Both'}. If 'Cube' is chosen, the direction
             is output into the file too, with corresponding local coordinates.
         '''
-        supertime1 = time(); print("Saving supernova data...")
-        pos, peak = self.supernovae
+        supertime1 = time(); print("Saving bright flash data...")
+        pos, peak = self.flashes
         
         if proj in ["AllSky", "Both"]:
             equats = np.array([format(abs(equat), '3.2f') for equat in pos[0]])
@@ -785,24 +789,31 @@ class UniverseSim(object):
             uc, vc, index = misc.cubemap(x, y, z)
             uc = np.array([format(coord, '3.2f') for coord in uc])
             vc = np.array([format(coord, '3.2f') for coord in vc])
-            
-        peak = np.array([format(flux, '.3e') for flux in peak])
+        
         width = int(-(-np.log10(len(peak)) // 1))
-        names = [f"SNe{i:0{width}d}" for i in range(1, len(peak) + 1)]
+        if self.eventType == "supernova":
+            peak = np.array([format(flux, '.3e') for flux in peak])
+            names = [f"SNe{i:0{width}d}" for i in range(1, len(peak) + 1)]
+        elif self.eventType == "flash":
+            names = [f"FE{i:0{width}d}" for i in range(1, len(peak) + 1)]
         
         if proj in ["AllSky", "Both"]:
-            supernovadata = {"Name": names, "Equatorial": equats, "Polar": polars, "PeakFlux(W)": peak}
-            supernovafile = pd.DataFrame(supernovadata)
-            supernovafile.to_csv(self.datadirectory + "\\AllSky Supernova Data.txt", index=None, sep=' ')
+            if self.eventType == "supernova":
+                flashdata = {"Name": names, "Equatorial": equats, "Polar": polars, "PeakFlux(W/m^2)": peak}
+            elif self.eventType == "flash":
+                flashdata = {"Name": names, "Equatorial": equats, "Polar": polars, "Photon-Count": peak}
+            flashfile = pd.DataFrame(flashdata)
+            flashfile.to_csv(self.datadirectory + "\\AllSky Flash Data.txt", index=None, sep=' ')
         if proj in ["Cube", "Both"]:
             directions = np.array(['Front', 'Back', 'Top', 'Bottom', 'Left', 'Right'])
-            supernovadata = {"Name": names, "Direction": directions[index],
-                             "X": uc, "Y": vc, 
-                             "PeakFlux(W)": peak}
-            supernovafile = pd.DataFrame(supernovadata)
-            supernovafile.to_csv(self.datadirectory + "\\Supernova Data.txt", index=None, sep=' ')
+            if self.eventType == "supernova":
+                flashdata = {"Name": names, "Direction": directions[index], "X": uc, "Y": vc, "PeakFlux(W/m^2)": peak}
+            elif self.eventType == "flash":
+                flashdata = {"Name": names, "Direction": directions[index], "X": uc, "Y": vc, "Photon-Count": peak}
+            flashfile = pd.DataFrame(flashdata)
+            flashfile.to_csv(self.datadirectory + "\\Flash Data.txt", index=None, sep=' ')
         
-        supertime2 = time(); total = supertime2 - supertime1; print("Supernova data saved in", total, "s")
+        supertime2 = time(); total = supertime2 - supertime1; print("Flash data saved in", total, "s")
     
     def save_blackbodies(self):
         ''' Saves blackbody curves for all stars in the local galaxy. 
@@ -929,7 +940,7 @@ def main():
     # sim.save_data()
     
     sim = UniverseSim(100, isotropic=False, rotvels="Boosted")
-    sim.save_data(proj="AllSky", planetNeb=False, radio=False)
+    sim.save_data(proj="Cube", planetNeb=False, radio=False)
 
     
 if __name__ == "__main__":

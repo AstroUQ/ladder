@@ -113,15 +113,23 @@ class UniverseSim(object):
         else:
             os.makedirs(self.datadirectory)     # if directory doesn't exist, create it
             
-    def create_cubemap_directory(self):
+    def create_cubemap_directory(self, proj="Cube"):
         ''' Creates the directional folders needed for the cubemap projection data/images.
         A folder is created for each of ['Front', 'Back', 'Top', 'Bottom', 'Left', 'Right'].
+        Parameters
+        ----------
+        proj : str
+            One of {"Cube", "DivCube"}, to determine how many subfolders to make. 
         '''
         if not self.datadirectory: # if the parent data directory hasnt been created,
             self.create_directory() # it must be created
         directions = ['Front', 'Back', 'Top', 'Bottom', 'Left', 'Right']
         for direction in directions: # now make a folder for each direction
             os.makedirs(self.datadirectory + f'\\{direction}')
+            if proj == "DivCube":
+                for X in ["A", "B", "C", "D", "E", "F"]:
+                    for Y in range(1, 7):
+                        os.makedirs(self.datadirectory + f'\\{direction}\\{X}{Y}')
         self.cubemapdirectory = True # and finally set it so that we know the cubemap directional directories have been made
     
     def plot_universe(self, spikes=True, radio=False, pretty=True, planetNeb=False, save=False, cubemap=False):
@@ -411,7 +419,7 @@ class UniverseSim(object):
         properties : bool
             Whether to save the properties of the universe (e.g. variable star parameters, galaxy size, etc)
         proj : str
-            One of {'AllSky', 'Cube', 'Both'} to determine output of images/data
+            One of {'AllSky', 'Cube', 'Both', 'DivCube'} to determine output of images/data
         pic : bool
             Whether to generate and save a 2d plot of the universe.
         pretty : bool
@@ -444,8 +452,9 @@ class UniverseSim(object):
         print("Starting data saving..."); t0 = time()
         if not self.datadirectory:
             self.create_directory()
-        if proj in ['Cube', "Both"] and not self.cubemapdirectory:
-            self.create_cubemap_directory()
+        if proj in ['Cube', "Both", "DivCube"] and not self.cubemapdirectory:
+            method = 'Cube' if proj == "Both" else proj
+            self.create_cubemap_directory(proj=method)
 
         # first, save the *data* that the user might interact with
         if pic:     # save a huge pic (or pics) of the universe. say goodbye to your diskspace
@@ -542,8 +551,8 @@ class UniverseSim(object):
         radio : bool
             True if you want an *extra* image with radio contours overlaid onto the AllSky projection
         proj : str
-            One of {'AllSky', 'Cube', 'Both'} depending on if you want a single, equirectangular projected image of the sky, or
-            six, cubemapped images of the sky, respectively. (or both!)
+            One of {'AllSky', 'Cube', 'Both', 'DivCube'} depending on if you want a single, equirectangular projected image of the sky, 
+            or six, cubemapped images of the sky, respectively. (or both!)
         pretty : bool
             Whether to plot galaxy nebulosity on top of galaxies. Warning: high RAM usage!
         planetNeb : bool
@@ -551,10 +560,11 @@ class UniverseSim(object):
         '''
         if not self.datadirectory:
             self.create_directory()
-        if proj in ['Cube', "Both"] and not self.cubemapdirectory:
-            self.create_cubemap_directory()
+        if proj in ['Cube', "Both", "DivCube"] and not self.cubemapdirectory:
+            method = 'Cube' if proj == "Both" else proj
+            self.create_cubemap_directory(proj=method)
             
-        if proj in ['Cube', 'Both']:
+        if proj in ['Cube', 'Both', 'DivCube']:
             pictime1 = time(); print("Generating universe picture...")
             figAxes = self.plot_universe(pretty=pretty, planetNeb=planetNeb, save=True, cubemap=True)
             directions = ['Front', 'Back', 'Top', 'Bottom', 'Left', 'Right']
@@ -562,6 +572,17 @@ class UniverseSim(object):
                 fig, ax = figAxes[i]
                 fig.savefig(self.datadirectory + f'\\{directions[i]}\\{directions[i]}.png', dpi=1500, bbox_inches='tight', 
                             pad_inches = 0.01)
+                
+                if proj == 'DivCube':
+                    for j, X in enumerate(["A", "B", "C", "D", "E", "F"]):
+                        xbounds = [-45 + j * 15, -30 + j * 15]
+                        ax.set_xlim(xbounds)
+                        for Y in range(1, 7):
+                            ybounds = [45 - Y * 15, 60 - Y * 15]
+                            ax.set_ylim(ybounds)
+                            fig.savefig(self.datadirectory + f'\\{directions[i]}\\{X}{Y}\\{X}{Y}-{directions[i]}.png',
+                                        dpi=150, bbox_inches='tight', pad_inches = 0.01)
+                
             pictime2 = time(); total = pictime2 - pictime1; print("Cubemapped universe pictures saved in", total, "s")
         if proj in ['AllSky', 'Both']:
             pictime1 = time(); print("Generating universe picture...")
@@ -576,12 +597,22 @@ class UniverseSim(object):
                 self.plot_radio([fig, ax], method="AllSky")
                 fig.savefig(self.datadirectory + '\\AllSky Radio Overlay Image.png', dpi=1500, bbox_inches='tight', pad_inches = 0.01)
                 pictime3 = time(); total = pictime3 - pictime2; print("Radio overlay picture saved in", total, "s")
-            if proj in ["Cube", "Both"]:
+            if proj in ["Cube", "Both", "DivCube"]:
                 self.plot_radio(figAxes, method="Cube")
                 for i in range(6):
                     fig, ax = figAxes[i]
+                    ax.set_xlim(-45, 45); ax.set_ylim(-45, 45);
                     fig.savefig(self.datadirectory + f'\\{directions[i]}\\{directions[i]} Radio Overlay.png', dpi=1500, 
                                 bbox_inches='tight', pad_inches = 0.01)
+                    if proj == 'DivCube':
+                        for j, X in enumerate(["A", "B", "C", "D", "E", "F"]):
+                            xbounds = [-45 + j * 15, -30 + j * 15]
+                            ax.set_xlim(xbounds)
+                            for Y in range(1, 7):
+                                ybounds = [45 - Y * 15, 60 - Y * 15]
+                                ax.set_ylim(ybounds)
+                                fig.savefig(self.datadirectory + f'\\{directions[i]}\\{X}{Y}\\{X}{Y}-{directions[i]} Radio Overlay.png',
+                                            dpi=150, bbox_inches='tight', pad_inches = 0.01)
             
         plt.close('all')
         
@@ -591,7 +622,7 @@ class UniverseSim(object):
         Parameters
         ----------
         proj : str
-            One of {'AllSky', 'Cube', 'Both'} depending on if you want a single, equirectangular projected image of the sky, or
+            One of {'AllSky', 'Cube', 'Both', 'DivCube'} depending on if you want a single, equirectangular projected image of the sky, or
             six, cubemapped images of the sky, respectively. Both is also an option.  
         '''
         if not self.datadirectory:
@@ -606,7 +637,7 @@ class UniverseSim(object):
         
         if proj in ["Cube", "Both"]:
             uc, vc, index = misc.cubemap(x, y, z)
-            if proj == "Cube":
+            if proj in ["Cube", "DivCube"]:
                 _, _, radius = misc.cartesian_to_spherical(x, y, z)
         if proj in ['AllSky', 'Both']:
             equat, polar, radius = misc.cartesian_to_spherical(x, y, z)
@@ -619,7 +650,7 @@ class UniverseSim(object):
         # round position values to 4 decimal places which is about ~1/3 of an arcsecond (or rather 0.0001 degrees)
         if proj in ["AllSky", "Both"]:
             equat = np.around(equat, decimals=4); polar = np.around(polar, decimals=4);  
-        if proj in ["Cube", "Both"]:
+        if proj in ["Cube", "Both", "DivCube"]:
             uc = np.around(uc, decimals=4); vc = np.around(vc, decimals=4);
             
         # now to work with the band luminosity data. First, get the data for each star in the universe
@@ -644,19 +675,35 @@ class UniverseSim(object):
                 variabool[k] = star.variable
                 k += 1
         
-        if proj in ["Cube", "Both"]:
+        if proj in ["Cube", "Both", "DivCube"]:
             directions = ['Front', 'Back', 'Top', 'Bottom', 'Left', 'Right']
             for i, direction in enumerate(directions):
                 # now, write all star data to a pandas dataframe
-                stardata = {'Name': self.starnames[index == i], 
-                            'X': uc[index == i], 'Y': vc[index == i],        # units of the X/Y are in degrees
-                            'BlueF': blueflux[index == i], 'GreenF': greenflux[index == i], 'RedF': redflux[index == i],   # units of these fluxes are in W/m^2/nm
-                            'Parallax': parallax[index == i], 'RadialVelocity': obsvel[index == i], # units of parallax are in arcsec, obsvel in km/s
-                            'Variable?': variabool[index == i]}  # outputs 1.0 if variable, 0.0 if not      
-                starfile = pd.DataFrame(stardata)
-                
-                starfile.to_csv(self.datadirectory + f"\\{direction}\\Star Data.txt", index=None, sep=' ')    # and finally save the dataframe to the directory
-        
+                if proj in ["Cube", "Both"]:
+                    stardata = {'Name': self.starnames[index == i], 
+                                'X': uc[index == i], 'Y': vc[index == i],        # units of the X/Y are in degrees
+                                'BlueF': blueflux[index == i], 'GreenF': greenflux[index == i], 'RedF': redflux[index == i],   # units of these fluxes are in W/m^2/nm
+                                'Parallax': parallax[index == i], 'RadialVelocity': obsvel[index == i], # units of parallax are in arcsec, obsvel in km/s
+                                'Variable?': variabool[index == i]}  # outputs 1.0 if variable, 0.0 if not      
+                    starfile = pd.DataFrame(stardata)
+                    
+                    starfile.to_csv(self.datadirectory + f"\\{direction}\\Star Data.txt", index=None, sep=' ')    # and finally save the dataframe to the directory
+                elif proj == "DivCube":
+                    for j, X in enumerate(["A", "B", "C", "D", "E", "F"]):
+                        xbounds = [-45 + j * 15, -30 + j * 15]
+                        for Y in range(1, 7):
+                            ybounds = [45 - Y * 15, 60 - Y * 15]
+                            indices = np.where((index == i) & (uc >= xbounds[0]) & (uc <= xbounds[1]) &
+                                               (vc >= ybounds[0]) & (vc <= ybounds[1]))
+                            stardata = {'Name': self.starnames[indices], 
+                                        'X': uc[indices], 'Y': vc[indices],        # units of the X/Y are in degrees
+                                        'BlueF': blueflux[indices], 'GreenF': greenflux[indices], 'RedF': redflux[indices],   # units of these fluxes are in W/m^2/nm
+                                        'Parallax': parallax[indices], 'RadialVelocity': obsvel[indices], # units of parallax are in arcsec, obsvel in km/s
+                                        'Variable?': variabool[indices]}  # outputs 1.0 if variable, 0.0 if not      
+                            starfile = pd.DataFrame(stardata)
+                            
+                            starfile.to_csv(self.datadirectory + f"\\{direction}\\{X}{Y}\\Star Data.txt", index=None, sep=' ')    # and finally save the dataframe to the directory
+                    
         if proj in ["AllSky", "Both"]:
             # now, write all star data to a pandas dataframe
             stardata = {'Name': self.starnames, 'Equatorial': equat, 'Polar': polar,        # units of the equat/polar are in degrees
@@ -674,14 +721,14 @@ class UniverseSim(object):
         Parameters
         ----------
         proj : str
-            One of {'AllSky', 'Cube', 'Both'} depending on if you want a single, equirectangular projected image of the sky, or
+            One of {'AllSky', 'Cube', 'Both', 'DivCube'} depending on if you want a single, equirectangular projected image of the sky, or
             six, cubemapped images of the sky, respectively. Both is also an option.  
         '''
         distanttime1 = time(); print("Saving distant galaxy data...")
         sphericals = np.array([galaxy.spherical for galaxy in self.distantgalaxies])
         if proj in ["AllSky", "Both"]:
             equat, polar, dists = sphericals[:, 0], sphericals[:, 1], sphericals[:, 2]
-        if proj in ["Cube", "Both"]:
+        if proj in ["Cube", "Both", "DivCube"]:
             _, _, dists = sphericals[:, 0], sphericals[:, 1], sphericals[:, 2]
             carts = np.array([galaxy.cartesian for galaxy in self.distantgalaxies])
             x, y, z = carts[:, 0], carts[:, 1], carts[:, 2]
@@ -707,7 +754,7 @@ class UniverseSim(object):
         
         if proj in ["AllSky", "Both"]:
             equat = [format(coord, '3.4f') for coord in equat]; polar = [format(coord, '3.4f') for coord in polar]
-        if proj in ["Cube", "Both"]:
+        if proj in ["Cube", "Both", "DivCube"]:
             uc = np.array([format(coord, '3.4f') for coord in uc]); vc = np.array([format(coord, '3.4f') for coord in vc])
         
         if proj in ["AllSky", "Both"]:
@@ -717,14 +764,28 @@ class UniverseSim(object):
             DGfile = pd.DataFrame(DGdata)
             DGfile.to_csv(self.datadirectory + "\\Distant Galaxy Data.txt", index=None, sep=' ')
             
-        if proj in ["Cube", "Both"]:
+        if proj in ["Cube", "Both", "DivCube"]:
             directions = ['Front', 'Back', 'Top', 'Bottom', 'Left', 'Right']
             for i, direction in enumerate(directions):
-                DGdata = {"Name": names[index == i], 'X': uc[index == i], 'Y': vc[index == i],
-                          'BlueF': blueflux[index == i], 'GreenF': greenflux[index == i], 'RedF': redflux[index == i],
-                          'Size': sizes[index == i], 'RadialVelocity': DGobsvel[index == i]}
-                DGfile = pd.DataFrame(DGdata)
-                DGfile.to_csv(self.datadirectory + f"\\{direction}\\Distant Galaxy Data.txt", index=None, sep=' ')
+                if proj in ["Cube", "Both"]:
+                    DGdata = {"Name": names[index == i], 'X': uc[index == i], 'Y': vc[index == i],
+                              'BlueF': blueflux[index == i], 'GreenF': greenflux[index == i], 'RedF': redflux[index == i],
+                              'Size': sizes[index == i], 'RadialVelocity': DGobsvel[index == i]}
+                    DGfile = pd.DataFrame(DGdata)
+                    DGfile.to_csv(self.datadirectory + f"\\{direction}\\Distant Galaxy Data.txt", index=None, sep=' ')
+                elif proj == "DivCube":
+                    for j, X in enumerate(["A", "B", "C", "D", "E", "F"]):
+                        xbounds = [-45 + j * 15, -30 + j * 15]
+                        for Y in range(1, 7):
+                            ybounds = [45 - Y * 15, 60 - Y * 15]
+                            indices = np.where((index == i) & (uc >= xbounds[0]) & (uc <= xbounds[1]) &
+                                               (vc >= ybounds[0]) & (vc <= ybounds[1]))
+                            DGdata = {"Name": names[indices], 'X': uc[indices], 'Y': vc[indices],
+                                      'BlueF': blueflux[indices], 'GreenF': greenflux[indices], 'RedF': redflux[indices],
+                                      'Size': sizes[indices], 'RadialVelocity': DGobsvel[indices]}    
+                            DGfile = pd.DataFrame(DGdata)
+                            
+                            DGfile.to_csv(self.datadirectory + f"\\{direction}\\{X}{Y}\\Distant Galaxy Data.txt", index=None, sep=' ')    # and finally save the dataframe to the directory
         distanttime2 = time(); total = distanttime2 - distanttime1; print("Distant galaxy data saved in", total, "s")
         
     def save_variables(self):
@@ -784,7 +845,7 @@ class UniverseSim(object):
         if proj in ["AllSky", "Both"]:
             equats = np.array([format(abs(equat), '3.2f') for equat in pos[0]])
             polars = np.array([format(abs(polar), '3.2f') for polar in pos[1]])
-        if proj in ["Cube", "Both"]:
+        if proj in ["Cube", "Both", "DivCube"]:
             x, y, z = misc.spherical_to_cartesian(pos[0], pos[1], pos[2])
             uc, vc, index = misc.cubemap(x, y, z)
             uc = np.array([format(coord, '3.2f') for coord in uc])
@@ -804,7 +865,7 @@ class UniverseSim(object):
                 flashdata = {"Name": names, "Equatorial": equats, "Polar": polars, "Photon-Count": peak}
             flashfile = pd.DataFrame(flashdata)
             flashfile.to_csv(self.datadirectory + "\\AllSky Flash Data.txt", index=None, sep=' ')
-        if proj in ["Cube", "Both"]:
+        if proj in ["Cube", "Both", "DivCube"]:
             directions = np.array(['Front', 'Back', 'Top', 'Bottom', 'Left', 'Right'])
             if self.eventType == "supernova":
                 flashdata = {"Name": names, "Direction": directions[index], "X": uc, "Y": vc, "PeakFlux(W/m^2)": peak}
@@ -869,7 +930,7 @@ class UniverseSim(object):
                       'Luminosity': BHlumins}
             BHfile = pd.DataFrame(BHdata)
             BHfile.to_csv(self.datadirectory + "\\AllSky Radio Source Data.txt", index=None, sep=' ')
-        if proj in ["Cube", "Both"]:
+        if proj in ["Cube", "Both", "DivCube"]:
             x, y, z = misc.spherical_to_cartesian(equats, polars, np.array(dists))
             uc, vc, index = misc.cubemap(x, y, z)
             
@@ -939,8 +1000,8 @@ def main():
     # sim = UniverseSim(1000, mode="Normal")
     # sim.save_data()
     
-    sim = UniverseSim(100, isotropic=False, rotvels="Boosted")
-    sim.save_data(proj="Cube", planetNeb=False, radio=False)
+    sim = UniverseSim(20, isotropic=False, rotvels="Boosted")
+    sim.save_data(proj="DivCube", planetNeb=False, radio=True)
 
     
 if __name__ == "__main__":

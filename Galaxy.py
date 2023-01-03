@@ -667,9 +667,12 @@ class Galaxy(object):
         localgalaxy : bool
             Whether or not this galaxy is the local galaxy (and thus fills up much of the figure)
         '''
+        if figAxes == None: # generate the matplotlib axes if they dont yet exist
+            misc.gen_figAxes(method=method)
+        # now to create the nebula for this particular galaxy (of radius, species and rotation)
         galaxNeb = Nebula(self.species, self.spherical, self.radius, rotation=self.rotation,
                           localgalaxy=localgalaxy)
-        galaxNeb.plot_nebula(figAxes=figAxes, style='colormesh', method=method)
+        galaxNeb.plot_nebula(figAxes=figAxes, style='colormesh', method=method) # and finally plot it on the existing figure
     
     def plot_RotCurve(self, newtapprox=False, observed=False, save=False):
         ''' Produces a rotation curve of this galaxy. If the galaxy has dark matter and the user opts to display the newtonian

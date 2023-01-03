@@ -119,7 +119,8 @@ class UniverseSim(object):
         Parameters
         ----------
         proj : str
-            One of {"Cube", "DivCube"}, to determine how many subfolders to make. 
+            One of {"Cube", "DivCube"}, to determine how many subfolders to make. If "DivCube" is selected, 
+            folders 'A1' through to 'F6' are created to divide each directional image into 36 squares of 15x15 deg each.
         '''
         if not self.datadirectory: # if the parent data directory hasnt been created,
             self.create_directory() # it must be created
@@ -279,6 +280,8 @@ class UniverseSim(object):
             gc.enable()
             for i, galaxy in enumerate(self.galaxies):
                 if planetNeb:
+                    # we're going to plot planetary nebulae for each close white dwarf that is relatively hot (which i rationalise
+                    # is a young white dwarf star, and needs a nebula accordingly)
                     if galaxy.spherical[2] < 1500:
                         for j, star in enumerate(galaxy.stars):
                             if star.species == "WDwarf" and star.temperature >= 18000:
@@ -286,8 +289,9 @@ class UniverseSim(object):
                                 planetaryNeb = Nebula('ring', pos, cartesian=True, reduction=True)
                                 planetaryNeb.plot_nebula(figAxes=figAxes, method=method)
                 if pretty:
+                    # here is where we generate and plot the nebulosity for each close galaxy
                     if galaxy.spherical[2] < 20000: # if the galaxy is closer than 20kpc
-                        local = True if i == len(self.galaxies) - 1 else False 
+                        local = True if i == len(self.galaxies) - 1 else False # the local galaxy is the last in the list
                         galaxy.plot_nebulosity(figAxes, method=method, localgalaxy=local)
                         gc.collect()
                 
@@ -558,6 +562,10 @@ class UniverseSim(object):
         planetNeb : bool
             Whether to generate and plot planetary nebulae in the local/close galaxies
         '''
+        # this import and backend change apparently helps with time to save images 
+        import matplotlib
+        matplotlib.use('Agg')
+        
         if not self.datadirectory:
             self.create_directory()
         if proj in ['Cube', "Both", "DivCube"] and not self.cubemapdirectory:
@@ -1000,8 +1008,8 @@ def main():
     # sim = UniverseSim(1000, mode="Normal")
     # sim.save_data()
     
-    sim = UniverseSim(20, isotropic=False, rotvels="Boosted")
-    sim.save_data(proj="DivCube", planetNeb=False, radio=True)
+    sim = UniverseSim(1000, isotropic=False, rotvels="Boosted")
+    sim.save_data(proj="AllSky", planetNeb=False, radio=True)
 
     
 if __name__ == "__main__":

@@ -41,7 +41,7 @@ class Galaxy(object):
         rotate : bool
             Whether or not to rotate the galaxy randomly
         complexity : str
-            One of {"Comprehensive", "Normal", "Basic", "Distant"} which dictates the population of the galaxy and the type. 
+            One of {"Comprehensive", "Normal", "Basic"} which dictates the population of the galaxy and the type. 
         variable : list
             The first element must be a bool, which decides whether or not to generate variability in some stars
             The second and third elements (and fourth [optional]) must be comprised of [period, lightcurve type],
@@ -64,23 +64,20 @@ class Galaxy(object):
             self.spherical = position
             self.cartesian = misc.spherical_to_cartesian(position[0], position[1], position[2])
         self.variable = variable
-        if self.complexity != "Distant":
-            self.starpositions, self.stars, self.rotation = self.generate_galaxy()
-            self.starmasses = np.array([star.get_star_mass() for star in self.stars])
-            self.blackhole = self.generate_BlackHole()
-            starorbitradii = [self.starpositions[0] - self.cartesian[0], 
-                              self.starpositions[1] - self.cartesian[1], 
-                              self.starpositions[2] - self.cartesian[2]]
-            self.starorbits = self.star_orbits(starorbitradii[0], starorbitradii[1], starorbitradii[2])
-            self.starvels, _, self.darkmattermass, self.directions = self.rotation_vels(mult=rotvels)
-            self.galaxymass = sum(self.starmasses) + self.darkmattermass
-        else:   # distant galaxy
-            self.galaxymass, self.bandlumin, self.rotation = self.distant_galaxy()
-            self.blackhole = self.generate_BlackHole()
+        self.starpositions, self.stars, self.rotation = self.generate_galaxy()
+        self.starmasses = np.array([star.get_star_mass() for star in self.stars])
+        self.blackhole = self.generate_BlackHole()
+        starorbitradii = [self.starpositions[0] - self.cartesian[0], 
+                          self.starpositions[1] - self.cartesian[1], 
+                          self.starpositions[2] - self.cartesian[2]]
+        self.starorbits = self.star_orbits(starorbitradii[0], starorbitradii[1], starorbitradii[2])
+        self.starvels, _, self.darkmattermass, self.directions = self.rotation_vels(mult=rotvels)
+        self.galaxymass = sum(self.starmasses) + self.darkmattermass
     
     def choose_blackhole(self):
         ''' Chooses whether to have a black hole in this galaxy (only if the complexity is "Comprehensive")
         Returns
+        -------
         bh : bool
             True if there is a black hole in the galaxy.
         '''
@@ -105,44 +102,12 @@ class Galaxy(object):
             The blackhole at the center of the galaxy
         '''
         if self.blackhole == True:
-            if self.complexity == "Distant":
-                eddlumin = np.random.uniform(0.2, 1) if self.species[0] == "S" else np.random.uniform(0.5, 1)
-                bh = BlackHole(self.galaxymass/2, self.species, self.radius, eddlumin)
-            else:
-                eddlumin = self.BHclusterpop/20
-                eddlumin = min(eddlumin, 1)     # makes it so that, for ellipticals in particular, blackholes dont have more than edd lumin
-                bh = BlackHole(sum(self.starmasses), self.species, self.radius, eddlumin)
+            eddlumin = self.BHclusterpop / 20
+            eddlumin = min(eddlumin, 1)     # makes it so that, for ellipticals in particular, blackholes dont have more than edd lumin
+            bh = BlackHole(sum(self.starmasses), self.species, self.radius, eddlumin)
         else:
             bh = False
         return bh
-
-    def distant_galaxy(self):
-        ''' Generate masses and spectra for distant galaxies. Lookup data taken from "Galaxy Averages.txt"
-        Returns
-        -------
-        mass : float
-            The mass of the galaxy in solar masses
-        bandlumin : numpy array (1x3)
-            The [B, G, R] spectra of the galaxy in units of watts per nm
-        rotation : numpy array
-            The rotation of the galaxy relative to the origin
-        '''
-        masslookup = {"S0":26751, "Sa":17531, "Sb":15599, "Sc":13303, "SBa":25834, "SBb":22521, "SBc":16538,
-                      "cD":800885, "E0":578472, "E1":418379, "E2":268095, "E3":177070, "E4":105890,
-                      "E5":65450, "E6":30775, "E7":14545}
-        mass = masslookup[self.species] * np.random.normal(1, 0.1)
-        
-        bandluminlookup = {"S0":[9.18e+27, 7.11e+27, 3.24e+27], "Sa":[1.74e+28, 1.30e+28, 5.44e+27], "Sb":[1.25e+28, 9.71e+27, 4.41e+27],
-                           "Sc":[1.26e+28, 9.59e+27, 4.23e+27], "SBa":[1.33e+28, 1.03e+28, 4.64e+27], "SBb":[1.42e+28, 1.11e+28, 5.11e+27], 
-                           "SBc":[1.26e+28, 9.77e+27, 4.43e+27], "cD":[3.35e+28, 2.34e+28, 8.69e+27], "E0":[8.44e+27, 6.53e+27, 2.96e+27], 
-                           "E1":[9.37e+27, 7.24e+27, 3.27e+27], "E2":[8.68e+27, 6.75e+27, 3.10e+27], "E3":[1.02e+28, 7.88e+27, 3.58e+27], 
-                           "E4":[9.01e+27, 7.00e+27, 3.21e+27], "E5":[8.46e+27, 6.51e+27, 2.91e+27], 
-                           "E6":[9.14e+27, 7.12e+27, 3.27e+27], "E7":[9.09e+27, 7.07e+27, 3.24e+27]}
-        bandlumin = np.array(bandluminlookup[self.species]) * np.random.normal(1, 0.15, 3)
-        
-        rotation = np.random.uniform(0, 2*np.pi, 3)
-        
-        return mass, bandlumin, rotation
     
     def determine_population(self, species):
         ''' Determine the number of stars to put in a galaxy depending on the galaxy type
@@ -166,9 +131,7 @@ class Galaxy(object):
                       "cD":[2000, 200], "E":[1600 - 120 * num, 200 / (num + 1)]}
         mean, SD = poplookup[index]
         population = np.random.normal(mean, SD)
-        if self.complexity == "Distant":
-            population /= 18
-        elif self.complexity == "Basic":
+        if self.complexity == "Basic":
             population *= 0.3
         return int(population)
     
@@ -224,7 +187,7 @@ class Galaxy(object):
         #now to actually grab the parameters for the galaxy type in question:
         mult, spiralwrap = [param[speciesindex[self.species]] for param in [SpiralRadiiDiv, wrap]]
         
-        #[disk, bulge, bar, spiral] populations as a proportion of total galaxy star population
+        #[disk, bulge, bar, young spiral, old spiral] populations as a proportion of total galaxy star population
         regionpops = [[0.7, 0.2, 0, 0.01, 0.09],           #S0
                        [0.45, 0.2, 0, 0.15, 0.2],        #Sa
                        [0.45, 0.2, 0, 0.15, 0.2],        #Sb
@@ -508,7 +471,8 @@ class Galaxy(object):
         -------
         stars : list of n Star objects
         '''
-        proportions = {"ys":[0.82, 0.1, 0.07, 0.01],    # [Main sequence, giants, supergiants, white dwarfs] - young spiral
+        # [Main sequence, giants, supergiants, white dwarfs]
+        proportions = {"ys":[0.82, 0.1, 0.07, 0.01],    # young spiral
                        "os":[0.79, 0.15, 0.03, 0.03],   # old spiral
                        "disk":[0.9, 0.05, 0.02, 0.03],      # disk population
                        "bulge":[0.8, 0.1, 0.04, 0.06]}      # bulge population

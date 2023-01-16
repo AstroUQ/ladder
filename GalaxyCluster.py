@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 from multiprocessing import Pool
 import MiscTools as misc
 from Galaxy import Galaxy
+from DistantGalaxy import DistantGalaxy
 
 class GalaxyCluster(object):
     ''' A cluster of Galaxy objects, all spherically distributed about a central position. Generates galaxy objects within this
@@ -74,8 +75,12 @@ class GalaxyCluster(object):
         -------
         Galaxy : Galaxy object
         '''
-        return Galaxy(species, position, cartesian=True, rotate=local, blackhole=self.blackholes, darkmatter=self.darkmatter,
-                      complexity=self.complexity, variable=self.variable, rotvels=self.rotvelMult)
+        if self.complexity == "Distant":
+            return DistantGalaxy(species, position, cartesian=True, blackhole=self.blackholes, darkmatter=self.darkmatter)
+        else:
+            return Galaxy(species, position, cartesian=True, rotate=local, blackhole=self.blackholes, 
+                          darkmatter=self.darkmatter, complexity=self.complexity, variable=self.variable, 
+                          rotvels=self.rotvelMult)
     
     def generate_galaxies(self, population):
         ''' Uniformly distributes and generates galaxies within a sphere, with a central elliptical galaxy if the cluster

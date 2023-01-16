@@ -246,9 +246,11 @@ class UniverseSim(object):
             x, y, z = np.append(x, DGx), np.append(y, DGy), np.append(z, DGz)
             
         DGscales = 1 / (0.0001 * DGdists)   # we want to artifically make distant galaxies a bit larger than stars, since they *should* be brighter and bigger
-        for scale in DGscales:
-            scales.append(scale)
-            colours.append([1.0000, 0.8286, 0.7187])    # this is a nice enough colour to show distant galaxies as. Plotting them based on their actual colour would be too expensive
+        scales.extend(DGscales)
+        colours.extend([[1.0, 0.8286, 0.7187] for i in range(len(DGscales))])
+        # for scale in DGscales:
+        #     scales.append(scale)
+        #     colours.append([1.0000, 0.8286, 0.7187])    # this is a nice enough colour to show distant galaxies as. Plotting them based on their actual colour would be too expensive
         
         if not cubemap:
             if save == True:    # as with earlier, plot with no circle outline if saving
@@ -570,7 +572,7 @@ class UniverseSim(object):
             directions = ['Front', 'Back', 'Top', 'Bottom', 'Left', 'Right']
             for i in range(6):
                 fig, ax = figAxes[i]
-                fig.savefig(self.datadirectory + f'\\{directions[i]}\\{directions[i]}.png', dpi=1500, bbox_inches='tight', 
+                fig.savefig(self.datadirectory + f'\\{directions[i]}\\{directions[i]}.jpeg', dpi=1500, bbox_inches='tight', 
                             pad_inches = 0.01)
                 
                 if proj == 'DivCube':
@@ -580,7 +582,7 @@ class UniverseSim(object):
                         for Y in range(1, 7):
                             ybounds = [45 - Y * 15, 60 - Y * 15]
                             ax.set_ylim(ybounds)
-                            fig.savefig(self.datadirectory + f'\\{directions[i]}\\{X}{Y}\\{X}{Y}-{directions[i]}.png',
+                            fig.savefig(self.datadirectory + f'\\{directions[i]}\\{X}{Y}\\{X}{Y}-{directions[i]}.jpeg',
                                         dpi=150, bbox_inches='tight', pad_inches = 0.01)
                 
             pictime2 = time(); total = pictime2 - pictime1; print("Cubemapped universe pictures saved in", total, "s")
@@ -716,13 +718,16 @@ class UniverseSim(object):
         
         startime2 = time(); total = startime2 - startime1; print("Star Data saved in", total, "s")
         
-    def save_distant_galaxies(self, proj='AllSky'):
+    def save_distant_galaxies(self, proj='AllSky', evolution=True):
         ''' Saves the data of all of the distant galaxies in the data directory, based on the projection of the images.
         Parameters
         ----------
         proj : str
             One of {'AllSky', 'Cube', 'Both', 'DivCube'} depending on if you want a single, equirectangular projected image of the sky, or
-            six, cubemapped images of the sky, respectively. Both is also an option.  
+            six, cubemapped images of the sky, respectively. Both is also an option.
+        evolution : bool
+            If True, galaxies in the distant (young) universe will have their spectra blueshifted so as to emulate younger
+            galaxies being bluer than their more evolved counterparts. 
         '''
         distanttime1 = time(); print("Saving distant galaxy data...")
         sphericals = np.array([galaxy.spherical for galaxy in self.distantgalaxies])
@@ -735,7 +740,7 @@ class UniverseSim(object):
             uc, vc, index = misc.cubemap(x, y, z)
         distsMeters = dists * 3.086 * 10**16
         
-        bandlumin = np.array([galaxy.bandlumin for galaxy in self.distantgalaxies])
+        bandlumin = np.array([galaxy.get_bandlumin(evolution=evolution, universe_rad=self.universe.radius) for galaxy in self.distantgalaxies])
         bluelumin, greenlumin, redlumin = bandlumin[:, 0], bandlumin[:, 1], bandlumin[:, 2]
         blueflux, greenflux, redflux = bluelumin / distsMeters**2, greenlumin / distsMeters**2, redlumin / distsMeters**2  
         blueflux = np.array([format(flux, '.3e') for flux in blueflux])   # now round each data point to 3 decimal places
@@ -1000,8 +1005,8 @@ def main():
     # sim = UniverseSim(1000, mode="Normal")
     # sim.save_data()
     
-    sim = UniverseSim(20, isotropic=False, rotvels="Boosted")
-    sim.save_data(proj="DivCube", planetNeb=False, radio=True)
+    sim = UniverseSim(200, isotropic=False, rotvels="Boosted")
+    sim.save_data(proj="Cube", planetNeb=False, radio=False)
 
     
 if __name__ == "__main__":

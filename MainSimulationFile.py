@@ -566,36 +566,42 @@ class UniverseSim(object):
         '''
         # this import and backend change apparently helps with time to save images 
         import matplotlib
-        matplotlib.use('Agg')
+        matplotlib.use('Agg') # backend which doesn't produce new windows for each figure. helps when producing/saving lots of images
         
-        if not self.datadirectory:
+        if not self.datadirectory: # create the directory if it doesn't yet exist
             self.create_directory()
-        if proj in ['Cube', "Both", "DivCube"] and not self.cubemapdirectory:
+        if proj in ['Cube', "Both", "DivCube"] and not self.cubemapdirectory: # create the cubemap directory if it doesnt yet exist (for cubemapped datasets)
             method = 'Cube' if proj == "Both" else proj
             self.create_cubemap_directory(proj=method)
             
+        # now to save cubemapped if desired
         if proj in ['Cube', 'Both', 'DivCube']:
-            pictime1 = time(); print("Generating universe picture...")
-            figAxes = self.plot_universe(pretty=pretty, planetNeb=planetNeb, save=True, cubemap=True)
-            directions = ['Front', 'Back', 'Top', 'Bottom', 'Left', 'Right']
+            pictime1 = time(); print("Generating universe picture...") # start a timer
+            figAxes = self.plot_universe(pretty=pretty, planetNeb=planetNeb, save=True, cubemap=True) # plot the universe
+            directions = ['Front', 'Back', 'Top', 'Bottom', 'Left', 'Right'] # 6 cubemap directions
             for i in range(6):
-                fig, ax = figAxes[i]
-                fig.savefig(self.datadirectory + f'\\{directions[i]}\\{directions[i]}.jpeg', dpi=1500, bbox_inches='tight', 
-                            pad_inches = 0.01)
+                # for each direction, we're gonna save a big picture
+                fig, ax = figAxes[i] # get the figure corresponding to the ith face
+                fig.savefig(self.datadirectory + f'\\{directions[i]}\\{directions[i]}.png', dpi=1500, bbox_inches='tight', 
+                            pad_inches = 0.01, pil_kwargs={"optimize": True})
                 
                 if proj == 'DivCube':
+                    # in each direction, now save 36 subdivisions of the face (making a total of 6 * 36 subdivisions)
                     for j, X in enumerate(["A", "B", "C", "D", "E", "F"]):
-                        xbounds = [-45 + j * 15, -30 + j * 15]
-                        ax.set_xlim(xbounds)
+                        xbounds = [-45 + j * 15, -30 + j * 15] # calculate the xbounds of this subdivision
+                        ax.set_xlim(xbounds) # set xbounds
                         for Y in range(1, 7):
-                            ybounds = [45 - Y * 15, 60 - Y * 15]
-                            ax.set_ylim(ybounds)
-                            fig.savefig(self.datadirectory + f'\\{directions[i]}\\{X}{Y}\\{X}{Y}-{directions[i]}.jpeg',
-                                        dpi=150, bbox_inches='tight', pad_inches = 0.01)
+                            ybounds = [45 - Y * 15, 60 - Y * 15] # calculate ybounds of this subdivision
+                            ax.set_ylim(ybounds) # set ybounds
+                            # now to save this particular subdivision image
+                            fig.savefig(self.datadirectory + f'\\{directions[i]}\\{X}{Y}\\{X}{Y}-{directions[i]}.png',
+                                        dpi=150, bbox_inches='tight', pad_inches = 0.01, pil_kwargs={"optimize": True})
                 
             pictime2 = time(); total = pictime2 - pictime1; print("Cubemapped universe pictures saved in", total, "s")
+            
+        # now to plot an equirectangular image of the universe if desired
         if proj in ['AllSky', 'Both']:
-            pictime1 = time(); print("Generating universe picture...")
+            pictime1 = time(); print("Generating universe picture...") # start timer
             fig, ax = self.plot_universe(pretty=pretty, planetNeb=planetNeb, save=True)
             fig.set_size_inches(18, 9, forward=True)
             fig.savefig(self.datadirectory + '\\AllSky Universe Image.png', dpi=1500, bbox_inches='tight', pad_inches = 0.01)
@@ -1013,7 +1019,7 @@ def main():
     # sim = UniverseSim(1000, mode="Normal")
     # sim.save_data()
     
-    sim = UniverseSim(200, isotropic=False, rotvels="Boosted")
+    sim = UniverseSim(800, isotropic=False, rotvels="Boosted")
     sim.save_data(proj="Cube", planetNeb=False, radio=False)
 
     

@@ -583,7 +583,7 @@ class UniverseSim(object):
                 # for each direction, we're gonna save a big picture
                 fig, ax = figAxes[i] # get the figure corresponding to the ith face
                 fig.savefig(self.datadirectory + f'\\{directions[i]}\\{directions[i]}.png', dpi=1500, bbox_inches='tight', 
-                            pad_inches = 0.01, pil_kwargs={"optimize": True})
+                            pad_inches = 0.01, pil_kwargs={"compress_level": 0})
                 
                 if proj == 'DivCube':
                     # in each direction, now save 36 subdivisions of the face (making a total of 6 * 36 subdivisions)
@@ -595,7 +595,7 @@ class UniverseSim(object):
                             ax.set_ylim(ybounds) # set ybounds
                             # now to save this particular subdivision image
                             fig.savefig(self.datadirectory + f'\\{directions[i]}\\{X}{Y}\\{X}{Y}-{directions[i]}.png',
-                                        dpi=150, bbox_inches='tight', pad_inches = 0.01, pil_kwargs={"optimize": True})
+                                        dpi=150, bbox_inches='tight', pad_inches = 0.01, pil_kwargs={"compress_level": 0})
                 
             pictime2 = time(); total = pictime2 - pictime1; print("Cubemapped universe pictures saved in", total, "s")
             
@@ -604,14 +604,16 @@ class UniverseSim(object):
             pictime1 = time(); print("Generating universe picture...") # start timer
             fig, ax = self.plot_universe(pretty=pretty, planetNeb=planetNeb, save=True)
             fig.set_size_inches(18, 9, forward=True)
-            fig.savefig(self.datadirectory + '\\AllSky Universe Image.png', dpi=1500, bbox_inches='tight', pad_inches = 0.01)
+            fig.savefig(self.datadirectory + '\\AllSky Universe Image.png', dpi=1500, bbox_inches='tight', 
+                        pad_inches = 0.01, pil_kwargs={"compress_level": 0})
             pictime2 = time(); total = pictime2 - pictime1; print("AllSky Universe picture saved in", total, "s")
         
         if radio and self.hasblackhole:       # plot radio data too
             print("Generating radio overlay...")
             if proj in ["AllSky", "Both"]:
                 self.plot_radio([fig, ax], method="AllSky")
-                fig.savefig(self.datadirectory + '\\AllSky Radio Overlay Image.png', dpi=1500, bbox_inches='tight', pad_inches = 0.01)
+                fig.savefig(self.datadirectory + '\\AllSky Radio Overlay Image.png', dpi=1500, bbox_inches='tight', 
+                            pad_inches = 0.01, pil_kwargs={"compress_level": 0})
                 pictime3 = time(); total = pictime3 - pictime2; print("Radio overlay picture saved in", total, "s")
             if proj in ["Cube", "Both", "DivCube"]:
                 self.plot_radio(figAxes, method="Cube")
@@ -619,7 +621,7 @@ class UniverseSim(object):
                     fig, ax = figAxes[i]
                     ax.set_xlim(-45, 45); ax.set_ylim(-45, 45);
                     fig.savefig(self.datadirectory + f'\\{directions[i]}\\{directions[i]} Radio Overlay.png', dpi=1500, 
-                                bbox_inches='tight', pad_inches = 0.01)
+                                bbox_inches='tight', pad_inches = 0.01, pil_kwargs={"compress_level": 0})
                     if proj == 'DivCube':
                         for j, X in enumerate(["A", "B", "C", "D", "E", "F"]):
                             xbounds = [-45 + j * 15, -30 + j * 15]
@@ -628,7 +630,7 @@ class UniverseSim(object):
                                 ybounds = [45 - Y * 15, 60 - Y * 15]
                                 ax.set_ylim(ybounds)
                                 fig.savefig(self.datadirectory + f'\\{directions[i]}\\{X}{Y}\\{X}{Y}-{directions[i]} Radio Overlay.png',
-                                            dpi=150, bbox_inches='tight', pad_inches = 0.01)
+                                            dpi=150, bbox_inches='tight', pad_inches = 0.01, pil_kwargs={"compress_level": 0})
             
         plt.close('all')
         
@@ -1019,8 +1021,8 @@ def main():
     # sim = UniverseSim(1000, mode="Normal")
     # sim.save_data()
     
-    sim = UniverseSim(800, isotropic=False, rotvels="Boosted")
-    sim.save_data(proj="Cube", planetNeb=False, radio=False)
+    sim = UniverseSim(200, isotropic=False, rotvels="Boosted", mode="Comprehensive")
+    sim.save_data(proj="Both", planetNeb=False, radio=True)
 
     
 if __name__ == "__main__":

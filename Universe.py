@@ -94,7 +94,7 @@ class Universe(object):
 
             # determine whether to do 2 or 3 variable types
             prob = np.random.uniform(0, 1); types = 2 if prob <= 0.66 else 3
-            types = 3
+            # types = 3
 
             # randomly determine period of the variables within some allowed range
             shortperiod = np.random.uniform(18, 25)

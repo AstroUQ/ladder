@@ -34,21 +34,23 @@ class Galaxy(object):
             if cartesian == True, position = [x, y, z]
         cartesian : bool
             Whether the provided position is in 3D cartesian coordinates (True) or spherical coordinates (False)
-        BHcluster : bool
-            Whether or not to generate a star cluster around the central black hole
+        blackhole : bool
+            Whether or not this galaxy has a blackhole in its center
         darkmatter : bool
             Whether or not to generate dark matter in the galaxy mass (impacts rotation curves)
         rotate : bool
-            Whether or not to rotate the galaxy randomly
+            Whether or not to rotate the galaxy randomly in 3D space
         complexity : str
             One of {"Comprehensive", "Normal", "Basic"} which dictates the population of the galaxy and the type. 
         variable : list
             The first element must be a bool, which decides whether or not to generate variability in some stars
-            The second and third elements (and fourth [optional]) must be comprised of [period, lightcurve type],
-            where the period is in hours (float) and the lightcurve type is one of {"Saw", "Tri", "Sine"} (str). 
+            The second and third elements (and fourth [optional]) must be comprised of 
+            [period, lightcurve type, gradient, yint], where the period is in hours (float) and the 
+            lightcurve type is one of {"Saw", "Tri", "Sine"} (str), with gradient and yint being floats too. 
+            See Universe.py -> "determine_variablestars" for more info
         rotvels : str
-            One of {"Normal", "Boosted"}, which dictates whether rotation curves have arbitrarily (and unphysically) boosted
-            velocity magnitudes.
+            One of {"Normal", "Boosted"}, which dictates whether rotation curves have arbitrarily boosted velocity 
+            magnitudes (possibly accounting for interstellar gas/dust mass?).
         '''
         self.darkmatter = darkmatter
         self.complexity = complexity

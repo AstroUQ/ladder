@@ -37,11 +37,13 @@ class GalaxyCluster(object):
             One of {"Comprehensive", "Normal", "Basic", "Distant"} which dictates the population of the galaxies and the type. 
         variable : list
             The first element must be a bool, which decides whether or not to generate variability in some stars
-            The second and third elements (and fourth [optional]) must be comprised of [period, lightcurve type],
-            where the period is in hours (float) and the lightcurve type is one of {"Saw", "Tri", "Sine"} (str). 
+            The second and third elements (and fourth [optional]) must be comprised of 
+            [period, lightcurve type, gradient, yint], where the period is in hours (float) and the 
+            lightcurve type is one of {"Saw", "Tri", "Sine"} (str), with gradient and yint being floats too. 
+            See Universe.py -> "determine_variablestars" for more info
         rotvels : str
-            One of {"Normal", "Boosted"}, which dictates whether rotation curves have arbitrarily (and unphysically) boosted
-            velocity magnitudes.
+            One of {"Normal", "Boosted"}, which dictates whether rotation curves have arbitrarily boosted velocity 
+            magnitudes (possibly accounting for interstellar gas/dust mass?).
         '''
         self.local = local
         self.clusterpop = population

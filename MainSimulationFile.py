@@ -821,19 +821,19 @@ class UniverseSim(object):
             if galaxy.spherical[2] <= 15000:    # we only want to save variable star data if the stars are close-ish
                 for star in galaxy.stars:
                     if star.variable == True:
-                        condition1 = galaxy.spherical[2] <= 5000 and star.variabletype[0] == "Short"
-                        condition2 = galaxy.spherical[2] <= 7500 and star.variabletype[0] == "Longest"
-                        condition3 = star.variabletype[0] in ["Long", "False"]
-                        if condition1 or condition2 or condition3:  # if one of the above criteria are met, we want to save the data
-                            starname = self.starnames[k]
-                            if galaxy.rotate == False:      # must be the local galaxy, so we want to save a pic of the lightcurve
-                                fig = star.plot_lightcurve(save=True)
-                                fig.savefig(variabledirectory + f'\\{starname}.png', dpi=400, bbox_inches='tight', pad_inches = 0.01)
-                            times, fluxes = star.lightcurve
-                            variabledata = {"Time": times, "NormalisedFlux": fluxes}
-                            variablefile = pd.DataFrame(variabledata)
-                            variablefile.to_csv(variabledirectory + f"\\{starname}.txt", index=None, sep=' ')
-                    k +=1
+                        # condition1 = galaxy.spherical[2] <= 5000 and star.variabletype[0] == "Short"
+                        # condition2 = galaxy.spherical[2] <= 7500 and star.variabletype[0] == "Longest"
+                        # condition3 = star.variabletype[0] in ["Long", "False"]
+                        # if condition1 or condition2 or condition3:  # if one of the above criteria are met, we want to save the data
+                        starname = self.starnames[k]
+                        if galaxy.rotate == False:      # must be the local galaxy, so we want to save a pic of the lightcurve
+                            fig = star.plot_lightcurve(save=True)
+                            fig.savefig(variabledirectory + f'\\{starname}.png', dpi=400, bbox_inches='tight', pad_inches = 0.01)
+                        times, fluxes = star.lightcurve
+                        variabledata = {"Time": times, "NormalisedFlux": fluxes}
+                        variablefile = pd.DataFrame(variabledata)
+                        variablefile.to_csv(variabledirectory + f"\\{starname}.txt", index=None, sep=' ')
+                    k += 1
             else:   # we still need to increment the ticker so that later data is accurate
                 k += len(galaxy.stars)
         
@@ -1021,7 +1021,7 @@ def main():
     # sim = UniverseSim(1000, mode="Normal")
     # sim.save_data()
     
-    sim = UniverseSim(200, isotropic=False, rotvels="Boosted", mode="Comprehensive")
+    sim = UniverseSim(800, seed=2639, isotropic=False, rotvels="Boosted", mode="Comprehensive")
     sim.save_data(proj="Both", planetNeb=False, radio=True)
 
     

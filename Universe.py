@@ -207,7 +207,10 @@ class Universe(object):
         
         lowerbound = 5000      # we want a certain area around the origin to be empty (to make space for the local cluster)
         if self.homogeneous:
-            dists = np.random.uniform(lowerbound / self.radius, 1, population)
+            closepopulation = int(np.random.uniform(20, 50))
+            closedists = np.random.uniform((lowerbound / self.radius)**3, (threshold / self.radius)**3, closepopulation)
+            fardists = np.random.uniform((lowerbound / self.radius)**3, 1, population - closepopulation)
+            dists = np.append(closedists, fardists)
             R = self.radius * np.cbrt(dists)
         else:
             # proportion = 1/10    # proportion of total galaxies that you want to be resolved, 

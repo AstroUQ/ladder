@@ -110,7 +110,7 @@ class DistantGalaxy(object):
             # these are parameters for a surge function (approximating a planck curve) based on the above data
             bandlumin_coeffs = {"S0":[1.29e+37, 1.25, -6.3e+6], "Sa":[5.02e+37, 1.28, -6.87e+6], 
                                 "Sb":[1.947e+37, 1.257, -6.31e+6], "Sc":[2.2e+37, 1.258, -6.53e+6], 
-                                "SBa":[2.22e+37, 1.26, -6.36e+7], "SBb":[2.02e+37, 1.254, -6.22e+6], 
+                                "SBa":[2.22e+37, 1.26, -6.36e+6], "SBb":[2.02e+37, 1.254, -6.22e+6], 
                                 "SBc":[1.94e+37, 1.256, -6.33e+6], 
                                 "cD":[2.93e+38, 1.33, -7.8e+6], 
                                 "E0":[1.26e+37, 1.254, -6.33e+6], "E1":[1.448e+37, 1.255, -6.36e+6], 

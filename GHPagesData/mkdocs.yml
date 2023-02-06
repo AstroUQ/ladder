@@ -35,6 +35,7 @@ nav:
         - 'Plotting a HR Diagram and Blackbody Curves': Analysing Data/Walkthrough/HR_Temp.ipynb
         - Identifying Galaxies: Analysing Data/Walkthrough/GalaxyFinding.ipynb
         - Rotation Curves: Analysing Data/Walkthrough/Rotation Curves.ipynb
+        - Distance Ladder I: Analysing Data/Walkthrough/Distance Ladder I; Resolved Galaxies.ipynb
     - 'About':
         - About: About.md
         - GitHub Readme: GitHub README.md

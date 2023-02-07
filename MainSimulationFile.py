@@ -20,6 +20,7 @@ from GalaxyCluster import GalaxyCluster
 from Star import Star
 from Nebula import Nebula
 from Universe import Universe
+from HTMLSite import Site
 
 
 def plot_all_dopplers(galaxies):
@@ -417,7 +418,7 @@ class UniverseSim(object):
             
     def save_data(self, properties=True, proj='AllSky', pic=True, pretty=True, planetNeb=False, radio=True, stars=True, 
                   variablestars=True, blackbodies=False, distantgalax=True, flashes=True, doppler=[False, False], blackhole=False, 
-                  rotcurves=False, cutoff=[True, 1e-22]):
+                  rotcurves=False, cutoff=[True, 1e-22], site=True):
         ''' Generates some data, takes other data, and saves it to the system in a new directory within the file directory.
         .pdf images are commented out currently - uncomment them at your own risk! (.pdfs can be in excess of 90mb each!)
         Parameters
@@ -457,6 +458,8 @@ class UniverseSim(object):
         cutoff : list of [bool, float]
             The *minimum* flux of objects that will be 'detected' and saved into the data file. The first element is a
             bool (if True, the data is cutoff), and the second element is a float which is the minimum flux value.
+        site : bool
+            Whether to generate a set of .html files which mimic a crude website for a user to interact with and save data.
         '''
         print("Starting data saving..."); t0 = time()
         if not self.datadirectory:
@@ -498,6 +501,8 @@ class UniverseSim(object):
             dopplertime2 = time(); total = dopplertime2 - dopplertime1; print("Doppler image saved in", total, "s")
         if rotcurves:   # plot and save the rotation curve of each resolved galaxy
             self.save_rotcurves()
+        if site: # create a crude html site for a user to interact with and download data
+            self.create_site(directory=self.datadirectory, proj=proj, flashes=flashes, variables=variablestars)
         
         t1 = time(); total = t1 - t0; print("All data generated and saved in =", total, "s")
         
@@ -673,9 +678,11 @@ class UniverseSim(object):
         
         # round position values to 4 decimal places which is about ~1/3 of an arcsecond (or rather 0.0001 degrees)
         if proj in ["AllSky", "Both"]:
-            equat = np.around(equat, decimals=4); polar = np.around(polar, decimals=4);  
+            # equat = np.around(equat, decimals=4); polar = np.around(polar, decimals=4);
+            equat = np.array([format(coord, '3.4f') for coord in equat]); polar = np.array([format(coord, '3.4f') for coord in polar])
         if proj in ["Cube", "Both", "DivCube"]:
-            uc = np.around(uc, decimals=4); vc = np.around(vc, decimals=4);
+            # uc = np.around(uc, decimals=4); vc = np.around(vc, decimals=4);
+            uc = np.array([format(coord, '2.4f') for coord in uc]); vc = np.array([format(coord, '2.4f') for coord in vc])
             
         # now to work with the band luminosity data. First, get the data for each star in the universe
         blueflux = [[star.bandlumin[0] for star in galaxy.stars] for galaxy in self.galaxies]
@@ -716,8 +723,10 @@ class UniverseSim(object):
             directions = ['Front', 'Back', 'Top', 'Bottom', 'Left', 'Right']
             for i, direction in enumerate(directions):
                 # now, write all star data to a pandas dataframe
+                
                 if proj in ["Cube", "Both"]:
-                    stardata = {'Name': names[index == i], 
+                    dirNames = [f"{direction}{name}" for name in names[index == i]]
+                    stardata = {'Name': dirNames, 
                                 'X': uc[index == i], 'Y': vc[index == i],        # units of the X/Y are in degrees
                                 'BlueF': blueflux[index == i], 'GreenF': greenflux[index == i], 'RedF': redflux[index == i],   # units of these fluxes are in W/m^2/nm
                                 'Parallax': parallax[index == i], 'RadialVelocity': obsvel[index == i], # units of parallax are in arcsec, obsvel in km/s
@@ -732,7 +741,8 @@ class UniverseSim(object):
                             ybounds = [45 - Y * 15, 60 - Y * 15]
                             indices = np.where((index == i) & (uc >= xbounds[0]) & (uc <= xbounds[1]) &
                                                (vc >= ybounds[0]) & (vc <= ybounds[1]))
-                            stardata = {'Name': names[indices], 
+                            divNames = [f"{direction}{name}" for name in names[indices]]
+                            stardata = {'Name': divNames, 
                                         'X': uc[indices], 'Y': vc[indices],        # units of the X/Y are in degrees
                                         'BlueF': blueflux[indices], 'GreenF': greenflux[indices], 'RedF': redflux[indices],   # units of these fluxes are in W/m^2/nm
                                         'Parallax': parallax[indices], 'RadialVelocity': obsvel[indices], # units of parallax are in arcsec, obsvel in km/s
@@ -807,7 +817,7 @@ class UniverseSim(object):
         if proj in ["AllSky", "Both"]:
             equat = [format(coord, '3.4f') for coord in equat]; polar = [format(coord, '3.4f') for coord in polar]
         if proj in ["Cube", "Both", "DivCube"]:
-            uc = np.array([format(coord, '3.4f') for coord in uc]); vc = np.array([format(coord, '3.4f') for coord in vc])
+            uc = np.array([format(coord, '2.4f') for coord in uc]); vc = np.array([format(coord, '2.4f') for coord in vc])
         blueflux = np.array([format(flux, '.3e') for flux in blueflux])   # now round each data point to 3 decimal places
         greenflux = np.array([format(flux, '.3e') for flux in greenflux])
         redflux = np.array([format(flux, '.3e') for flux in redflux])
@@ -823,7 +833,8 @@ class UniverseSim(object):
             directions = ['Front', 'Back', 'Top', 'Bottom', 'Left', 'Right']
             for i, direction in enumerate(directions):
                 if proj in ["Cube", "Both"]:
-                    DGdata = {"Name": names[index == i], 'X': uc[index == i], 'Y': vc[index == i],
+                    dirNames = [f"{direction}{name}" for name in names[index == i]]
+                    DGdata = {"Name": dirNames, 'X': uc[index == i], 'Y': vc[index == i],
                               'BlueF': blueflux[index == i], 'GreenF': greenflux[index == i], 'RedF': redflux[index == i],
                               'Size': sizes[index == i], 'RadialVelocity': DGobsvel[index == i]}
                     DGfile = pd.DataFrame(DGdata)
@@ -835,7 +846,8 @@ class UniverseSim(object):
                             ybounds = [45 - Y * 15, 60 - Y * 15]
                             indices = np.where((index == i) & (uc >= xbounds[0]) & (uc <= xbounds[1]) &
                                                (vc >= ybounds[0]) & (vc <= ybounds[1]))
-                            DGdata = {"Name": names[indices], 'X': uc[indices], 'Y': vc[indices],
+                            divNames = [f"{direction}{name}" for name in names[indices]]
+                            DGdata = {"Name": divNames, 'X': uc[indices], 'Y': vc[indices],
                                       'BlueF': blueflux[indices], 'GreenF': greenflux[indices], 'RedF': redflux[indices],
                                       'Size': sizes[indices], 'RadialVelocity': DGobsvel[indices]}    
                             DGfile = pd.DataFrame(DGdata)
@@ -861,40 +873,27 @@ class UniverseSim(object):
         x, y, z, _, _ = starpos[0], starpos[1], starpos[2], starpos[3], starpos[4]
         _, _, radius = misc.cartesian_to_spherical(x, y, z)
         
+        directions = ['Front', 'Back', 'Top', 'Bottom', 'Left', 'Right']
+        
         for galaxy in self.galaxies:
-            # the below block of code is commented out, as it caused issues in data analysis
-            # if galaxy.spherical[2] <= 15000:    # we only want to save variable star data if the stars are close-ish
-            #     for star in galaxy.stars:
-            #         if star.variable == True:
-            #             condition1 = galaxy.spherical[2] <= 5000 and star.variabletype[0] == "Short"
-            #             condition2 = galaxy.spherical[2] <= 7500 and star.variabletype[0] == "Longest"
-            #             condition3 = star.variabletype[0] in ["Long", "False"]
-            #             if condition1 or condition2 or condition3:  # if one of the above criteria are met, we want to save the data
-            #                 starname = self.starnames[k]
-            #                 if galaxy.rotate == False:      # must be the local galaxy, so we want to save a pic of the lightcurve
-            #                     fig = star.plot_lightcurve(save=True)
-            #                     fig.savefig(variabledirectory + f'\\{starname}.png', dpi=400, bbox_inches='tight', pad_inches = 0.01)
-            #                 times, fluxes = star.lightcurve
-            #                 variabledata = {"Time": times, "NormalisedFlux": fluxes}
-            #                 variablefile = pd.DataFrame(variabledata)
-            #                 variablefile.to_csv(variabledirectory + f"\\{starname}.txt", index=None, sep=' ')
-            #         k += 1
-            # else:   # we still need to increment the ticker so that later data is accurate
-            #     k += len(galaxy.stars)
-            
-            # the below code replaces it
             for star in galaxy.stars:
                 if star.variable == True:
                     starflux = star.bandlumin / (4 * np.pi * (radius[k] * 3.086 * 10**16)**2) # calculate flux of this variable star
                     if (min(starflux) > cutoff[1]) or not cutoff[0]: # if the min bandflux is greater than the cutoff OR if we dont care about cutoffs
                         starname = self.starnames[k]
+                        
+                        X, Y, Z = np.array(x[k]), np.array(y[k]), np.array(z[k])
+                        _, _, index = misc.cubemap(X, Y, Z)
+                        direction = directions[index[0]]
+                        
                         if galaxy.rotate == False:      # must be the local galaxy, so we want to save a pic of the lightcurve
                             fig = star.plot_lightcurve(save=True)
-                            fig.savefig(variabledirectory + f'\\{starname}.png', dpi=400, bbox_inches='tight', pad_inches = 0.01)
+                            fig.savefig(variabledirectory + f'\\{direction}{starname}.png', dpi=400, bbox_inches='tight', pad_inches = 0.01)
                         times, fluxes = star.lightcurve
                         variabledata = {"Time": times, "NormalisedFlux": fluxes}
                         variablefile = pd.DataFrame(variabledata)
-                        variablefile.to_csv(variabledirectory + f"\\{starname}.txt", index=None, sep=' ')
+                        
+                        variablefile.to_csv(variabledirectory + f"\\{direction}{starname}.txt", index=None, sep=' ')
                 k += 1
         
         # now to take and plot the period-luminosity data of the local galaxy!
@@ -1010,7 +1009,7 @@ class UniverseSim(object):
             BHdata = {'Name': names, 'Equatorial': equats, 'Polar': polars,
                       'Luminosity': BHlumins}
             BHfile = pd.DataFrame(BHdata)
-            BHfile.to_csv(self.datadirectory + "\\AllSky Radio Source Data.txt", index=None, sep=' ')
+            BHfile.to_csv(self.datadirectory + "\\AllSky Radio Source Data.txt", index=None, sep='\t')
         if proj in ["Cube", "Both", "DivCube"]:
             x, y, z = misc.spherical_to_cartesian(equats, polars, np.array(dists))
             uc, vc, index = misc.cubemap(x, y, z)
@@ -1020,7 +1019,7 @@ class UniverseSim(object):
             BHdata = {'Name': names, 'Direction': directions[index], 'X': uc, 'Y': vc,
                       'Luminosity': BHlumins}
             BHfile = pd.DataFrame(BHdata)
-            BHfile.to_csv(self.datadirectory + "\\Radio Source Data.txt", index=None, sep=' ')
+            BHfile.to_csv(self.datadirectory + "\\Radio Source Data.txt", index=None, sep='\t')
         
         bhtime2 = time(); total = bhtime2 - bhtime1; print("Black hole data saved in", total, "s")
     
@@ -1052,6 +1051,22 @@ class UniverseSim(object):
                             dpi=400, bbox_inches='tight', pad_inches = 0.01)
         plt.close('all')
         rottime3 = time(); total = rottime3 - rottime2; print("Cluster rotation curves saved in", total, "s")
+    
+    def create_site(self, directory, proj, flashes=True, variables=True):
+        ''' Creates a set of .html files which mimics a crude website to interact with and save the data. 
+        Parameters
+        ----------
+        directory : str
+            The main data directory of this UniverseSim dataset
+        proj : str
+            One of {'AllSky', 'Cube', 'Both', 'DivCube'} to determine output of images/data
+        flashes : bool
+            If we've saved the flash events. Will generate a section in the top-level index file about xray flashes
+        '''
+        print("Generating HTML files...")
+        t1 = time()
+        Site(directory, proj=proj, flashes=flashes, variables=variables)
+        t2 = time(); t = t2 - t1; print(f"HTML Files created in {t} s")
         
 def main():
     ### -- this was used to find galaxy averages -- ###
@@ -1081,14 +1096,17 @@ def main():
     # sim = UniverseSim(1000, mode="Normal")
     # sim.save_data()
     
-    sim = UniverseSim(800, seed=2639, isotropic=False, rotvels="Boosted", mode="Comprehensive")
-    sim.save_data(proj="Both", planetNeb=False, radio=True)
+    # sim = UniverseSim(800, seed=2639, isotropic=False, rotvels="Boosted", mode="Comprehensive")
+    # sim.save_data(proj="Both", planetNeb=False, radio=True)
     
     # sim = UniverseSim(800, seed=1000, isotropic=False, homogeneous=False, blackholes=False, darkmatter=True)
     # sim.save_data(proj="Cube", radio=False, rotcurves=True)
     
     # sim = UniverseSim(800, seed=9999, isotropic=True, homogeneous=True, blackholes=True, darkmatter=False)
     # sim.save_data(proj="Cube", radio=False, rotcurves=True)
+    
+    sim = UniverseSim(100)
+    sim.save_data(proj="Cube", pretty=False, radio=False)
     
 
     

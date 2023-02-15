@@ -1,6 +1,6 @@
-site_name: Simulated Universe
-site_url: https://ryanwhite1.github.io/Simulated-Universe/
-site_author: Ryan White
+site_name: PHYS3080 Distance Ladder Project
+site_url: https://astrouq.github.io/ladder/
+site_author: Ryan White, Benjamin Pope
 theme:
   name: "material"
   logo: MiscGithubImages/SBa.jpg
@@ -16,10 +16,10 @@ theme:
 extra:
     social:
         - icon: fontawesome/brands/github
-          link: https://github.com/ryanwhite1
-copyright: Copyright &copy; 2023 Ryan White
+          link: https://github.com/astrouq
+copyright: Copyright &copy; 2023 Ryan White, Benjamin Pope
 
-repo_url: https://github.com/ryanwhite1/Simulated-Universe
+repo_url: https://github.com/astrouq/ladder
 edit_uri: ""
 nav: 
     - 'Home': index.md

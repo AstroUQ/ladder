@@ -207,7 +207,7 @@ class Universe(object):
         
         lowerbound = 5000      # we want a certain area around the origin to be empty (to make space for the local cluster)
         if self.homogeneous:
-            closepopulation = int(np.random.uniform(20, 50))
+            closepopulation = int(np.sqrt(self.clusterpop))
             closedists = np.random.uniform((lowerbound / self.radius)**3, (threshold / self.radius)**3, closepopulation)
             fardists = np.random.uniform((lowerbound / self.radius)**3, 1, population - closepopulation)
             dists = np.append(closedists, fardists)

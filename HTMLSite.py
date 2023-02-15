@@ -72,19 +72,19 @@ class Site(object):
                 # need to add the variable star data folder to a .zip archive in order to make it downloadable.
                 # the below code does this. 
                 import shutil
-                shutil.make_archive(self.directory + "/Variable Star Data", 'zip', self.directory + "/Variable Star Data")
+                shutil.make_archive(self.directory + "/Variable_Star_Data", 'zip', self.directory + "/Variable_Star_Data")
                 
                 index.write("<H1> Variable Star Data </H1>")
                 index.write("<p>Some stars in the sky were found to change in apparent brightness over time, usually following a periodic trend.<br><br>")
-                for filename in os.listdir(self.directory + "/Variable Star Data"):
+                for filename in os.listdir(self.directory + "/Variable_Star_Data"):
                     # i want to show the first variable star lightcurve that has an image.
                     if filename[-3:] == "png":
-                        index.write(f'<IMG SRC="Variable Star Data/{filename}" WIDTH="500"><br>')
+                        index.write(f'<IMG SRC="Variable_Star_Data/{filename}" WIDTH="500"><br>')
                         index.write(f"<p>Example of a variable star lightcurve - star {filename[:-4]} <br>")
                         break
                 index.write("<p>Units of the variable data are:<ul>\n<li> Time: hours\n<li> Normalised flux: unitless</ul>")
                 index.write("<p>Uncertainties in this data (one standard deviation) are:<ul>\n<li> Time: 0.3 hours\n<li> Norm. flux: 1.5%</ul>")
-                index.write('<H3><A HREF="Variable Star Data.zip">Download a compressed .zip file of all of the variable star lightcurve data.</A></H3><br><hr>')
+                index.write('<H3><A HREF="Variable_Star_Data.zip">Download a compressed .zip file of all of the variable star lightcurve data.</A></H3><br><hr>')
                 
             if flashes == True:
                 index.write("<H1> X-Ray All-Sky Camera Data </H1>")
@@ -96,8 +96,8 @@ class Site(object):
                     index.write("Positions are given by where they would appear in the relevant wide-field camera image. ")
                 index.write("Positions are only accurate to 0.05 degrees (one standard deviation). <p>")
                 index.write("The X-Ray camera is sensitive to burts of more than 174 photons only. <p>")
-                index.write('<H3><A HREF="Flash Data.txt">Text file of the below data</A></H3>')
-                index.write(self.create_html_table(self.directory + "/Flash Data.txt"))
+                index.write('<H3><A HREF="Flash_Data.csv">Text file of the below data</A></H3>')
+                index.write(self.create_html_table(self.directory + "/Flash_Data.csv"))
                 
             index.write("</body>")
             
@@ -122,7 +122,7 @@ class Site(object):
                         index.write("<li> Positions: degrees\n<li> Flux: W/nm/m<sup>2</sup>\n<li> Parallax: arcsec\n<li> Radial Velocity: km/s\n<li> Variable: unitless (=1 if variable, =0 if not)</ul>")
                         index.write("<p>Uncertainties are (one standard deviation figures):<ul>")
                         index.write("<li> Fluxes: 1% \n<li> Positions: 0.0001 degrees \n<li> Parallaxes: 0.001 arcseconds\n<li> Radial Velocities: 0.03km/s</ul>")
-                        index.write('<A HREF="Star Data.txt">Click here to download the star data in .txt format, suitable for loading into python or matlab!</A><br><hr>')
+                        index.write('<A HREF="Star_Data.csv">Click here to download the star data in .csv format, suitable for loading into python or matlab!</A><br><hr>')
                         
                         index.write("<H2> Distant Galaxies in this image </H2>")
                         index.write("<p><b>Note:</b> positive radial velocities indicated objects moving away from us.</p>")
@@ -131,9 +131,37 @@ class Site(object):
                         index.write("<li> Positions: degrees\n<li> Flux: W/nm/m<sup>2</sup>\n<li> Size: arcseconds\n<li> Radial Velocity: km/s</ul>")
                         index.write("<p>Uncertainties are (one standard deviation figures):<ul>")
                         index.write("<li> Fluxes: 1% \n<li> Positions: 0.0001 degrees \n<li> Sizes: 10% \n<li> Radial Velocities: 0.1km/s</ul>")
-                        index.write('<A HREF="Distant Galaxy Data.txt">Click here to download the distant galaxy data in .txt format, suitable for loading into python or matlab!</A><br><hr>')
+                        index.write('<A HREF="Distant_Galaxy_Data.csv">Click here to download the distant galaxy data in .csv format, suitable for loading into python or matlab!</A><br><hr>')
+                    elif self.proj == "DivCube":
+                        index.write("The above image is divided into a 6x6 grid, totalling 36 images. The subdivided images, and links to data contained within those images are available below! <br><hr>")
+                        for j, Y in enumerate(["1", "2", "3", "4", "5", "6"]):
+                            for k, X in enumerate(["A", "B", "C", "D", "E", "F"]):
+                                index.write(f'<A HREF="{X+Y}/index.html"> {X+Y}</A>')
+                                with open(self.directory + f"/{direction}/{X+Y}/index.html", "w") as subindex:
+                                    subindex.write(f'<html>\n<head>\n<title>Data from the {direction} Wide-Field Camera, Division {X+Y} </title>\n</head>')
+                                    subindex.write(f'<body>\n<IMG SRC="{X}{Y}-{direction}.png"><br><hr>')
+                                    
+                                    subindex.write("<H2> Stellar Objects in this image </H2>")
+                                    subindex.write("<p><b>Note:</b> positive radial velocities indicated objects moving away from us.</p>")
+                                    subindex.write("<p>Blue flux is measured at 440nm, green at 500nm, and red at 700nm.</p>")
+                                    subindex.write("<p>Units are:<ul>")
+                                    subindex.write("<li> Positions: degrees\n<li> Flux: W/nm/m<sup>2</sup>\n<li> Parallax: arcsec\n<li> Radial Velocity: km/s\n<li> Variable: unitless (=1 if variable, =0 if not)</ul>")
+                                    subindex.write("<p>Uncertainties are (one standard deviation figures):<ul>")
+                                    subindex.write("<li> Fluxes: 1% \n<li> Positions: 0.0001 degrees \n<li> Parallaxes: 0.001 arcseconds\n<li> Radial Velocities: 0.03km/s</ul>")
+                                    subindex.write('<A HREF="Star_Data.csv">Click here to download the star data in .csv format, suitable for loading into python or matlab!</A><br><hr>')
+                                    
+                                    subindex.write("<H2> Distant Galaxies in this image </H2>")
+                                    subindex.write("<p><b>Note:</b> positive radial velocities indicated objects moving away from us.</p>")
+                                    subindex.write("<p>Blue flux is measured at 440nm, green at 500nm, and red at 700nm.</p>")
+                                    subindex.write("<p>Units are:<ul>")
+                                    subindex.write("<li> Positions: degrees\n<li> Flux: W/nm/m<sup>2</sup>\n<li> Size: arcseconds\n<li> Radial Velocity: km/s</ul>")
+                                    subindex.write("<p>Uncertainties are (one standard deviation figures):<ul>")
+                                    subindex.write("<li> Fluxes: 1% \n<li> Positions: 0.0001 degrees \n<li> Sizes: 10% \n<li> Radial Velocities: 0.1km/s</ul>")
+                                    subindex.write('<A HREF="Distant_Galaxy_Data.csv">Click here to download the distant galaxy data in .csv format, suitable for loading into python or matlab!</A><br><hr>')
+                            index.write("<br>")
+                        index.write("</body>")
                     
-    def create_html_table(self, datafile, delimiter=' '):
+    def create_html_table(self, datafile, delimiter=','):
         ''' Returns the html for a basic table, with data from the datafile file.
         Parameters
         ----------

@@ -17,7 +17,7 @@ extra:
     social:
         - icon: fontawesome/brands/github
           link: https://github.com/ryanwhite1
-copyright: Copyright &copy; 2022 Ryan White
+copyright: Copyright &copy; 2023 Ryan White
 
 repo_url: https://github.com/ryanwhite1/Simulated-Universe
 edit_uri: ""
@@ -36,6 +36,7 @@ nav:
         - Identifying Galaxies: Analysing Data/Walkthrough/GalaxyFinding.ipynb
         - Rotation Curves: Analysing Data/Walkthrough/Rotation Curves.ipynb
         - Distance Ladder I: Analysing Data/Walkthrough/Distance Ladder I; Resolved Galaxies.ipynb
+        - Distance Ladder II: Analysing Data/Walkthrough/Distance Ladder II; X-Ray Flashes and Distant Galaxies.ipynb
     - 'About':
         - About: About.md
         - GitHub Readme: GitHub README.md

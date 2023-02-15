@@ -418,7 +418,7 @@ class UniverseSim(object):
             
     def save_data(self, properties=True, proj='AllSky', pic=True, pretty=True, planetNeb=False, radio=True, stars=True, 
                   variablestars=True, blackbodies=False, distantgalax=True, flashes=True, doppler=[False, False], blackhole=False, 
-                  rotcurves=False, cutoff=[True, 1e-22], site=True):
+                  rotcurves=False, cutoff=[True, 1e-22], site=True, archive=True):
         ''' Generates some data, takes other data, and saves it to the system in a new directory within the file directory.
         .pdf images are commented out currently - uncomment them at your own risk! (.pdfs can be in excess of 90mb each!)
         Parameters
@@ -503,6 +503,8 @@ class UniverseSim(object):
             self.save_rotcurves()
         if site: # create a crude html site for a user to interact with and download data
             self.create_site(directory=self.datadirectory, proj=proj, flashes=flashes, variables=variablestars)
+        if archive:
+            self.archive_data()
         
         t1 = time(); total = t1 - t0; print("All data generated and saved in =", total, "s")
         
@@ -590,10 +592,12 @@ class UniverseSim(object):
             for i in range(6):
                 # for each direction, we're gonna save a big picture
                 fig, ax = figAxes[i] # get the figure corresponding to the ith face
-                fig.savefig(self.datadirectory + f'\\{directions[i]}\\{directions[i]}.png', dpi=1500, bbox_inches='tight', 
+                if proj != 'DivCube':
+                    fig.savefig(self.datadirectory + f'\\{directions[i]}\\{directions[i]}.png', dpi=1500, bbox_inches='tight', 
                             pad_inches = 0.01)
                 
                 if proj == 'DivCube':
+                    fig.set_size_inches(1, 1)
                     # in each direction, now save 36 subdivisions of the face (making a total of 6 * 36 subdivisions)
                     for j, X in enumerate(["A", "B", "C", "D", "E", "F"]):
                         xbounds = [-45 + j * 15, -30 + j * 15] # calculate the xbounds of this subdivision
@@ -602,8 +606,21 @@ class UniverseSim(object):
                             ybounds = [45 - Y * 15, 60 - Y * 15] # calculate ybounds of this subdivision
                             ax.set_ylim(ybounds) # set ybounds
                             # now to save this particular subdivision image
-                            fig.savefig(self.datadirectory + f'\\{directions[i]}\\{X}{Y}\\{X}{Y}-{directions[i]}.png',
-                                        dpi=150, bbox_inches='tight', pad_inches = 0.01)
+                            fig.savefig(self.datadirectory + f'\\{directions[i]}\\{X}{Y}\\{X}{Y}-{directions[i]}.png', 
+                                        dpi=750, bbox_inches='tight', pad_inches = 0.01)
+                            
+                    # now to save a picture of the entire face, with grid lines indicating subdivisions
+                    fig.set_size_inches(6, 6)
+                    ax.set_ylim(-45, 45); ax.set_xlim(-45, 45)
+                    ax.grid(visible=False)
+                    for loc in [-30, -15, 0, 15, 30]:
+                        ax.axhline(y=loc, lw=0.2, c='w'); ax.axvline(x=loc, lw=0.2, c='w')
+                    for j, col in enumerate(["A", "B", "C", "D", "E", "F"]):
+                        ax.text(-40 + 15*j, 40, col, c='w', fontsize='large')
+                    for j, row in enumerate(["1", "2", "3", "4", "5", "6"]):
+                        ax.text(-44, 32 - j*15, row, c='w', fontsize='large')
+                    fig.savefig(self.datadirectory + f'\\{directions[i]}\\{directions[i]}.png', dpi=1500, bbox_inches='tight', 
+                            pad_inches = 0.01)
                 
             pictime2 = time(); total = pictime2 - pictime1; print("Cubemapped universe pictures saved in", total, "s")
             
@@ -682,6 +699,8 @@ class UniverseSim(object):
             equat = np.array([format(coord, '3.4f') for coord in equat]); polar = np.array([format(coord, '3.4f') for coord in polar])
         if proj in ["Cube", "Both", "DivCube"]:
             # uc = np.around(uc, decimals=4); vc = np.around(vc, decimals=4);
+            if proj == "DivCube": # we need to keep the numerical vals (opposed to str vals) to do conditionals later on
+                num_uc = uc; num_vc = vc;
             uc = np.array([format(coord, '2.4f') for coord in uc]); vc = np.array([format(coord, '2.4f') for coord in vc])
             
         # now to work with the band luminosity data. First, get the data for each star in the universe
@@ -702,6 +721,7 @@ class UniverseSim(object):
             for star in galaxy.stars:
                 variabool[k] = star.variable
                 k += 1
+        variabool = variabool.astype('int32')   # convert those floats to integers!
         
         names = self.starnames
         if cutoff[0] == True:
@@ -709,6 +729,8 @@ class UniverseSim(object):
             
             if proj in ["Cube", "Both", "DivCube"]:
                 uc, vc, index = uc[validIndexes], vc[validIndexes], index[validIndexes]
+                if proj == "DivCube":
+                    num_uc = num_uc[validIndexes]; num_vc = num_vc[validIndexes]
             if proj in ['AllSky', 'Both']:
                 equat, polar = equat[validIndexes], polar[validIndexes]
             redflux, blueflux, greenflux = redflux[validIndexes], blueflux[validIndexes], greenflux[validIndexes]
@@ -733,14 +755,14 @@ class UniverseSim(object):
                                 'Variable?': variabool[index == i]}  # outputs 1.0 if variable, 0.0 if not      
                     starfile = pd.DataFrame(stardata)
                     
-                    starfile.to_csv(self.datadirectory + f"\\{direction}\\Star Data.txt", index=None, sep=' ')    # and finally save the dataframe to the directory
+                    starfile.to_csv(self.datadirectory + f"\\{direction}\\Star_Data.csv", index=None, sep=',')    # and finally save the dataframe to the directory
                 elif proj == "DivCube":
                     for j, X in enumerate(["A", "B", "C", "D", "E", "F"]):
                         xbounds = [-45 + j * 15, -30 + j * 15]
                         for Y in range(1, 7):
                             ybounds = [45 - Y * 15, 60 - Y * 15]
-                            indices = np.where((index == i) & (uc >= xbounds[0]) & (uc <= xbounds[1]) &
-                                               (vc >= ybounds[0]) & (vc <= ybounds[1]))
+                            indices = np.where((index == i) & (num_uc >= xbounds[0]) & (num_uc <= xbounds[1]) &
+                                               (num_vc >= ybounds[0]) & (num_vc <= ybounds[1]))
                             divNames = [f"{direction}{name}" for name in names[indices]]
                             stardata = {'Name': divNames, 
                                         'X': uc[indices], 'Y': vc[indices],        # units of the X/Y are in degrees
@@ -749,7 +771,7 @@ class UniverseSim(object):
                                         'Variable?': variabool[indices]}  # outputs 1.0 if variable, 0.0 if not      
                             starfile = pd.DataFrame(stardata)
                             
-                            starfile.to_csv(self.datadirectory + f"\\{direction}\\{X}{Y}\\Star Data.txt", index=None, sep=' ')    # and finally save the dataframe to the directory
+                            starfile.to_csv(self.datadirectory + f"\\{direction}\\{X}{Y}\\Star_Data.csv", index=None, sep=',')    # and finally save the dataframe to the directory
                     
         if proj in ["AllSky", "Both"]:
             # now, write all star data to a pandas dataframe
@@ -759,7 +781,7 @@ class UniverseSim(object):
                         'Variable?': variabool}                                  # outputs 1.0 if variable, 0.0 if not      
             starfile = pd.DataFrame(stardata)
             
-            starfile.to_csv(self.datadirectory + "\\All Star Data.txt", index=None, sep=' ')    # and finally save the dataframe to the directory
+            starfile.to_csv(self.datadirectory + "\\All_Star_Data.csv", index=None, sep=',')    # and finally save the dataframe to the directory
         
         startime2 = time(); total = startime2 - startime1; print("Star Data saved in", total, "s")
         
@@ -817,6 +839,8 @@ class UniverseSim(object):
         if proj in ["AllSky", "Both"]:
             equat = [format(coord, '3.4f') for coord in equat]; polar = [format(coord, '3.4f') for coord in polar]
         if proj in ["Cube", "Both", "DivCube"]:
+            if proj == "DivCube": # we need to keep the numerical vals (opposed to str vals) to do conditionals later on
+                num_uc = uc; num_vc = vc;
             uc = np.array([format(coord, '2.4f') for coord in uc]); vc = np.array([format(coord, '2.4f') for coord in vc])
         blueflux = np.array([format(flux, '.3e') for flux in blueflux])   # now round each data point to 3 decimal places
         greenflux = np.array([format(flux, '.3e') for flux in greenflux])
@@ -827,7 +851,7 @@ class UniverseSim(object):
                       'BlueF': blueflux, 'GreenF': greenflux, 'RedF': redflux,
                       'Size': sizes, 'RadialVelocity': DGobsvel}
             DGfile = pd.DataFrame(DGdata)
-            DGfile.to_csv(self.datadirectory + "\\Distant Galaxy Data.txt", index=None, sep=' ')
+            DGfile.to_csv(self.datadirectory + "\\Distant_Galaxy_Data.csv", index=None, sep=',')
             
         if proj in ["Cube", "Both", "DivCube"]:
             directions = ['Front', 'Back', 'Top', 'Bottom', 'Left', 'Right']
@@ -838,21 +862,21 @@ class UniverseSim(object):
                               'BlueF': blueflux[index == i], 'GreenF': greenflux[index == i], 'RedF': redflux[index == i],
                               'Size': sizes[index == i], 'RadialVelocity': DGobsvel[index == i]}
                     DGfile = pd.DataFrame(DGdata)
-                    DGfile.to_csv(self.datadirectory + f"\\{direction}\\Distant Galaxy Data.txt", index=None, sep=' ')
+                    DGfile.to_csv(self.datadirectory + f"\\{direction}\\Distant_Galaxy_Data.csv", index=None, sep=',')
                 elif proj == "DivCube":
                     for j, X in enumerate(["A", "B", "C", "D", "E", "F"]):
                         xbounds = [-45 + j * 15, -30 + j * 15]
                         for Y in range(1, 7):
                             ybounds = [45 - Y * 15, 60 - Y * 15]
-                            indices = np.where((index == i) & (uc >= xbounds[0]) & (uc <= xbounds[1]) &
-                                               (vc >= ybounds[0]) & (vc <= ybounds[1]))
+                            indices = np.where((index == i) & (num_uc >= xbounds[0]) & (num_uc <= xbounds[1]) &
+                                               (num_vc >= ybounds[0]) & (num_vc <= ybounds[1]))
                             divNames = [f"{direction}{name}" for name in names[indices]]
                             DGdata = {"Name": divNames, 'X': uc[indices], 'Y': vc[indices],
                                       'BlueF': blueflux[indices], 'GreenF': greenflux[indices], 'RedF': redflux[indices],
                                       'Size': sizes[indices], 'RadialVelocity': DGobsvel[indices]}    
                             DGfile = pd.DataFrame(DGdata)
                             
-                            DGfile.to_csv(self.datadirectory + f"\\{direction}\\{X}{Y}\\Distant Galaxy Data.txt", index=None, sep=' ')    # and finally save the dataframe to the directory
+                            DGfile.to_csv(self.datadirectory + f"\\{direction}\\{X}{Y}\\Distant_Galaxy_Data.csv", index=None, sep=',')    # and finally save the dataframe to the directory
         distanttime2 = time(); total = distanttime2 - distanttime1; print("Distant galaxy data saved in", total, "s")
         
     def save_variables(self, cutoff=[True, 1e-22]):
@@ -865,7 +889,7 @@ class UniverseSim(object):
             bool (if True, the data is cutoff), and the second element is a float which is the minimum flux value.
         '''
         vartime1 = time(); print("Saving variable data...")
-        variabledirectory = self.datadirectory + "\\Variable Star Data"     # save data within a subfolder
+        variabledirectory = self.datadirectory + "\\Variable_Star_Data"     # save data within a subfolder
         os.makedirs(variabledirectory)
         k = 0
         
@@ -893,7 +917,7 @@ class UniverseSim(object):
                         variabledata = {"Time": times, "NormalisedFlux": fluxes}
                         variablefile = pd.DataFrame(variabledata)
                         
-                        variablefile.to_csv(variabledirectory + f"\\{direction}{starname}.txt", index=None, sep=' ')
+                        variablefile.to_csv(variabledirectory + f"\\{direction}{starname}.csv", index=None, sep=',')
                 k += 1
         
         # now to take and plot the period-luminosity data of the local galaxy!
@@ -944,7 +968,7 @@ class UniverseSim(object):
             elif self.eventType == "flash":
                 flashdata = {"Name": names, "Equatorial": equats, "Polar": polars, "Photon-Count": peak}
             flashfile = pd.DataFrame(flashdata)
-            flashfile.to_csv(self.datadirectory + "\\AllSky Flash Data.txt", index=None, sep=' ')
+            flashfile.to_csv(self.datadirectory + "\\AllSky_Flash Data.csv", index=None, sep=',')
         if proj in ["Cube", "Both", "DivCube"]:
             directions = np.array(['Front', 'Back', 'Top', 'Bottom', 'Left', 'Right'])
             if self.eventType == "supernova":
@@ -952,7 +976,7 @@ class UniverseSim(object):
             elif self.eventType == "flash":
                 flashdata = {"Name": names, "Direction": directions[index], "X": uc, "Y": vc, "Photon-Count": peak}
             flashfile = pd.DataFrame(flashdata)
-            flashfile.to_csv(self.datadirectory + "\\Flash Data.txt", index=None, sep=' ')
+            flashfile.to_csv(self.datadirectory + "\\Flash_Data.csv", index=None, sep=',')
         
         supertime2 = time(); total = supertime2 - supertime1; print("Flash data saved in", total, "s")
     
@@ -1009,7 +1033,7 @@ class UniverseSim(object):
             BHdata = {'Name': names, 'Equatorial': equats, 'Polar': polars,
                       'Luminosity': BHlumins}
             BHfile = pd.DataFrame(BHdata)
-            BHfile.to_csv(self.datadirectory + "\\AllSky Radio Source Data.txt", index=None, sep='\t')
+            BHfile.to_csv(self.datadirectory + "\\AllSky_Radio_Source_Data.csv", index=None, sep=',')
         if proj in ["Cube", "Both", "DivCube"]:
             x, y, z = misc.spherical_to_cartesian(equats, polars, np.array(dists))
             uc, vc, index = misc.cubemap(x, y, z)
@@ -1019,7 +1043,7 @@ class UniverseSim(object):
             BHdata = {'Name': names, 'Direction': directions[index], 'X': uc, 'Y': vc,
                       'Luminosity': BHlumins}
             BHfile = pd.DataFrame(BHdata)
-            BHfile.to_csv(self.datadirectory + "\\Radio Source Data.txt", index=None, sep='\t')
+            BHfile.to_csv(self.datadirectory + "\\Radio_Source_Data.csv", index=None, sep=',')
         
         bhtime2 = time(); total = bhtime2 - bhtime1; print("Black hole data saved in", total, "s")
     
@@ -1068,6 +1092,15 @@ class UniverseSim(object):
         Site(directory, proj=proj, flashes=flashes, variables=variables)
         t2 = time(); t = t2 - t1; print(f"HTML Files created in {t} s")
         
+    def archive_data(self):
+        ''' Adds all of the files from *this* dataset to a .zip archive (with the same name) in the Datasets folder.
+        '''
+        print("Archiving data to .zip file...")
+        t1 = time()
+        import shutil
+        shutil.make_archive(self.datadirectory, 'zip', self.datadirectory + "/")
+        t2 = time(); t = t2 - t1; print(f"Data archived in {t} s")
+        
 def main():
     ### -- this was used to find galaxy averages -- ###
     # number = 40
@@ -1105,8 +1138,12 @@ def main():
     # sim = UniverseSim(800, seed=9999, isotropic=True, homogeneous=True, blackholes=True, darkmatter=False)
     # sim.save_data(proj="Cube", radio=False, rotcurves=True)
     
-    sim = UniverseSim(100)
-    sim.save_data(proj="Cube", pretty=False, radio=False)
+    for numclust in [400, 800]:
+        for proj in ["Cube", "DivCube"]:
+            for pretty in [True, False]:
+                print(numclust, proj, pretty)
+                sim = UniverseSim(numclust, seed=3948)
+                sim.save_data(proj=proj, pretty=pretty, radio=False)
     
 
     

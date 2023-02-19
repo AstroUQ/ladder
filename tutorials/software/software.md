@@ -22,11 +22,17 @@ When working in Python, it is best to create a new environment for each project.
 - `scipy`, with miscellaneous scientific Python features, and
 - `ipykernel`, which runs Jupyter notebooks.
 
-You can create a new environment called `ladder` with all of this, using the following terminal commands:
+You can create a new environment called `ladder` with all of this, using the following terminal commands. 
+
+First set up conda (only do this once):
 
 ```shell
 conda init
-conda create --name ladder python=3.9 pip numpy matplotlib astropy scipy ipykernel
+```
+then in your terminal, create an environment called `ladder`, with some default software installed:
+
+```shell
+conda create --name ladder python=3.10 pip numpy matplotlib astropy scipy ipykernel pandas
 ```
 
 Then you want to *activate* this ennvironment, and install the Jupyter notebook packages.

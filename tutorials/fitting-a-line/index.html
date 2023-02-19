@@ -1370,6 +1370,7 @@ all of MD as it is not optimized for dense, information rich UIs.
 <p>For you to think about:</p>
 <ul>
 <li>How would you fit a line if there are uncertainties in both <code>x</code> and <code>y</code>?</li>
+<li>How could you use Monte Carlo to estimate uncertainties in a Lomb-Scargle?</li>
 <li>Our fitting isn't ideal if your uncertainties aren't exactly iid Gaussian. Try looking up Markov Chain Monte Carlo, which is the best way to fit <em>any</em> model to <em>any</em> data and get uncertainties in your model parameters. <ul>
 <li><a href="https://emcee.readthedocs.io/en/stable/tutorials/line/">Code tutorial</a> on MCMC with Python package <code>emcee</code> by Dan Foreman-Mackey </li>
 <li>Theory paper explaining why you do this by Hogg et al: <a href="https://arxiv.org/abs/1008.4686">arXiv:1008.4686</a></li>

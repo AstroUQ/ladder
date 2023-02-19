@@ -19,14 +19,14 @@ repo_url: https://github.com/astrouq/ladder
 edit_uri: ""
 nav: 
     - 'Home': index.md
-    - Learning Python: Tutorials/software.md
+    - Learning Python: tutorials/software.md
     - 'Datasets': datasets.md
     - 'Tutorials':
-        - Introduction: Tutorials/introduction.md
-        - 'Un-Cubemapping Data': Tutorials/uncubemapping.ipynb
-        - 'Fitting a Line to Data': Tutorials/fitting-a-line.ipynb
-        - HR Diagrams: Tutorials/hr_diagram.ipynb
-        - Periodograms: Tutorials/lombscargle_example.ipynb
+        - Introduction: tutorials/introduction.md
+        - 'Un-Cubemapping Data': tutorials/uncubemapping.ipynb
+        - 'Fitting a Line to Data': tutorials/fitting-a-line.ipynb
+        - HR Diagrams: tutorials/hr_diagram.ipynb
+        - Periodograms: tutorials/lombscargle_example.ipynb
     - 'About':
         - About: About.md
     

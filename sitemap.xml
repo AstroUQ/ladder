@@ -26,37 +26,42 @@
          <changefreq>daily</changefreq>
     </url>
     <url>
-         <loc>https://astrouq.github.io/ladder/Tutorials/Uncertainties/</loc>
+         <loc>https://astrouq.github.io/ladder/tutorials/Uncertainties/</loc>
          <lastmod>2023-02-19</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
-         <loc>https://astrouq.github.io/ladder/Tutorials/UsefulFormulae/</loc>
+         <loc>https://astrouq.github.io/ladder/tutorials/UsefulFormulae/</loc>
          <lastmod>2023-02-19</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
-         <loc>https://astrouq.github.io/ladder/Tutorials/hr_diagram/</loc>
+         <loc>https://astrouq.github.io/ladder/tutorials/data/</loc>
          <lastmod>2023-02-19</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
-         <loc>https://astrouq.github.io/ladder/Tutorials/introduction/</loc>
+         <loc>https://astrouq.github.io/ladder/tutorials/hr_diagram/</loc>
          <lastmod>2023-02-19</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
-         <loc>https://astrouq.github.io/ladder/Tutorials/lombscargle_example/</loc>
+         <loc>https://astrouq.github.io/ladder/tutorials/introduction/</loc>
          <lastmod>2023-02-19</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
-         <loc>https://astrouq.github.io/ladder/Tutorials/software/</loc>
+         <loc>https://astrouq.github.io/ladder/tutorials/lombscargle_example/</loc>
          <lastmod>2023-02-19</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
-         <loc>https://astrouq.github.io/ladder/Tutorials/uncubemapping/</loc>
+         <loc>https://astrouq.github.io/ladder/tutorials/software/</loc>
+         <lastmod>2023-02-19</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://astrouq.github.io/ladder/tutorials/uncubemapping/</loc>
          <lastmod>2023-02-19</lastmod>
          <changefreq>daily</changefreq>
     </url>

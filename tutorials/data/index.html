@@ -6,21 +6,19 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="your data isn't great!!">
-      
       
       
         <meta name="author" content="Ryan White, Benjamin Pope">
       
       
-        <link rel="canonical" href="https://astrouq.github.io/ladder/Tutorials/Uncertainties/">
+        <link rel="canonical" href="https://astrouq.github.io/ladder/tutorials/data/">
       
       <link rel="icon" href="../../assets/images/favicon.png">
       <meta name="generator" content="mkdocs-1.2.2, mkdocs-material-7.2.1">
     
     
       
-        <title>Data Uncertainties - PHYS3080 Distance Ladder Project</title>
+        <title>Data - PHYS3080 Distance Ladder Project</title>
       
     
     
@@ -72,11 +70,6 @@
     <label class="md-overlay" for="__drawer"></label>
     <div data-md-component="skip">
       
-        
-        <a href="#uncertainties-in-data" class="md-skip">
-          Skip to content
-        </a>
-      
     </div>
     <div data-md-component="announce">
       
@@ -102,7 +95,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Data Uncertainties
+              Data
             
           </span>
         </div>
@@ -474,186 +467,9 @@
               
                 
                 
-                <h1 id="uncertainties-in-data">Uncertainties in Data</h1>
-<p>Due to the nature of taking measurements, all measurements have an inherent uncertainty in their true values. </p>
-<h3 id="variable-star-data">Variable Star Data</h3>
-<p>Each <code>.txt</code> file within this directory has measurement uncertainty corresponding to</p>
-<table>
-<thead>
-<tr>
-<th>Measurement</th>
-<th>Uncertainty</th>
-<th>Unit</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Time</td>
-<td>+/- 0.3</td>
-<td>hours</td>
-</tr>
-<tr>
-<td>NormalisedFlux</td>
-<td>+/- 1.5</td>
-<td>%</td>
-</tr>
-</tbody>
-</table>
-<h3 id="distant-galaxy-datatxt"><code>Distant Galaxy Data.txt</code></h3>
-<table>
-<thead>
-<tr>
-<th>Measurement</th>
-<th>Uncertainty</th>
-<th>Unit</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Equatorial</td>
-<td>+/- 0.0001</td>
-<td>degrees</td>
-</tr>
-<tr>
-<td>Polar</td>
-<td>+/- 0.0001</td>
-<td>degrees</td>
-</tr>
-<tr>
-<td>BlueF</td>
-<td>+/- 1</td>
-<td>%</td>
-</tr>
-<tr>
-<td>GreenF</td>
-<td>+/- 1</td>
-<td>%</td>
-</tr>
-<tr>
-<td>RedF</td>
-<td>+/- 1</td>
-<td>%</td>
-</tr>
-<tr>
-<td>Size</td>
-<td>+/- 10</td>
-<td>%</td>
-</tr>
-<tr>
-<td>RadialVelocity</td>
-<td>+/- 0.1</td>
-<td>km/s</td>
-</tr>
-</tbody>
-</table>
-<h3 id="radio-source-datatxt"><code>Radio Source Data.txt</code></h3>
-<table>
-<thead>
-<tr>
-<th>Measurement</th>
-<th>Uncertainty</th>
-<th>Unit</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Equatorial</td>
-<td>+/- 0.01</td>
-<td>degrees</td>
-</tr>
-<tr>
-<td>Polar</td>
-<td>+/- 0.01</td>
-<td>degrees</td>
-</tr>
-<tr>
-<td>Luminosity</td>
-<td>+/- 10</td>
-<td>%</td>
-</tr>
-</tbody>
-</table>
-<h3 id="star-datatxt"><code>Star Data.txt</code></h3>
-<table>
-<thead>
-<tr>
-<th>Measurement</th>
-<th>Uncertainty</th>
-<th>Unit</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Equatorial</td>
-<td>+/- 0.0001</td>
-<td>degrees</td>
-</tr>
-<tr>
-<td>Polar</td>
-<td>+/- 0.0001</td>
-<td>degrees</td>
-</tr>
-<tr>
-<td>BlueF</td>
-<td>+/- 1</td>
-<td>%</td>
-</tr>
-<tr>
-<td>GreenF</td>
-<td>+/- 1</td>
-<td>%</td>
-</tr>
-<tr>
-<td>RedF</td>
-<td>+/- 1</td>
-<td>%</td>
-</tr>
-<tr>
-<td>Parallax</td>
-<td>+/- 0.001</td>
-<td>arcseconds</td>
-</tr>
-<tr>
-<td>RadialVelocity</td>
-<td>+/- 0.03</td>
-<td>km/s</td>
-</tr>
-<tr>
-<td>Variable?</td>
-<td>N/A</td>
-<td>N/A</td>
-</tr>
-</tbody>
-</table>
-<h3 id="supernova-datatxt"><code>Supernova Data.txt</code></h3>
-<table>
-<thead>
-<tr>
-<th>Measurement</th>
-<th>Uncertainty</th>
-<th>Unit</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Equatorial</td>
-<td>+/- 0.01</td>
-<td>degrees</td>
-</tr>
-<tr>
-<td>Polar</td>
-<td>+/- 0.01</td>
-<td>degrees</td>
-</tr>
-<tr>
-<td>PeakFlux(W)</td>
-<td>+/- 1</td>
-<td>%</td>
-</tr>
-</tbody>
-</table>
+                  <h1>Data</h1>
                 
-                  
+                
                 
               
               

@@ -29,6 +29,9 @@ nav:
         - 'Fitting a Line to Data': tutorials/fitting-a-line.ipynb
         - HR Diagrams: tutorials/hr_diagram.ipynb
         - Periodograms: tutorials/lombscargle_example.ipynb
+    - Writing a Report: 
+        - Structure: report.md
+        - Preparing a Report: latex.md
     - 'About':
         - About: About.md
     

@@ -5,8 +5,8 @@ theme:
   name: "material"
   logo: MiscGithubImages/SBa.jpg
   palette:
-    primary: black
-    accent: black
+    primary: deep purple
+    accent: purple
   features:
     - navigation.tabs
     - navigation.top

@@ -24,13 +24,11 @@ edit_uri: ""
 nav: 
     - 'Home': index.md
     - Learning Python: Tutorials/software.md
-    - 'Datasets': Datasets.md
+    - 'Datasets': datasets.md
     - 'Tutorials':
         - Introduction: Tutorials/introduction.md
-        - 'Un-Cubemapping Data': Tutorials/Tutorials/Un-Cubemapping Data.ipynb
+        - 'Un-Cubemapping Data': Tutorials/uncubemapping.ipynb
         - 'Fitting a Line to Data': Tutorials/fitting-a-line.ipynb
-    - 'Tutorials':
-        - Introduction: Tutorials/Tutorials/introduction.md
         - HR Diagrams: Tutorials/hr_diagram.ipynb
         - Periodograms: Tutorials/lombscargle_example.ipynb
     - 'About':

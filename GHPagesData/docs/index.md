@@ -2,8 +2,7 @@
 title: Home
 description: Introduction Page
 ---
-# Your Universes
-
+# PHYS3080: Distance Ladder Project
 
 <p align="middle"><img src="assets/solar system.png" style="width:15%"/><img src="assets/local stars.png" style="width:15%"/><img src="assets/parent galaxy.png" style="width:15%"/><img src="assets/local galaxies.png" style="width:15%"/><img src="assets/distant clusters.png" style="width:15%"/><img src="assets/observable universe.png" style="width:15%"/></p>
 
@@ -28,9 +27,6 @@ The space-probe has just landed after its one year mission, and the data tapes e
 ## Sitemap
 On the [About page](About.md) you'll find all of the physics that is actually emulated in this simulation, as well as some important information about the simulation. Check your group identification and dataset on the [datasets page](Datasets.md). 
 
-## Data Sets
-
-
 ## Hints
 
 Your job, in general terms, is to work out as much as you can about New Earth's Universe. You can assume that basic physical constants like the speed of light or the constant of gravity are the same as in our universe. However, the more complicated physics like star formation, stellar and galaxy evolution are probably different. To what extent they differ is something that you will have to work out. The more you work out, the better your score in this assignment will be. Here are some some unsorted, non-exhaustive hints and pointers about the exercise:
@@ -50,7 +46,6 @@ There are no marks for just coming up with lists of numbers -- we are interested
 Much like investigating the real Universe, we don't expect you to address ALL of the above questions in a superbly detailed manner. You must pick and choose which questions or aspects of this project you want to concentrate on.
 
 However: We suggest that your starting point be constructing a distance ladder.
-
 
 ## Deadlines and Grading
 

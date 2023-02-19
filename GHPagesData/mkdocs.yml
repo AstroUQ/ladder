@@ -23,28 +23,18 @@ repo_url: https://github.com/astrouq/ladder
 edit_uri: ""
 nav: 
     - 'Home': index.md
-    - Learning Python: software.md
+    - Learning Python: Tutorials/software.md
     - 'Datasets': Datasets.md
     - 'Tutorials':
         - Introduction: Tutorials/introduction.md
         - 'Un-Cubemapping Data': Tutorials/Tutorials/Un-Cubemapping Data.ipynb
-        - 'Fitting a Line to Data': Tutorials/
-        # - Uncertainties in Data: Tutorials/Uncertainties.md
-        # - 'Useful Formulae': Tutorials/UsefulFormulae.md
+        - 'Fitting a Line to Data': Tutorials/fitting-a-line.ipynb
     - 'Tutorials':
         - Introduction: Tutorials/Tutorials/introduction.md
-        - HR Diagrams: notebooks/hr_diagram.ipynb
-        - Periodograms: notebooks/lombscargle_example.ipynb
-        # - 'Local Galaxy, Finding Variable Periods': Tutorials/Tutorials/Local Universe.ipynb
-        # - 'Plotting a HR Diagram and Blackbody Curves': Tutorials/Tutorials/HR_Temp.ipynb
-        - Identifying Galaxies: Tutorials/Tutorials/GalaxyFinding.ipynb
-        # - Rotation Curves: Tutorials/Tutorials/Rotation Curves.ipynb
-        # - Distance Ladder I: Tutorials/Tutorials/Distance Ladder I; Resolved Galaxies.ipynb
-        # - Distance Ladder II: Tutorials/Tutorials/Distance Ladder II; X-Ray Flashes and Distant Galaxies.ipynb
+        - HR Diagrams: Tutorials/hr_diagram.ipynb
+        - Periodograms: Tutorials/lombscargle_example.ipynb
     - 'About':
         - About: About.md
-        # - GitHub Readme: GitHub README.md
-        # - License: License.md
     
 plugins:
     - search

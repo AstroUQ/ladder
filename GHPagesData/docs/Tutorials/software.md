@@ -97,6 +97,7 @@ How do you share code with your colleagues? This is an important skill not just 
 You want to have everything in a *repository*, which is a remote server in the cloud that has all your software backed up, with saved checkpoints you can go back to if something is wrong.
 
 The most popular software for interacting with repositories is `git`, and there are two big companies that offer comparable cloud storage for your repos: 
+
 - Atlassian offers [BitBucket](https://bitbucket.org/product)
 - Microsoft runs [GitHub](https://github.com/)
 

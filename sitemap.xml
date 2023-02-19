@@ -21,6 +21,11 @@
          <changefreq>daily</changefreq>
     </url>
     <url>
+         <loc>https://astrouq.github.io/ladder/data/</loc>
+         <lastmod>2023-02-19</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
          <loc>https://astrouq.github.io/ladder/datasets/</loc>
          <lastmod>2023-02-19</lastmod>
          <changefreq>daily</changefreq>
@@ -32,11 +37,6 @@
     </url>
     <url>
          <loc>https://astrouq.github.io/ladder/tutorials/UsefulFormulae/</loc>
-         <lastmod>2023-02-19</lastmod>
-         <changefreq>daily</changefreq>
-    </url>
-    <url>
-         <loc>https://astrouq.github.io/ladder/tutorials/data/</loc>
          <lastmod>2023-02-19</lastmod>
          <changefreq>daily</changefreq>
     </url>

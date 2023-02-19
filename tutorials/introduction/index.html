@@ -198,11 +198,15 @@
   
 
 
-  <li class="md-tabs__item">
-    <a href="../../datasets/" class="md-tabs__link">
-      Datasets
-    </a>
-  </li>
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../datasets/" class="md-tabs__link">
+        Datasets
+      </a>
+    </li>
+  
 
       
         
@@ -321,10 +325,49 @@
   
   
   
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_3" type="checkbox" id="__nav_3" >
+      
+      <label class="md-nav__link" for="__nav_3">
+        Datasets
+        <span class="md-nav__icon md-icon"></span>
+      </label>
+      <nav class="md-nav" aria-label="Datasets" data-md-level="1">
+        <label class="md-nav__title" for="__nav_3">
+          <span class="md-nav__icon md-icon"></span>
+          Datasets
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+  
+  
+  
     <li class="md-nav__item">
       <a href="../../datasets/" class="md-nav__link">
         Datasets
       </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../data/" class="md-nav__link">
+        Data Structure
+      </a>
+    </li>
+  
+
+          
+        </ul>
+      </nav>
     </li>
   
 
@@ -399,81 +442,6 @@
   <a href="#what-you-can-find" class="md-nav__link">
     What you can find
   </a>
-  
-    <nav class="md-nav" aria-label="What you can find">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#how-you-can-find-it" class="md-nav__link">
-    How you can find it:
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#whats-inside-the-data" class="md-nav__link">
-    What's inside the data...
-  </a>
-  
-    <nav class="md-nav" aria-label="What's inside the data...">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#universe-imagepng" class="md-nav__link">
-    Universe Image.png
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#radio-overlay-imagepng" class="md-nav__link">
-    Radio Overlay Image.png
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#radio-source-datatxt" class="md-nav__link">
-    Radio Source Data.txt
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#star-datatxt" class="md-nav__link">
-    Star Data.txt
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#variable-star-data" class="md-nav__link">
-    Variable Star Data
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#distant-galaxy-datatxt" class="md-nav__link">
-    Distant Galaxy Data.txt
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#supernova-datatxt" class="md-nav__link">
-    Supernova Data.txt
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
@@ -646,222 +614,6 @@
 <li>Are galaxies the same colour at any distance?</li>
 </ul>
 </details>
-<h3 id="how-you-can-find-it">How you can find it:</h3>
-<h2 id="whats-inside-the-data">What's inside the data...</h2>
-<p>When opening the dataset folder, you'll be greeted by a few files all of which are relevant to working out properties of the universe within. Let's look at the dataset with seed 588.</p>
-<h3 id="universe-imagepng"><code>Universe Image.png</code></h3>
-<p>A good first point to start is with <code>Universe Image.png</code>. </p>
-<p><img alt="universe" src="../assets/Universe%20Image%20smaller.png" /></p>
-<p>Straight away we can see via the <span class="arithmatex">\(x\)</span> and <span class="arithmatex">\(y\)</span> axes that this is a full sky image. The data is given in a spherical coordinate system, with a polar angle of 0 at the north pole and 180 at the south pole. The equatorial angle of 180 degrees is effectively 'straight ahead' (although it really doesn't matter much), with 270<sup>o</sup> being to the right, 90<sup>o</sup> being to the left and 0 and 360<sup>o</sup> being 'behind'. </p>
-<p>Lets take a bit of a closer look at the image, specifically zooming in at about a polar angle of 90<sup>o</sup> and an equatorial angle of 200<sup>o</sup>.</p>
-<p align="middle"><img src="../assets/Universe Image zoomed.png" style="width:600px;"/></p>
-
-<p>This image shows most of the main features of <code>Universe Image.png</code>:</p>
-<ul>
-<li>
-<p>There are some very bright stars that have diffraction spikes.</p>
-</li>
-<li>
-<p>There are many resolved but dimmer stars in our own galaxy (meaning they have no diffraction spikes). 
- These seem to be aligned more or less in a disk going about the center of the image horizontally.</p>
-</li>
-<li>
-<p>There are some resolved clusters of stars in the distance: galaxies!</p>
-</li>
-<li>
-<p>There are very very distant objects in some parts of the image. The most easily seen is in the bottom, slightly right of center. These are distant galaxies that are too far to resolve individual stars or structure.</p>
-</li>
-</ul>
-<p>Even with just this image alone, you can start qualitatively saying some things about this universe. </p>
-<h3 id="radio-overlay-imagepng"><code>Radio Overlay Image.png</code></h3>
-<p>Next, let's take a look at the radio overlay image.</p>
-<p><img alt="radio" src="../assets/Radio%20Overlay%20Image%20smaller.png" /></p>
-<p>At first glance, this is extremely similar in layout and appearance to the <code>Universe Image</code>; that's because it is! As part of the 'data collection' of this universe, some imaging was done in the radio portion of the spectrum and has been overlaid onto the visible spectrum image. Let's take a closer look (specifically at about polar=130<sup>o</sup> and equatorial=190<sup>o</sup>).</p>
-<p align="middle"><img src="../assets/Radio Overlay Image zoomed.png" style="width:600px;"/></p>
-
-<p>This is a <em>very</em> zoomed in image, and so there are limitations both on the image resolution <em>and</em> the radio resolution. With that said, we can clearly see some radio features in the space around some (but not all!) galaxies. What's caused this? Why are there some different looking radio lobes? </p>
-<h3 id="radio-source-datatxt"><code>Radio Source Data.txt</code></h3>
-<p>Looking at the radio images above, it seems that the radio features eminate from the centers of some galaxies. These radio sources are the brightest parts of the radio features, and were imaged with a full-spectrum (but low resolution) imager so that the source of these radio features could have a rough estimate of its <em>bolometric</em> luminosity (that is, luminosity across the whole spectrum). </p>
-<p>On opening the file, you'll see some data that has the headings:</p>
-<table>
-<thead>
-<tr>
-<th>Measurement</th>
-<th>Unit</th>
-<th>Explanation</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Equatorial</td>
-<td>degrees</td>
-<td>Equatorial angle of the radio source</td>
-</tr>
-<tr>
-<td>Polar</td>
-<td>degrees</td>
-<td>Polar angle of the radio source</td>
-</tr>
-<tr>
-<td>Luminosity</td>
-<td>W/m<sup>2</sup></td>
-<td>Approx. bolometric luminosity of the radio source</td>
-</tr>
-</tbody>
-</table>
-<p>The bolometric luminosity imager is only accurate to luminosities of 10<sup>-17</sup> W/m<sup>2</sup> or higher. All other sources are not included in the data file.</p>
-<h3 id="star-datatxt"><code>Star Data.txt</code></h3>
-<p>Arguably the most important of the files is the star data file. Each <em><strong>resolved</strong></em> star in the universe has a line of data in this file. Measured is the stars position, its monochromatic (meaning one colour) luminosity for three wavelengths (using a highly sensitive instrument), parallax angle, radial velocity and a light curve (if the star is characterised by a variable luminosity). </p>
-<table>
-<thead>
-<tr>
-<th>Measurement</th>
-<th>Unit</th>
-<th>Explanation</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Equatorial</td>
-<td>degrees</td>
-<td>Equatorial position of the star</td>
-</tr>
-<tr>
-<td>Polar</td>
-<td>degrees</td>
-<td>Polar position of the star</td>
-</tr>
-<tr>
-<td>BlueF</td>
-<td>W/nm/m<sup>2</sup></td>
-<td>Monochromatic luminosity of the star at 440nm</td>
-</tr>
-<tr>
-<td>GreenF</td>
-<td>W/nm/m<sup>2</sup></td>
-<td>Monochromatic luminosity of the star at 500nm</td>
-</tr>
-<tr>
-<td>RedF</td>
-<td>W/nm/m<sup>2</sup></td>
-<td>Monochromatic luminosity of the star at 700nm</td>
-</tr>
-<tr>
-<td>Parallax</td>
-<td>arcseconds</td>
-<td>Maximum parallax angle of the star across 1 year of observations</td>
-</tr>
-<tr>
-<td>RadialVelocity</td>
-<td>km/s</td>
-<td>Line-of-sight motion of the star (positive implies motion away)</td>
-</tr>
-<tr>
-<td>Variable?</td>
-<td>N/A</td>
-<td>1 if the star shows variability in its luminosity, 0 otherwise.</td>
-</tr>
-</tbody>
-</table>
-<h3 id="variable-star-data"><code>Variable Star Data</code></h3>
-<p>Some stars in the universe will have a variable luminosity across time, and so this variability was measured if applicable and saved in a separate file for each star in the format <code>{starname}.txt</code>. The luminosity of the star was measured once every hour for 120 hours, and data is given in terms of a proportion of its average luminosity. </p>
-<table>
-<thead>
-<tr>
-<th>Measurement</th>
-<th>Unit</th>
-<th>Explanation</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Time</td>
-<td>hours</td>
-<td>The time (since starting) of the measurement</td>
-</tr>
-<tr>
-<td>NormalisedFlux</td>
-<td>N/A</td>
-<td>Proportion of baseline (average) luminosity</td>
-</tr>
-</tbody>
-</table>
-<h3 id="distant-galaxy-datatxt"><code>Distant Galaxy Data.txt</code></h3>
-<p>Due to their small size in the sky, distant galaxies could be measured using the same instruments as those used to measure star properties. </p>
-<table>
-<thead>
-<tr>
-<th>Measurement</th>
-<th>Unit</th>
-<th>Explanation</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Equatorial</td>
-<td>degrees</td>
-<td>Equatorial position of the galaxy</td>
-</tr>
-<tr>
-<td>Polar</td>
-<td>degrees</td>
-<td>Polar position of the galaxy</td>
-</tr>
-<tr>
-<td>BlueF</td>
-<td>W/nm/m<sup>2</sup></td>
-<td>Monochromatic luminosity of the galaxy at 440nm</td>
-</tr>
-<tr>
-<td>GreenF</td>
-<td>W/nm/m<sup>2</sup></td>
-<td>Monochromatic luminosity of the galaxy at 500nm</td>
-</tr>
-<tr>
-<td>RedF</td>
-<td>W/nm/m<sup>2</sup></td>
-<td>Monochromatic luminosity of the galaxy at 700nm</td>
-</tr>
-<tr>
-<td>Size</td>
-<td>arcseconds</td>
-<td>The width in the sky subtended by the galaxy</td>
-</tr>
-<tr>
-<td>RadialVelocity</td>
-<td>km/s</td>
-<td>Line-of-sight motion of the galaxy (positive implies motion away)</td>
-</tr>
-</tbody>
-</table>
-<h3 id="supernova-datatxt"><code>Supernova Data.txt</code></h3>
-<p>Across the period of observation (1 year), several extremely bright flashes were observed that faded away within a few weeks. This was measured with the rough bolometric luminosity imager.</p>
-<table>
-<thead>
-<tr>
-<th>Measurement</th>
-<th>Unit</th>
-<th>Explanation</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Equatorial</td>
-<td>degrees</td>
-<td>Rough position of the bright flash</td>
-</tr>
-<tr>
-<td>Polar</td>
-<td>degrees</td>
-<td>Rough position of the bright flash</td>
-</tr>
-<tr>
-<td>PeakFlux(W)</td>
-<td>W/m<sup>2</sup></td>
-<td>Rough bolometric luminosity of the bright flash</td>
-</tr>
-</tbody>
-</table>
                 
                   
                 
@@ -888,7 +640,7 @@
     <nav class="md-footer__inner md-grid" aria-label="Footer">
       
         
-        <a href="../../datasets/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Datasets" rel="prev">
+        <a href="../../data/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Data Structure" rel="prev">
           <div class="md-footer__button md-icon">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
           </div>
@@ -897,7 +649,7 @@
               <span class="md-footer__direction">
                 Previous
               </span>
-              Datasets
+              Data Structure
             </div>
           </div>
         </a>

@@ -1,24 +1,29 @@
 site_name: PHYS3080 Distance Ladder Project
 site_url: https://astrouq.github.io/ladder/
 site_author: Ryan White, Benjamin Pope
+
+plugins:
+    mkdocs-jupyter:
+        theme: dark
+
 theme:
   name: "material"
   icon:
     logo: material/telescope
   palette:
-    -   scheme: slate
-        primary: deep purple
-        accent: purple
-        toggle:
-            icon: material/weather-night
-            name: Switch to light mode
-
     -   scheme: default
         primary: deep purple
         accent: purple
         toggle:
             icon: material/weather-sunny
             name: Switch to dark mode
+
+    -   scheme: slate
+        primary: deep purple
+        accent: purple
+        toggle:
+            icon: material/weather-night
+            name: Switch to light mode
 
 
   features:
@@ -38,9 +43,9 @@ nav:
         - 'Un-Cubemapping Data': tutorials/uncubemapping.ipynb
     - 'Tutorials':
         - Introduction: tutorials/introduction.md
-        - 'Fitting a Line to Data': tutorials/fitting-a-line.ipynb
         - HR Diagrams: tutorials/hr_diagram.ipynb
         - Periodograms: tutorials/lombscargle_example.ipynb
+        - 'Fitting a Line to Data': tutorials/fitting-a-line.ipynb
     - Writing a Report: 
         - Structure: report.md
         - Preparing a Report: latex.md

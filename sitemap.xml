@@ -51,6 +51,11 @@
          <changefreq>daily</changefreq>
     </url>
     <url>
+         <loc>https://astrouq.github.io/ladder/tutorials/fitting-a-line/</loc>
+         <lastmod>2023-02-19</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
          <loc>https://astrouq.github.io/ladder/tutorials/hr_diagram/</loc>
          <lastmod>2023-02-19</lastmod>
          <changefreq>daily</changefreq>

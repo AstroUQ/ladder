@@ -32,7 +32,7 @@ conda init
 then in your terminal, create an environment called `ladder`, with some default software installed:
 
 ```shell
-conda create --name ladder python=3.10 pip numpy matplotlib astropy scipy ipykernel pandas
+conda create --name ladder python=3.10 pip numpy matplotlib astropy scipy ipykernel pandas tqdm
 ```
 
 Then you want to *activate* this ennvironment, and install the Jupyter notebook packages.

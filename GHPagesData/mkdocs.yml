@@ -6,8 +6,21 @@ theme:
   icon:
     logo: material/telescope
   palette:
-    primary: deep purple
-    accent: purple
+    -   scheme: slate
+        primary: deep purple
+        accent: purple
+        toggle:
+            icon: material/weather-night
+            name: Switch to light mode
+
+    -   scheme: default
+        primary: deep purple
+        accent: purple
+        toggle:
+            icon: material/weather-sunny
+            name: Switch to dark mode
+
+
   features:
     - navigation.tabs
     - navigation.top
@@ -16,8 +29,6 @@ theme:
     - toc.integrate
 copyright: Copyright &copy; 2023 Ryan White, Benjamin Pope
 
-repo_url: https://github.com/astrouq/ladder
-edit_uri: ""
 nav: 
     - 'Home': index.md
     - Learning Python: tutorials/software.md

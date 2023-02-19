@@ -4,7 +4,7 @@ title: Introduction
 ## To start off...
 This simulation was programmed in Python and it was designed with analysis in Python in mind. Of course, you can use any language you'd like to look at and analyse the data.
 
-I've included a [(WIP) walkthrough](Walkthrough/introduction.md) in how to analyse the data. With that in mind, there are countless different ways that you could look at and analyse the data, all of which having pros and cons. 
+We have included example Python notebooks in a series of [tutorials](tutorials/introduction.md) in how to analyse the data. As you are encouraged to learn in each lesson, more tutorial pages will progressively become available over the semester covering each new topic. A week after each lesson, we will update tutorials for the previous week to reflect any issues that have arisen and give fuller answers to problems you are solving, so that nobody is left behind by the end of semester. 
 
 ## What you can find
 In principle, and with enough effort, you could find most of if not all of the physics that is simulated in this program. Below is a non-exhaustive list of what you could determine:

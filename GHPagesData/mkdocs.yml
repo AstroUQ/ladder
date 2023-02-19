@@ -13,10 +13,6 @@ theme:
     - navigation.instant
     - navigation.tracking
     - toc.integrate
-# extra:
-#     social:
-#         - icon: fontawesome/brands/github
-#           link: https://github.com/astrouq
 copyright: Copyright &copy; 2023 Ryan White, Benjamin Pope
 
 repo_url: https://github.com/astrouq/ladder

@@ -25,4 +25,4 @@ You may nevertheless prefer to use Microsoft Word, or another commercial word pr
 
 Here are several good example reports from previous years:
 
-- Ryan White
+- [Ryan White](assets/PHYS3080_Distance_Ladder_Report.pdf)

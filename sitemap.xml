@@ -2,82 +2,62 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
          <loc>https://astrouq.github.io/ladder/</loc>
-         <lastmod>2023-02-15</lastmod>
+         <lastmod>2023-02-19</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://astrouq.github.io/ladder/About/</loc>
-         <lastmod>2023-02-15</lastmod>
+         <lastmod>2023-02-19</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://astrouq.github.io/ladder/GitHub%20README/</loc>
-         <lastmod>2023-02-15</lastmod>
+         <lastmod>2023-02-19</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://astrouq.github.io/ladder/License/</loc>
-         <lastmod>2023-02-15</lastmod>
+         <lastmod>2023-02-19</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://astrouq.github.io/ladder/datasets/</loc>
-         <lastmod>2023-02-15</lastmod>
+         <lastmod>2023-02-19</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
-         <loc>https://astrouq.github.io/ladder/Analysing%20Data/Uncertainties/</loc>
-         <lastmod>2023-02-15</lastmod>
+         <loc>https://astrouq.github.io/ladder/Tutorials/Uncertainties/</loc>
+         <lastmod>2023-02-19</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
-         <loc>https://astrouq.github.io/ladder/Analysing%20Data/UsefulFormulae/</loc>
-         <lastmod>2023-02-15</lastmod>
+         <loc>https://astrouq.github.io/ladder/Tutorials/UsefulFormulae/</loc>
+         <lastmod>2023-02-19</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
-         <loc>https://astrouq.github.io/ladder/Analysing%20Data/introduction/</loc>
-         <lastmod>2023-02-15</lastmod>
+         <loc>https://astrouq.github.io/ladder/Tutorials/hr_diagram/</loc>
+         <lastmod>2023-02-19</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
-         <loc>https://astrouq.github.io/ladder/Analysing%20Data/Walkthrough/Distance%20Ladder%20I%3B%20Resolved%20Galaxies/</loc>
-         <lastmod>2023-02-15</lastmod>
+         <loc>https://astrouq.github.io/ladder/Tutorials/introduction/</loc>
+         <lastmod>2023-02-19</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
-         <loc>https://astrouq.github.io/ladder/Analysing%20Data/Walkthrough/Distance%20Ladder%20II%3B%20X-Ray%20Flashes%20and%20Distant%20Galaxies/</loc>
-         <lastmod>2023-02-15</lastmod>
+         <loc>https://astrouq.github.io/ladder/Tutorials/lombscargle_example/</loc>
+         <lastmod>2023-02-19</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
-         <loc>https://astrouq.github.io/ladder/Analysing%20Data/Walkthrough/GalaxyFinding/</loc>
-         <lastmod>2023-02-15</lastmod>
+         <loc>https://astrouq.github.io/ladder/Tutorials/software/</loc>
+         <lastmod>2023-02-19</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
-         <loc>https://astrouq.github.io/ladder/Analysing%20Data/Walkthrough/HR_Temp/</loc>
-         <lastmod>2023-02-15</lastmod>
-         <changefreq>daily</changefreq>
-    </url>
-    <url>
-         <loc>https://astrouq.github.io/ladder/Analysing%20Data/Walkthrough/Local%20Universe/</loc>
-         <lastmod>2023-02-15</lastmod>
-         <changefreq>daily</changefreq>
-    </url>
-    <url>
-         <loc>https://astrouq.github.io/ladder/Analysing%20Data/Walkthrough/Rotation%20Curves/</loc>
-         <lastmod>2023-02-15</lastmod>
-         <changefreq>daily</changefreq>
-    </url>
-    <url>
-         <loc>https://astrouq.github.io/ladder/Analysing%20Data/Walkthrough/Un-Cubemapping%20Data/</loc>
-         <lastmod>2023-02-15</lastmod>
-         <changefreq>daily</changefreq>
-    </url>
-    <url>
-         <loc>https://astrouq.github.io/ladder/Analysing%20Data/Walkthrough/introduction/</loc>
-         <lastmod>2023-02-15</lastmod>
+         <loc>https://astrouq.github.io/ladder/Tutorials/uncubemapping/</loc>
+         <lastmod>2023-02-19</lastmod>
          <changefreq>daily</changefreq>
     </url>
 </urlset>

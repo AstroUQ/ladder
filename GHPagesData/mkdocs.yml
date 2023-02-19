@@ -20,7 +20,9 @@ edit_uri: ""
 nav: 
     - 'Home': index.md
     - Learning Python: tutorials/software.md
-    - 'Datasets': datasets.md
+    - 'Datasets': 
+        - Datasets: datasets.md
+        - Data Structure: data.md
     - 'Tutorials':
         - Introduction: tutorials/introduction.md
         - 'Un-Cubemapping Data': tutorials/uncubemapping.ipynb

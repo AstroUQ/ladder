@@ -15,9 +15,9 @@ Many rockets later, the New Earthlings have gained a good understanding of their
 Over the last few years, you have helped build the planet's most ambitious (and expensive) space-probe yet: the Pimbblet Picture Producer (named after an Antipodean scientist with a rare surname who liked thinking about BIG questions). This remarkable satellite contained a number of instruments:
 
 - Six wide-field cameras, each of which repeatedly took pictures of 1/6 of the sky. Together, they measured the brightness and position of each object in the sky repeatedly. Variable objects were automatically identified and light curves generated for them.
-- A high resolution, narrow-field camera, which took more detailed close-up images of smaller regions. It took two images of each part of the sky, spaced by six months. This six month spacing allowed it to measure the parallax of each source, as New Earth moves around its Sun (New Earth is 1 AU from its Sun, and orbits it once a year). It detects every object brighter than 10-17 W m-2 nm-1 in its field of view.
+- A high resolution, narrow-field camera, which took more detailed close-up images of smaller regions. It took two images of each part of the sky, spaced by six months. It detects every object brighter than 10<sup>-17</sup> W m<sup>-2</sup> nm<sup>-1</sup> in its field of view. Its six month spacing also allowed it to measure the parallax of each source, as New Earth moves around its Sun (New Earth is 1 AU from its Sun, and orbits it once a year).
 - A spectrometer, which measured the wavelengths of the various absorption-lines, and hence used the Doppler effect to determine the radial velocity of each object detected by the imaging cameras.
-- An X-ray all-sky monitor which had 1m2 detector area, which scanned the sky looking for any X-rays coming from space.
+- An X-ray all-sky monitor which had 1m<sup>2</sup> detector area, which scanned the sky looking for any X-rays coming from space.
 
 All these instruments were programmed to not take data whenever anything in New Earth's solar system was in their field of view. This was to prevent the cameras being damaged by such bright targets. As a result, you will not see anything from New Earth's solar system in these data.
 
@@ -51,7 +51,7 @@ However: We suggest that your starting point be constructing a distance ladder.
 
 Please note that this is not an assignment that you can leave until the last possible moment. We will be spending a number of sessions in the computer lab for you to investigate the complex dataset, but you should also be continuing with this exercise in your own time. You have to do the following:
 
-- Read the marking scheme [here](https://learn.uq.edu.au/bbcswebdav/pid-7451506-dt-content-rid-42351967_1/xid-42351967_1).
+- Read the marking scheme [here](assets/distance_ladder_report_rubric.pdf).
 - Work in your groups to help each other solve the important parts of the problem.
 - Document your contribution to the group work on the group discussion board. You must make at least one significant posting at least a week before the final deadline.
 - Submit a full written report. This is your own report: you can use results from other group members (if acknowledged) but the writing must all be your own. It needs an abstract section that gives clear statements of your answers; see the marking scheme for more details. You may place detailed calculations in an appendix so as to not clutter up the body of the text. We will require an electronic copy of your assignment to be uploaded via Turnitin (accessed through Blackboard).

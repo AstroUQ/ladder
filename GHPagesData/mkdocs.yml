@@ -3,7 +3,8 @@ site_url: https://astrouq.github.io/ladder/
 site_author: Ryan White, Benjamin Pope
 theme:
   name: "material"
-  logo: MiscGithubImages/SBa.jpg
+  icon:
+    logo: material/telescope
   palette:
     primary: deep purple
     accent: purple

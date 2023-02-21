@@ -10,7 +10,6 @@ At the first lab, you were assigned into 12 groups. You are welcome to change if
 
 Here are your datasets, in interactive webpages and in zip files you can download containing everything:
 
-- [Index](https://people.smp.uq.edu.au/BenjaminPope/data/index.html)
 - Group 1: [web](https://people.smp.uq.edu.au/BenjaminPope/PHYS3080/universe_1/), [zip](https://people.smp.uq.edu.au/BenjaminPope/PHYS3080/universe_1.zip) 
 - Group 2: [web](https://people.smp.uq.edu.au/BenjaminPope/PHYS3080/universe_2/), [zip](https://people.smp.uq.edu.au/BenjaminPope/PHYS3080/universe_2/) 
 - Group 3: [web](https://people.smp.uq.edu.au/BenjaminPope/PHYS3080/universe_3/), [zip](https://people.smp.uq.edu.au/BenjaminPope/PHYS3080/universe_3/)
@@ -27,6 +26,6 @@ Here are your datasets, in interactive webpages and in zip files you can downloa
 ## How to Access and Use the Data
 
 The first step in analysing the data is to get the data! Download one of the .zip files from above according to the difficulty of your choice and unzip it in a directory you'd like to work in.
-Upon unzipping the file, you will see these files, or files similar to this (some might be missing):
+Upon unzipping the file, you will see these files, or files similar to this:
 <p align="middle"><img src="../assets/datasetunzipped.png" style="height:150px;"></p> 
 `Universe Image.png` is a visual image of all of the objects in the universe, taken with a mock telescope. Take a look at this first!

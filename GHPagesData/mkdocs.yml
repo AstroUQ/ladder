@@ -23,13 +23,13 @@ theme:
 copyright: Copyright &copy; 2023 Ryan White, Benjamin Pope
 
 nav: 
-    - 'Home': index.md
+    - Home: index.md
     - Learning Python: tutorials/software.md
-    - 'Datasets': 
+    - Datasets: 
         - Datasets: datasets.md
         - Data Structure: data.md
         - 'Un-Cubemapping Data': tutorials/uncubemapping.ipynb
-    - 'Tutorials':
+    - Tutorials:
         - Introduction: tutorials/introduction.md
         - HR Diagrams: tutorials/hr_diagram.ipynb
         - Periodograms: tutorials/lombscargle_example.ipynb
@@ -37,7 +37,7 @@ nav:
     - Writing a Report: 
         - Structure: report.md
         - Preparing a Report: latex.md
-    - 'About':
+    - About:
         - About: About.md
     
 plugins:

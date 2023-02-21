@@ -25,7 +25,7 @@ Here are your datasets, in interactive webpages and in zip files you can downloa
 
 ## How to Access and Use the Data
 
-The first step in analysing the data is to get the data! Download one of the .zip files from above according to the difficulty of your choice and unzip it in a directory you'd like to work in.
-Upon unzipping the file, you will see these files, or files similar to this:
-<p align="middle"><img src="../assets/datasetunzipped.png" style="height:150px;"></p> 
-`Universe Image.png` is a visual image of all of the objects in the universe, taken with a mock telescope. Take a look at this first!
+The first step in analysing the data is to get the data! Download one of the .zip files from above according to your group number and unzip it in a directory you'd like to work in. You can also use the html interface to navigate the data and pictures of your new universe!
+<!-- Upon unzipping the file, you will see these files, or files similar to this:
+<p align="middle"><img src="../assets/datasetunzipped.png" style="height:150px;"></p> -->
+With these files downloaded, you can now start analysing the data. Taking a look at the Tutorials section may be a good spot to start!

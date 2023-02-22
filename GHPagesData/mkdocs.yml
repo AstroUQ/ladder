@@ -24,7 +24,9 @@ copyright: Copyright &copy; 2023 Ryan White, Benjamin Pope
 
 nav: 
     - Home: index.md
-    - Learning Python: tutorials/software.md
+    - Working with Code: 
+        - Python: software.md
+        - Open Source Software: opensource.md
     - Datasets: 
         - Datasets: datasets.md
         - Data Structure: data.md

@@ -36,7 +36,17 @@
          <changefreq>daily</changefreq>
     </url>
     <url>
+         <loc>https://astrouq.github.io/ladder/opensource/</loc>
+         <lastmod>2023-02-22</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
          <loc>https://astrouq.github.io/ladder/report/</loc>
+         <lastmod>2023-02-22</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://astrouq.github.io/ladder/software/</loc>
          <lastmod>2023-02-22</lastmod>
          <changefreq>daily</changefreq>
     </url>
@@ -67,11 +77,6 @@
     </url>
     <url>
          <loc>https://astrouq.github.io/ladder/tutorials/lombscargle_example/</loc>
-         <lastmod>2023-02-22</lastmod>
-         <changefreq>daily</changefreq>
-    </url>
-    <url>
-         <loc>https://astrouq.github.io/ladder/tutorials/software/</loc>
          <lastmod>2023-02-22</lastmod>
          <changefreq>daily</changefreq>
     </url>

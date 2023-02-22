@@ -11,14 +11,14 @@
         <meta name="author" content="Ryan White, Benjamin Pope">
       
       
-        <link rel="canonical" href="https://astrouq.github.io/ladder/GitHub%20README/">
+        <link rel="canonical" href="https://astrouq.github.io/ladder/opensource/">
       
       <link rel="icon" href="../assets/images/favicon.png">
       <meta name="generator" content="mkdocs-1.2.2, mkdocs-material-7.2.1">
     
     
       
-        <title>Simulated Universe - PHYS3080 Distance Ladder Project</title>
+        <title>Open Source Software - PHYS3080 Distance Ladder Project</title>
       
     
     
@@ -71,7 +71,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#simulated-universe" class="md-skip">
+        <a href="#open-source-software" class="md-skip">
           Skip to content
         </a>
       
@@ -101,7 +101,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Simulated Universe
+              Open Source Software
             
           </span>
         </div>
@@ -172,13 +172,15 @@
         
   
   
+    
+  
 
 
   
   
   
     <li class="md-tabs__item">
-      <a href="../software/" class="md-tabs__link">
+      <a href="../software/" class="md-tabs__link md-tabs__link--active">
         Working with Code
       </a>
     </li>
@@ -303,12 +305,14 @@
 
   
   
+    
+  
   
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_2" type="checkbox" id="__nav_2" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_2" type="checkbox" id="__nav_2" checked>
       
       <label class="md-nav__link" for="__nav_2">
         Working with Code
@@ -336,11 +340,58 @@
             
   
   
+    
   
-    <li class="md-nav__item">
-      <a href="../opensource/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          Open Source Software
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         Open Source Software
       </a>
+      
+        
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#git-repositories" class="md-nav__link">
+    Git Repositories
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#making-open-source-software" class="md-nav__link">
+    Making Open-Source Software
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -604,102 +655,31 @@
               
                 
                 
-                <h1 id="simulated-universe">Simulated Universe</h1>
-<p><img alt="universe" src="../MiscGithubImages/universe.jpg" />
-<a href="https://spdx.org/licenses/MIT.html"><img alt="License" src="https://img.shields.io/badge/License-MIT-brightgreen" /></a>
-<a href="https://github.com/ryanwhite1/Simulated-Universe/issues"><img alt="GitHub issues" src="https://img.shields.io/github/issues/ryanwhite1/Simulated-Universe" /></a>
-<a href="https://github.com/ryanwhite1/Simulated-Universe/stargazers"><img alt="GitHub stars" src="https://img.shields.io/github/stars/ryanwhite1/Simulated-Universe" /></a></p>
-<p><a href="https://github.com/ryanwhite1/Simulated-Universe/blob/main/README.md">Preferably, use this link to the GitHub repository</a></p>
-<h2 id="about">About</h2>
-<p>As part of the University of Queensland course <em>PHYS3080 - Extragalactic Astrophysics and Cosmology</em>, we students were given data from a simulated universe (programmed by the course staff) to create an astronomical distance ladder. Both the data analysis and the simulation itself fascinated me, so I'd decided to try my hand at emulating the simulation myself. While some aspects in this simulation aren't as polished as the data we were given as students, some new features have been added, and others extended. I'm really happy with the results so far, and I aim to work on it and tweak the code for a while to come. </p>
-<p>As python is the language I'm most capable in, this project is written entirely in python. Several packages were used extensively, including but not limited to: <code>numpy</code>, <code>matplotlib</code>, <code>pandas</code>, <code>multiprocessing</code>, and <code>scipy</code>.</p>
-<h2 id="how-to-use-the-program">How to use the Program</h2>
-<p>Unless you intend to see the inner workings of the sim, the only file you would need to open is <code>MainSimulationFile.py</code>. To create a new dataset, just open this in your Python IDE of choice (or even just double click!), and run the program. This will create a new dataset in the "Datasets" folder, with a naming convention of "Sim Data (Clusters; {pop}, Seed; {seed})", where <code>pop</code> is the number of clusters and the <code>seed</code> parameter is just the seed for the random number generating in the program. Once the dataset is created, you can head over to the Datasets directory and take the .txt files within to analyse that universe!</p>
-<h2 id="extent-of-simulation">Extent of Simulation</h2>
-<p>Several real aspects of astronomy are modelled (to varying degrees of accuracy) in this simulation. Below is a non-exhaustive list of the physical properties that could, in theory, be derived via quantitative and qualitative means from the output data <code>.txt</code> files. In the likely case that I can't follow that theme, the dot points show what and how some things were simulated.</p>
-<h3 id="stars">Stars</h3>
-<p align="middle"><img src="../MiscGithubImages/Local Galaxy HR Diagram.png" style="width:600px;"></p>
-
+                <h1 id="open-source-software">Open Source Software</h1>
+<p>When we say software is open-source, we mean that you can access the code, and are allowed to use it and modify it yourself under various light conditions. One of the great things about astronomy is that we have a culture of open data, open-source software, and open access publishing - if you have a laptop and an internet connection, the barrier between you and looking at real cutting-edge astronomical data is very low. Part of the motivation for this course is to get you familiar with these tools and ideas, that you can use yourself in physics or any other subject or industry.</p>
+<h2 id="git-repositories">Git Repositories</h2>
+<p>How do you share code with your colleagues? This is an important skill not just for this course - but anything you do down the track in science, software engineering, or the commercial sector. This doesn't just apply to Python scripts you'll write here, but to any sort of code - including this website.</p>
+<p>You want to have everything in a <em>repository</em>, which is a remote server in the cloud that has all your software backed up, with saved checkpoints you can go back to if something is wrong.</p>
+<p>The most popular software for interacting with repositories is <code>git</code>, and there are two big companies that offer comparable cloud storage for your repos: </p>
 <ul>
-<li>Four distinct classes of stars are generated: Main Sequence, Giants, Supergiants, and White Dwarfs. They can be see on the HR diagram on the right in their usual positions.</li>
-<li>Main sequence stars are generated realistically according to luminosity-mass functions (with the mass first randomly generated via a gamma distribution), and then the radius generated according to mass-radius relations. The temperature is then solved via the Stefan-Boltzmann equation. I am quite happy with the behaviour of the MS stars!</li>
-<li>White dwarf mass distributions were generated according to a published paper on the topic. Radius was then generated by the <span class="arithmatex">\(R \sim M^{1/3}\)</span> relation and temperature derived from wikipedia data. The luminosity then was taken via the Stefan-Boltzmann law. </li>
-<li>The giant and supergiant parameter generation was far less realistic and was artificially chosen to give nice looking data on a HR diagram.</li>
+<li>Atlassian offers <a href="https://bitbucket.org/product">BitBucket</a></li>
+<li>Microsoft runs <a href="https://github.com/">GitHub</a></li>
 </ul>
-<p align="middle"><img src="../MiscGithubImages/S103645-Temp=7849.png" style="height:300px;"></p>
-
+<p>You can share these codes with your teammates and jointly collaborate on a project. The user interface is a little harder than Google Docs but I recommend you master it - it is a huge transferable skill.  </p>
+<p>All my code is version-controlled <a href="https://github.com/benjaminpope/">github.com/benjaminpope</a>. On my local machine I made a directory <code>/Users/benjaminpope/code/</code>, using terminal commands</p>
+<p><div class="highlight"><pre><span></span><code><span class="nb">cd</span> .
+mkdir code
+</code></pre></div>
+and you can download a repo (like this website as an example!) to your machine like this:</p>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span> code
+git clone https://github.com/astrouq/ladder/
+<span class="nb">cd</span> ladder
+</code></pre></div>
+<p>A really great way of organizing this project, from past experience, is if you create a repository of your own, shared with your group, and develop there. </p>
+<h2 id="making-open-source-software">Making Open-Source Software</h2>
+<p>Christina Hedges (NASA Ames) has a fantastic introduction to open-source software practices for astronomy, in which the above tools and many others are explained, for an audience of ~ PhD students:</p>
 <ul>
-<li>Star emission is modelled accurately according to blackbody curves, with their temperature and luminosity impacting the shape and height of the curve as expected. As part of the data output, monochromatic luminosity data is exported for each star in wavelengths 440nm, 500nm and 700nm (roughly the B, V, and R bands respectively).</li>
-</ul>
-<p align="middle"><img src="../MiscGithubImages/StarLightCurve.png" style="height:300px;"/></p>
-
-<ul>
-<li>Some populations of stars, depending on their position on the HR diagram, will have variable light curves. The simulation will determine whether to have two or three distinct variable populations, with a "short" (18-30 hour) period and a "long" (45-60 hour period) being certain. A "longest" (75-100 hour) period class of variable has a 1/3 chance of being generated too. Each of these classes of variables are shown as triangles in the HR diagram above, with the top population being the short period, the rightmost population being the longest period, and the bottom left being the long period. </li>
-<li>The lightcurve of variable stars is randomly chosen out of a Sine, Triangle, or Sawtooth wave, with some random scatter added onto the 'normalised flux'.</li>
-<li>The period-luminosity relation (linear trend on a logY-x scale) has a randomly assigned sign with a random gradient within some small range of the desired parameters. This is generated at the universe level in <code>Universe.py</code>.</li>
-</ul>
-<h3 id="galaxies">Galaxies</h3>
-<p align="middle">
-<img src="../MiscGithubImages/cD.jpg" style="height:100px;"/><img src="../MiscGithubImages/ellipticals.jpg" style="height:100px;"/><img src="../MiscGithubImages/S0.jpg" style="height:100px;"/><img src="../MiscGithubImages/Sa.jpg" style="height:100px;"/><img src="../MiscGithubImages/SBa.jpg" style="height:100px;"/><img src="../MiscGithubImages/Sb.jpg" style="height:100px;"/><img src="../MiscGithubImages/SBb.jpg" style="height:100px;"/><img src="../MiscGithubImages/Sc.jpg" style="height:100px;"/><img src="../MiscGithubImages/SBc.jpg" style="height:100px;"/> </p>
-
-<ul>
-<li>Classification of galaxy types. cD, E0-7, S0 and Sa-c, SBa-c galaxy types are simulated to a reasonable degree of accuracy (but mostly to be a bit pretty and to break up monotony in galaxies). </li>
-<li>Different star populations are found throughout galaxies. In spirals, the bulge/bar has lower mass, redder stars. The leading edges of spirals have high mass blue stars, with lower mass redder stars trailing the leading edges. There are also a population of even lower mass stars (on average) not associated with spirals. Elliptical galaxies are characterised by many more, lower mass red stars.
- 
-<p align="middle">
- <img src="../MiscGithubImages/E158.71-P78.02 E5, BH1, DM0.png" style="height:250px;"/><img src="../MiscGithubImages/E153.19-P82.24 S0, BH1, DM1.png" style="height:250px;"/><img src="../MiscGithubImages/E180.0-P90.0 SBc, BH0, DM1.png" style="height:250px;"/>
- </p></li>
-</ul>
-<p align="middle"> <em>(L) Black hole with no dark matter    (C) Black hole with dark matter    (R) No black hole with dark matter</em></p>
-
-<ul>
-<li>Rotation curves are simulated accurately according to newtonian physics, with black holes and dark matter (via the Navarro-Frenk-White profile) influencing rotation velocities. Spiral galaxies have coherent rotation, with all stars (except the central black hole cluster) orbiting in the orbital plane in the same direction. Elliptical galaxies have random velocity directions, but velocity magnitudes according to the same rotation curve profiles. This random velocity is really apparent in the doppler image below in the Galaxy Clusters section.</li>
-</ul>
-<p><img alt="" src="../MiscGithubImages/localradialvel.jpg" /></p>
-<h3 id="black-holes">Black Holes</h3>
-<p align="middle">
-<img src="../MiscGithubImages/FRI lobe.png" style="height:250px;"/><img src="../MiscGithubImages/FRII lobe.png" style="height:250px;"/>
-</p>
-
-<ul>
-<li>Massive black holes (usually on the order of 50-500 solar masses) are generated at the center of all/most galaxies with the mass dependent on the galaxy mass as a whole. </li>
-<li>Black holes all have a luminosity on the order of the eddington luminosity for a black hole of that mass. The actual proportion of <span class="arithmatex">\(L_\text{edd}\)</span> depends on how many stars are in a dense cluster around the black hole.</li>
-<li>Mock 'Radio Lobes' from black hole accretion shoot out from the 'poles' of the galaxy (which assumes that the accretion disk is parallel with the plane of the galaxy). cD galaxies display Fanaroff-Riley Type I lobes (L), while other galaxies show FRII lobes (R). Lobes generate if the central BH has a luminosity of more than <span class="arithmatex">\(10^6 L_\odot\)</span>. At the moment, there is no use for this other than qualitative means. </li>
-<li>Black holes have a cluster of massive stars around them (according to an exponential distribution, where ellipticals will have more stars), with random velocity directions. In the unlikely case you can actually see the black hole in an output image, it shows up as a dot with an aqua-ish colour (according to the blackbody colours link in the credits). </li>
-</ul>
-<h3 id="galaxy-clusters">Galaxy Clusters</h3>
-<p align="middle"><img src="../MiscGithubImages/Cluster1.jpg" style="height:250px;"/><img src="../MiscGithubImages/galaxradialvels.jpg" style="height:250px;"/></p>
-<p align="middle"><em>(L) A slightly more populous-than-average galaxy cluster.     (R) The radial velocities of galaxies within a cluster (red moving away).</em></p>
-
-<ul>
-<li>Galaxy clusters generate at least one galaxy according to an exponential distribution with a mean of 8 galaxies. Clusters with 5 or more galaxies will have an elliptical galaxy at their center, and clusters with 10 or more galaxies will have a cD galaxy in their center.</li>
-<li>Elliptical galaxies are much more common close to the center of clusters. Conversely, spirals are more likely on the outer edges of clusters. </li>
-<li>Using a similar approach to that of galaxy rotation curves, galaxies have a rotation velocity about the cluster center in a random direction (much similar to the method used for elliptical galaxies!)</li>
-</ul>
-<h3 id="the-universe-as-a-whole">The Universe as a whole</h3>
-<p align="middle">
-<img src="../MiscGithubImages/Hubble Diagram.png" style="height:250px;"/> 
-</p>
-
-<ul>
-<li>Hubble recession is modelled, with more distant galaxies receeding further away. The hubble constant itself is chosen as a value between 1000 and 5000km/s/Mpc, with a random sign. </li>
-<li>Radial velocities of resolved stars take into account hubble recession, galaxy movement within clusters, and star movement within galaxies. </li>
-<li>In output visual images of the universe (see the top of this readme!), stars have diffraction spikes according to how bright they appear to the observer. Why? Because this is pretty and I like it. </li>
-<li>Type Ia supernova are randomly exploded across ~55 or so galaxies in the universe, with at least two of them being in the local cluster of galaxies so that the user may more easily find the intrinsic brightness. </li>
-<li>Homogeneous and inhomogeneous universes (inhomo by default) are able to be generated. Homogeneous has spherically-uniformly distributed galaxies, while inhomogeneous has exponentially increasing cluster counts up to a threshold of 30kpc (this is where normal galaxies are no longer generated and the 'distant galaxies' are now generated), where cluster count then exponentially decreases towards the radius of the universe. </li>
-</ul>
-<h2 id="to-do">To-Do:</h2>
-<ul class="task-list">
-<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Make this damn README.md prettier!!</li>
-<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled checked/><span class="task-list-indicator"></span></label> Include a 'how to use' section in this readme (thanks saskia!)</li>
-<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled checked/><span class="task-list-indicator"></span></label> Fill out many docstrings and comment all code to a degree readable by other users.</li>
-</ul>
-<h2 id="creditsacknowledgements">Credits/Acknowledgements</h2>
-<ul>
-<li>Saskia for providing a mental amount of help with regards to Python programming. I've learnt a lot! Also many many sanity checks and FEEDBACK. Mamma mia. </li>
-<li>Ciaran for helping with a bit of math (linear algebra is hard) and some astro sanity checks here and there. </li>
-<li>The <code>blackbodycolours.txt</code> file was supplied free of charge by Mitchell Charity (<a href="mailto:mcharity@lcs.mit.edu">email</a>) from <a href="http://www.vendian.org/mncharity/dir3/blackbody/">What colour is a blackbody?</a> (Version 2001-Jun-22)</li>
-<li>The astrophysics team at the University of Queensland for providing inspiration for this project in the form of their simulation data! </li>
+<li><a href="https://christinahedges.github.io/astronomy_workflow/">christinahedges.github.io/astronomy_workflow</a></li>
 </ul>
                 
               
@@ -721,6 +701,41 @@
       
         
 <footer class="md-footer">
+  
+    <nav class="md-footer__inner md-grid" aria-label="Footer">
+      
+        
+        <a href="../software/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Python" rel="prev">
+          <div class="md-footer__button md-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
+          </div>
+          <div class="md-footer__title">
+            <div class="md-ellipsis">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              Python
+            </div>
+          </div>
+        </a>
+      
+      
+        
+        <a href="../datasets/" class="md-footer__link md-footer__link--next" aria-label="Next: Datasets" rel="next">
+          <div class="md-footer__title">
+            <div class="md-ellipsis">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              Datasets
+            </div>
+          </div>
+          <div class="md-footer__button md-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11H4z"/></svg>
+          </div>
+        </a>
+      
+    </nav>
   
   <div class="md-footer-meta md-typeset">
     <div class="md-footer-meta__inner md-grid">

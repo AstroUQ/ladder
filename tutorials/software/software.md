@@ -113,7 +113,7 @@ and you can download a repo (like this website as an example!) to your machine l
 
 ```shell
 cd code
-git clone https://github.com/benjaminpope/ladder/
+git clone https://github.com/astrouq/ladder/
 cd ladder
 ```
 

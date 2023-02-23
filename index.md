@@ -25,7 +25,7 @@ The space-probe has just landed after its one year mission, and the data tapes e
 
 
 ## Sitemap
-On the [About page](About.md) you'll find all of the physics that is actually emulated in this simulation, as well as some important information about the simulation. Check your group identification and dataset on the [datasets page](Datasets.md), and the data structure on the [data page](data.md).
+On the [About page](About.md) you'll find all of the physics that is actually emulated in this simulation, as well as some important information about the simulation. Check your group identification and dataset on the [datasets page](datasets.md), and the data structure on the [data page](data.md).
 
 ## Hints
 

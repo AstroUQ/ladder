@@ -11,17 +11,17 @@ At the first lab, you were assigned into 12 groups. You are welcome to change if
 Here are your datasets, in interactive webpages and in zip files you can download containing everything:
 
 - Group 1: [web](https://people.smp.uq.edu.au/BenjaminPope/PHYS3080/universe_1/), [zip](https://people.smp.uq.edu.au/BenjaminPope/PHYS3080/universe_1.zip) 
-- Group 2: [web](https://people.smp.uq.edu.au/BenjaminPope/PHYS3080/universe_2/), [zip](https://people.smp.uq.edu.au/BenjaminPope/PHYS3080/universe_2/) 
-- Group 3: [web](https://people.smp.uq.edu.au/BenjaminPope/PHYS3080/universe_3/), [zip](https://people.smp.uq.edu.au/BenjaminPope/PHYS3080/universe_3/)
-- Group 4: [web](https://people.smp.uq.edu.au/BenjaminPope/PHYS3080/universe_4/), [zip](https://people.smp.uq.edu.au/BenjaminPope/PHYS3080/universe_4/)
-- Group 5: [web](https://people.smp.uq.edu.au/BenjaminPope/PHYS3080/universe_5/), [zip](https://people.smp.uq.edu.au/BenjaminPope/PHYS3080/universe_5/)
-- Group 6: [web](https://people.smp.uq.edu.au/BenjaminPope/PHYS3080/universe_6/), [zip](https://people.smp.uq.edu.au/BenjaminPope/PHYS3080/universe_6/)
-- Group 7: [web](https://people.smp.uq.edu.au/BenjaminPope/PHYS3080/universe_7/), [zip](https://people.smp.uq.edu.au/BenjaminPope/PHYS3080/universe_7/)
-- Group 8: [web](https://people.smp.uq.edu.au/BenjaminPope/PHYS3080/universe_8/), [zip](https://people.smp.uq.edu.au/BenjaminPope/PHYS3080/universe_8/)
-- Group 9: [web](https://people.smp.uq.edu.au/BenjaminPope/PHYS3080/universe_9/), [zip](https://people.smp.uq.edu.au/BenjaminPope/PHYS3080/universe_9/)
-- Group 10: [web](https://people.smp.uq.edu.au/BenjaminPope/PHYS3080/universe_10/), [zip](https://people.smp.uq.edu.au/BenjaminPope/PHYS3080/universe_10/)
-- Group 11: [web](https://people.smp.uq.edu.au/BenjaminPope/PHYS3080/universe_11/), [zip](https://people.smp.uq.edu.au/BenjaminPope/PHYS3080/universe_11/)
-- Group 12: [web](https://people.smp.uq.edu.au/BenjaminPope/PHYS3080/universe_12/), [zip](https://people.smp.uq.edu.au/BenjaminPope/PHYS3080/universe_12/)
+- Group 2: [web](https://people.smp.uq.edu.au/BenjaminPope/PHYS3080/universe_2/), [zip](https://people.smp.uq.edu.au/BenjaminPope/PHYS3080/universe_2.zip) 
+- Group 3: [web](https://people.smp.uq.edu.au/BenjaminPope/PHYS3080/universe_3/), [zip](https://people.smp.uq.edu.au/BenjaminPope/PHYS3080/universe_3.zip)
+- Group 4: [web](https://people.smp.uq.edu.au/BenjaminPope/PHYS3080/universe_4/), [zip](https://people.smp.uq.edu.au/BenjaminPope/PHYS3080/universe_4.zip)
+- Group 5: [web](https://people.smp.uq.edu.au/BenjaminPope/PHYS3080/universe_5/), [zip](https://people.smp.uq.edu.au/BenjaminPope/PHYS3080/universe_5.zip)
+- Group 6: [web](https://people.smp.uq.edu.au/BenjaminPope/PHYS3080/universe_6/), [zip](https://people.smp.uq.edu.au/BenjaminPope/PHYS3080/universe_6.zip)
+- Group 7: [web](https://people.smp.uq.edu.au/BenjaminPope/PHYS3080/universe_7/), [zip](https://people.smp.uq.edu.au/BenjaminPope/PHYS3080/universe_7.zip)
+- Group 8: [web](https://people.smp.uq.edu.au/BenjaminPope/PHYS3080/universe_8/), [zip](https://people.smp.uq.edu.au/BenjaminPope/PHYS3080/universe_8.zip)
+- Group 9: [web](https://people.smp.uq.edu.au/BenjaminPope/PHYS3080/universe_9/), [zip](https://people.smp.uq.edu.au/BenjaminPope/PHYS3080/universe_9.zip)
+- Group 10: [web](https://people.smp.uq.edu.au/BenjaminPope/PHYS3080/universe_10/), [zip](https://people.smp.uq.edu.au/BenjaminPope/PHYS3080/universe_10.zip)
+- Group 11: [web](https://people.smp.uq.edu.au/BenjaminPope/PHYS3080/universe_11/), [zip](https://people.smp.uq.edu.au/BenjaminPope/PHYS3080/universe_11.zip)
+- Group 12: [web](https://people.smp.uq.edu.au/BenjaminPope/PHYS3080/universe_12/), [zip](https://people.smp.uq.edu.au/BenjaminPope/PHYS3080/universe_12.zip)
 
 ## How to Access and Use the Data
 

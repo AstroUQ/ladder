@@ -4,7 +4,7 @@ You can use whichever software you like to write your report, so long as it foll
 
 ## Using LaTeX
 
-Almost all scientific papers in astronomy are published using the typesetting software LaTeX, which not everyone may have used before. Here is a good [guide to using LaTeX](https://astrobites.org/2018/01/20/getting-started-with-latex/) by the astronomy student collective *astrobites*. It is a *markup language* that allows you to include attractive figures and tables, mathematical notation, and easily keep track of citations with [BibTeX])(https://www.overleaf.com/learn/latex/Bibliography_management_with_bibtex). 
+Almost all scientific papers in astronomy are published using the typesetting software LaTeX, which not everyone may have used before. Here is a good [guide to using LaTeX](https://astrobites.org/2018/01/20/getting-started-with-latex/) by the astronomy student collective *astrobites*. It is a *markup language* that allows you to include attractive figures and tables, mathematical notation, and easily keep track of citations with [BibTeX](https://www.overleaf.com/learn/latex/Bibliography_management_with_bibtex). 
 
 The easiest way to use LaTeX is via [Overleaf](overleaf.com), which is sort of like Google Docs for LaTeX, and allows you to share a document with your team and work collaboratively.
 

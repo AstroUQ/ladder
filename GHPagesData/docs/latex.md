@@ -2,6 +2,8 @@
 
 You can use whichever software you like to write your report, so long as it follows the [structure outlined above](report.md). But most scientists use the software LaTeX and we encourage you to as well; this is great practice for Honours, where your writing will all be required to be in LaTeX.
 
+In writing your report, please **put your group number at the top**, with your own name as first author and your colleagues as co-authors.
+
 ## Using LaTeX
 
 Almost all scientific papers in astronomy are published using the typesetting software LaTeX, which not everyone may have used before. Here is a good [guide to using LaTeX](https://astrobites.org/2018/01/20/getting-started-with-latex/) by the astronomy student collective *astrobites*. It is a *markup language* that allows you to include attractive figures and tables, mathematical notation, and easily keep track of citations with [BibTeX](https://www.overleaf.com/learn/latex/Bibliography_management_with_bibtex). 

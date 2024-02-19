@@ -36,8 +36,8 @@ nav:
         - Periodograms: tutorials/lombscargle_example.ipynb
         - 'Fitting a Line to Data': tutorials/fitting-a-line.ipynb
     - Writing a Report: 
-        - Structure: report.md
         - Preparing a Report: latex.md
+        - Structure: report.md
     - About:
         - About: About.md
     

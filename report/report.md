@@ -2,7 +2,7 @@
 
 The assessment for the Distance Ladder project, and the follow-up Cosmology project, is based on writing a long-form report. For many of you this may be the longest you have done in a Physics major, but this is a very important skill - a practising scientist, in academia, government, or industry, spends typically more of their time reading and writing papers and proposals than doing calculations or working in the lab. 
 
-Reports should contain a title, author name, a clearly structured main body and either an abstract or a summary. Aim at writing 10 to 15 pages. Make sure figures are properly labeled, including legible and informative axis labels and units. **Do not** include lengthy data tables or source code in your report. There is a light science-fiction setting in the course materials; you are allowed (and encouraged) to name things as you like, with as much whimsy or humour as you please, so long as the content is clear and understandable and the report is otherwise written like a scientific paper.
+Reports should follow the PASA journal format if at all possible. They should contain a title (including your group number), with first-author being your name and coauthors your group colleagues, a clearly structured main body and either an abstract or a summary. Aim at writing 10 to 15 pages. Make sure figures are properly labeled, including legible and informative axis labels and units. **Do not** include lengthy data tables or source code in your report. There is a light science-fiction setting in the course materials; you are allowed (and encouraged) to name things as you like, with as much whimsy or humour as you please, so long as the content is clear and understandable and the report is otherwise written like a scientific paper.
 
 In brief - you will get a 5 if you have a reasonably well written report across all marking criteria, with the only *essential* science content being a determination of the Hubble constant. Higher marks will be awarded for better-written reports that determine more physics about the universe.
 
@@ -14,7 +14,7 @@ You are required to follow the standard structure for scientific writing in your
 
 **Structure**:
 
-- **Title**: pick a punchy title that accurately encapsulates what you did.
+- **Title**: pick a punchy title that accurately encapsulates what you did. You can include your group number here, or under Affiliations.
 - **Authors and Affiliations**: here you list authors and affiliations (ie which university or institute each person is from; for you this will all be UQ, but most science is done by teams spread across many institutes). In astronomy the first author is the main person responsible, but in some fields of science this is the *last* author for historical reasons. In your report you should put your own name first, and then list all your team members.
 - **Abstract**: 200 words summarizing what you did. Every day hundreds of papers are published, and scientists mainly skim the title and abstract before deciding whether to read a paper. I like to follow a condensed form of the paper itself: start with
     - state the overall topic 

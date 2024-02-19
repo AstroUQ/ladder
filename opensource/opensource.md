@@ -1,6 +1,6 @@
 # Open Source Software
 
-When we say software is open-source, we mean that you can access the code, and are allowed to use it and modify it yourself under various light conditions. One of the great things about astronomy is that we have a culture of open data, open-source software, and open access publishing - if you have a laptop and an internet connection, the barrier between you and looking at real cutting-edge astronomical data is very low. Part of the motivation for this course is to get you familiar with these tools and ideas, that you can use yourself in physics or any other subject or industry.
+When we say software is open-source, we mean that you can access the code, and are allowed to use it and modify it yourself under various light conditions. One of the great things about astronomy is that more than any other natural science we have a culture of open data, open-source software, and open access publishing - if you have a laptop and an internet connection, the barrier between you and looking at real cutting-edge astronomical data is very low. Part of the motivation for this course is to get you familiar with these tools and ideas, that you can use yourself in physics or any other subject or industry.
 
 ## Git Repositories
 

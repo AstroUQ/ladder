@@ -30,7 +30,6 @@ nav:
     - Datasets: 
         - Datasets: datasets.md
         - Data Structure: data.md
-        - 'Un-Cubemapping Data': tutorials/uncubemapping.ipynb
     - Tutorials:
         - Introduction: tutorials/introduction.md
         - HR Diagrams: tutorials/hr_diagram.ipynb

@@ -10,7 +10,7 @@ Almost all scientific papers in astronomy are published using the typesetting so
 
 The easiest way to use LaTeX is via [Overleaf](overleaf.com), which is sort of like Google Docs for LaTeX, and allows you to share a document with your team and work collaboratively.
 
-Most of these papers are published in one of the major national journals, and there are Overleaf templates for each. In this report, you are required to use the template for the Australian national journal,  the [*Proceedings of the Astronomical Society of Australia* (PASA)](https://www.overleaf.com/latex/templates/cup-large2-template/sbvfyncxcbcm).
+Most of these papers are published in one of the major national journals, and there are Overleaf templates for each. In this report, **you are required to use the template for the Australian national journal**,  the [*Proceedings of the Astronomical Society of Australia* (PASA)](https://www.overleaf.com/latex/templates/cup-large2-template/sbvfyncxcbcm).
 
 ## Using Word
 

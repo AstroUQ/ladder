@@ -45,7 +45,7 @@ There are no marks for just coming up with lists of numbers -- we are interested
 
 Much like investigating the real Universe, we don't expect you to address ALL of the above questions in a superbly detailed manner. You must pick and choose which questions or aspects of this project you want to concentrate on.
 
-However: We suggest that your starting point be constructing a distance ladder.
+However: We suggest that your starting point be constructing a distance ladder. You will get at least a 5 for an appropriately well written report *if* it contains a reasonably accurate determination of H0, with errorbars. This is your first objective! 
 
 ## Deadlines and Grading
 
@@ -54,7 +54,7 @@ Please note that this is not an assignment that you can leave until the last pos
 - Read the marking scheme [here](assets/distance_ladder_report_rubric.pdf).
 - Work in your groups to help each other solve the important parts of the problem.
 - Document your contribution to the group work on the group discussion board. You must make at least one significant posting at least a week before the final deadline.
-- Submit a full written report. This is your own report: you can use results from other group members (if acknowledged) but the writing must all be your own. It needs an abstract section that gives clear statements of your answers; see the marking scheme for more details. You may place detailed calculations in an appendix so as to not clutter up the body of the text. We will require an electronic copy of your assignment to be uploaded via Turnitin (accessed through Blackboard).
-- In your project work and in the reports, concentrate on getting physical information out of the data. Avoid speculations that cannot be backed up by actual data. Also avoid drawing parallels to our universe. To the astronomers in New Universe, our universe is not available for comparison.
+- Submit a full written report. This is your own report: you can use results from other group members (if acknowledged) but the writing must all be your own. It needs an abstract section that gives clear statements of your answers; see the marking scheme for more details. You may place detailed calculations in an appendix so as to not clutter up the body of the text. Please do not include code or lengthy data tables, even in an appendix. We will require an electronic copy of your assignment to be uploaded via Turnitin (accessed through Blackboard).
+- In your project work and in the reports, concentrate on getting physical information out of the data. Avoid speculations that cannot be backed up by actual data. Also avoid drawing parallels to our universe. To the astronomers in New Universe, our universe is not available for comparison. Any physics you could know from the lab is safe, but any astrophysics could be completely different. 
 - Deadline for the written component? See Course Profile. Note the time deadline for electronic submission is strict and exact!
 

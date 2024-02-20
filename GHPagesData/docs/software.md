@@ -15,6 +15,7 @@ Anaconda is available on the UQ Digital Workspaces as the package `Anaconda3-202
 To install Python on a Windows/Mac/Linux machine of your own, I recommend you install Conda from [here](https://www.anaconda.com/download).
 
 When working in Python, it is best to create a new environment for each project. For this project, you will want these important packages pre-installed:
+
 - `pip`, which installs other Python packages,
 - `numpy`, which is a general-purpose maths library,
 - `matplotlib`, the general-purpose Python plotting library,

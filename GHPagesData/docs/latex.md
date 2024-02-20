@@ -18,6 +18,6 @@ If you absolutely cannot use LaTeX, please ask. If necessary are allowed to use 
 
 ## Example Reports
 
-Here are several good example reports from previous years:
+Here are a few good example reports from previous years. Keep in mind that these reports may have been for a different type of universe and different version of code! 
 
 - [Ryan White](assets/PHYS3080_Distance_Ladder_Report.pdf)

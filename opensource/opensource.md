@@ -29,6 +29,8 @@ git clone https://github.com/astrouq/ladder/
 cd ladder
 ```
 
+[GitHub also offers a GUI](https://desktop.github.com/) which may be a nice beginner-friendly experience if you've never used Git before! 
+
 A really great way of organizing this project, from past experience, is if you create a repository of your own, shared with your group, and develop there. 
 
 ## Making Open-Source Software

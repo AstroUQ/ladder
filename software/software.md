@@ -10,15 +10,17 @@ Most software development will be done in Python, and I recommend using Anaconda
 
 There is a great [conda cheat sheet](https://docs.conda.io/projects/conda/en/4.6.0/_downloads/52a95608c49671267e40c689e0bc00ca/conda-cheatsheet.pdf) with lots of tools to help you use Conda.
 
-Anaconda is available on the UQ Digital Workspaces as the package `Anaconda3-2020.02`. 
+Anaconda is available on the UQ Digital Workspaces as the package `Anaconda3-2020.02`, although this is much more tedious to use than installing Anaconda on your own machine. 
 
-To install Python on a Mac or Linux machine of your own, I recommend you install Conda from [here](https://www.anaconda.com/products/individual).
+To install Python on a Windows/Mac/Linux machine of your own, I recommend you install Conda from [here](https://www.anaconda.com/download).
 
 When working in Python, it is best to create a new environment for each project. For this project, you will want these important packages pre-installed:
+
 - `pip`, which installs other Python packages,
 - `numpy`, which is a general-purpose maths library,
 - `matplotlib`, the general-purpose Python plotting library,
-- `astropy`, which has lots of functions for astronomy, including how we will load data, and the Lomb-Scargle Periodogram for period determination,
+- `astropy`, which has lots of functions for astronomy, including the Lomb-Scargle Periodogram for period determination,
+- `pandas`, which is a useful tool for loading and working with data,
 - `scipy`, with miscellaneous scientific Python features, and
 - `ipykernel`, which runs Jupyter notebooks.
 
@@ -50,7 +52,7 @@ Then you can work to your heart's content in this conda environment.
 
 Most software development is done in Unix-based operating systems, the main examples being the Linux distributions, and Apple's Mac OSX. For a long time it has been a bit of a hassle to use the latest tools in Windows, but things have got a lot better recently!
 
-One recent development is the [Windows Subsystem for Linux](https://docs.microsoft.com/en-us/windows/wsl/install), which runs a Linux distribution (by default Ubuntu, which is my favourite too) inside of Windows. You should be able to do basically everything I suggested on the command line through this. By default, on Windows 10 or later, you should be able to open a PowerShell command line and type
+Anaconda (including Jupyter Notebook and their IDE Spyder) should work out of the box on Windows. The majority of popular python packages are built with Windows use in mind (including all of those we recommend using for this project!) although some niche packages may require a Unix-based system. If this is the case you should use [Windows Subsystem for Linux](https://docs.microsoft.com/en-us/windows/wsl/install), which runs a Linux distribution (by default Ubuntu, which is my favourite too) inside of Windows. You should be able to do basically everything I suggested on the command line through this. By default, on Windows 10 or later, you should be able to open a PowerShell command line and type
 
 ```shell
 wsl --install
@@ -60,20 +62,21 @@ and it should install; if this doesn't work, there are more detailed instruction
 
 ## Using Python
 
-There is a great intro textbook for Python for astronomers, freely available online [here](https://prappleizer.github.io/) by Pasha & Agostino.
+There is a great intro textbook for Python for astronomers, freely available online [here](https://prappleizer.github.io/) by Pasha & Agostino. 
+Chapter 1 isn't particularly relevant for Windows use of Anaconda, but will be a great resource when doing later research in a capstone/honours! 
 
 
 ## Jupyter Notebooks
 
 The main way that professional data scientists, physicists, and astronomers interactively use Python is through the Jupyter Notebook environment. This is an interactive, browser-based interpreter for Python.
 
-Here is a [great tutorial]((https://www.dataquest.io/blog/jupyter-notebook-tutorial/)) on using Jupyter notebooks - if you haven't before, I recommend you try this! 
+Here is a [great tutorial](https://www.dataquest.io/blog/jupyter-notebook-tutorial/) on using Jupyter notebooks - if you haven't before, I recommend you try this! 
 
-If you install Conda like above, you'll be good to go with the terminal command `jupyter notebook`. 
+If you install Conda like above, you'll be good to go with the terminal command `jupyter notebook` or by searching for the Jupyter Notebook app (Windows).
 
 ### Google Colab
 
-While some Windows users have Conda working very nicely, some users have been having difficulty.
+While most users will have Conda working very nicely, some users have difficulty installing (and Chromebooks are incompatible!).
 
 If this is the case for you, I recommend you use __Google Colab__, a free web-hosted Jupyter notebook environment that works like Google Docs. (There are paid versions, but you will not need to use these right now.)
 
@@ -83,7 +86,7 @@ Try it [here](https://colab.research.google.com/)! You can upload your project d
 ! pip install numpy matplotlib astropy scipy ipykernel
 ```
 
-I have created Google Colab versions of the tutorial pages from this site: 
+I have created Google Colab versions of the old tutorial pages from this site. Don't just copy and paste the code, but try to read this as a resource for how to use Colab: 
 
 - [HR Diagram](https://colab.research.google.com/drive/1dKY_ERciOdq0aSoDaUmNJLO5rkh6Ho1t?usp=sharing)
 - [Lomb-Scargle Periodogram](https://colab.research.google.com/drive/11EYzk_5cyNpCWWItp0NusuBRHh__TY-l?usp=sharing)
